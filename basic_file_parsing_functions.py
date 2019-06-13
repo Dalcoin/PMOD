@@ -482,3 +482,7 @@ def convert_time(tt,numeric_bool):
         return hrs_counter(tt,numeric_bool)        
     else:
         return days_counter(tt,numeric_bool)
+		
+		
+def new_function:
+	return None
