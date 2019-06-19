@@ -1,9 +1,17 @@
 #  parsing_lib
 # 
-#  Version 0.5 Contruct
+#  Version 0.9 Contruct
 #
 #
-# List of functions contained in this file: number = 6
+# List of functions contained in this file: number = 7
+#
+# __dup_check__
+# __text_file_replace__
+# __text_file_grab__
+# __list_file_grab__
+# __int_list__
+# __convert_time__
+# __list_matrix_trans__
 #
 # 
 # __dup_check__
@@ -18,6 +26,10 @@
 # Directions: Input a list of integers
 # 
 # Purpose: Checks for duplicates in a python list. 
+#
+#          Note that dup_check(n) starting from integer 1 and incrementing by 1 will
+#          generate a list of the triangle numbers, also given by the 
+#          binomial coefficient formula: (n+1 / 2)
 #
 # Returns: A list with two entries: the first is a boolean indicating whether a duplicate occurs,
 #                                   the second is an integer of pair-wise number of duplicate.
@@ -135,6 +147,20 @@
 #
 #
 #
+# __list_matrix_trans__
+#
+# list_matrix_trans('list')
+# list_matrix_trans(n)
+#
+# e.g. : convert list_matrix_trans([[1,2,3],[4,5,6]])
+#
+# n: list of numbers, float and integers allowed. Other data types work but not recommended
+# 
+# Directions: Place list of lists which form a matrix into n.
+#
+# Purpose: Transform an NxM matrix 
+#
+# Returns: List of lists
 
 import numpy as np
 import scipy as sp
@@ -185,6 +211,9 @@ def dup_check(list_to_check):
 
 
 def text_file_replace(file_name,file_make,grab_list,change_list):
+    
+#   Cette fonction contient beaucoup des lines qui sont exclures par des commentaires
+#   Un jour, je vais les supprimer
 
     # text_file_replace('file.in','file.out',[6,7],["nint, mint  0 1","pint, oint  1 1"])
     # file_name: input file string
@@ -211,12 +240,14 @@ def text_file_replace(file_name,file_make,grab_list,change_list):
 #    file_in = open(file_name,'r')
 #    file_lines = file_in.readlines()
 #    file_in.close()
-    
+
+#   Il faut que 'key' egale un. Si vous le change le fonction rendra rien
     key = 1
     
     length = len(file_lines)
     lines_list = []
     
+#   Ce block ne sert a rien 
 #    for i in range(length):
 #        file_line = file_lines[i].strip("\n").strip("\r").split(" ")
 #        if(key != 0):
@@ -250,7 +281,10 @@ def text_file_replace(file_name,file_make,grab_list,change_list):
                 else:
                     file_out.write(file_lines[i])
                 nonzero=0
-        
+
+#    Ce bloc des codes est demode: n'en utilisez pas!
+#    Je l'ai garde pour information                 
+                
 #        file_out = open(file_make,'w')
 #        for i in range(n):
 #            for j in range(m):
@@ -466,8 +500,11 @@ def list_file_grab(file_in,grab_list,repeat,formater):
         else:
             return raw_lines                      
 
+#--------------------------------------------------------------------------------------------------
         
 def int_list(n):return [x+1 for x in range(n)]
+
+#--------------------------------------------------------------------------------------------------
 
 def convert_time(tt,numeric_bool):
     import math as mt
@@ -533,7 +570,8 @@ def convert_time(tt,numeric_bool):
         return hrs_counter(tt,numeric_bool)        
     else:
         return days_counter(tt,numeric_bool)
-    
+
+#--------------------------------------------------------------------------------------------------
 
 def list_matrix_trans(n):
     
@@ -542,7 +580,6 @@ def list_matrix_trans(n):
     len_vals=[]
     for i in range(len(n)):
         len_vals.append(len(n[i]))
-    print(len_vals)
     if(len(len_vals) > 1):
         x = len(len_vals)
         assert int(dup_check(len_vals)[1]) == int((x)*(x-1)/2), "Error: 'n' is not a proper matrix"
