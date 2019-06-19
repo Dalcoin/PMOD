@@ -149,6 +149,12 @@ def dup_check(list_to_check):
     #Output is a list containing an indicator of duplicaticity 
     #and the pair-wise number of duplicates 
     
+# Note that dup_check(n) starting from integer 1 and incrementing by 1 will
+# generate a list of the triangle numbers, also given by the binomial coefficient formula:
+# (n+1)
+#  (2)
+
+    
     assert str(type(list_to_check)) == "<type 'list'>" , "Error: 'list_to_check' is not a list"
     n = len(list_to_check)
     m = 0
@@ -196,19 +202,25 @@ def text_file_replace(file_name,file_make,grab_list,change_list):
         assert str(type(change_list[i])) == "<type 'str'>" , "Error: 'grab_list' is not a list of strings"    
     assert len(grab_list) == len(change_list) , "Error: the length of grab_list must be the same as that of change_list"
     
-    file_in = open(file_name,'r')
-    file_lines = file_in.readlines()
-    file_in.close()
+    with open(file_name,'r') as file_in:
+        file_lines = file_in.readlines()
+            
+#    Ce bloc des codes est demode: n'en utilisez pas!
+#    Je l'ai garde pour reference 
+
+#    file_in = open(file_name,'r')
+#    file_lines = file_in.readlines()
+#    file_in.close()
     
     key = 1
     
     length = len(file_lines)
     lines_list = []
     
-    for i in range(length):
-        file_line = file_lines[i].strip("\n").strip("\r").split(" ")
-        if(key != 0):
-            lines_list.append(file_line)
+#    for i in range(length):
+#        file_line = file_lines[i].strip("\n").strip("\r").split(" ")
+#        if(key != 0):
+#            lines_list.append(file_line)
     
     if (key == 1):
         for i in range(len(grab_list)):
@@ -227,17 +239,29 @@ def text_file_replace(file_name,file_make,grab_list,change_list):
                 replace_list.append([grab_list[i],str(change_list[i])])
         nonzero = 0
         
-        file_out = open(file_make,'w')
-        for i in range(n):
-            for j in range(m):
-                if(i == int(replace_list[j][0])):
-                    gellig = j
-                    nonzero=1+nonzero                
-            if(nonzero > 0):      
-                file_out.write(replace_list[gellig][1]+"\n")
-            else:
-                file_out.write(file_lines[i])
-            nonzero=0
+        with open(file_make,'w') as file_out:
+            for i in range(n):
+                for j in range(m):
+                    if(i == int(replace_list[j][0])):
+                        gellig = j
+                        nonzero=1+nonzero         
+                if(nonzero > 0):      
+                    file_out.write(replace_list[gellig][1]+"\n")
+                else:
+                    file_out.write(file_lines[i])
+                nonzero=0
+        
+#        file_out = open(file_make,'w')
+#        for i in range(n):
+#            for j in range(m):
+#                if(i == int(replace_list[j][0])):
+#                    gellig = j
+#                    nonzero=1+nonzero                
+#            if(nonzero > 0):      
+#                file_out.write(replace_list[gellig][1]+"\n")
+#            else:
+#                file_out.write(file_lines[i])
+#            nonzero=0
 
             
 
@@ -265,16 +289,22 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
     assert str(type(group)) == "<type 'int'>" , "Error: 'groupe' is not an integer"
     assert group >= 0 , "Error: 'group' is negative, group should be non-negative"
         
-    file_in_r = open(file_in,'r')
-    file_lines = file_in_r.readlines()
-    file_in_r.close()
+#    file_in_r = open(file_in,'r')
+#    file_lines = file_in_r.readlines()
+#    file_in_r.close()
+    
+    with open(file_name,'r') as file_in:
+        file_lines = file_in.readlines()
     
     if(len(grab_list) == 0):
         n=len(file_lines) 
-        fileout = open(file_out,'w')
-        for i in range(n):
-            fileout.write(file_lines[i])    
-        fileout.close()    
+        with open(file_out,'w') as fileout:
+            for i in range(n):
+                fileout.write(file_lines[i])
+#        fileout = open(file_out,'w')
+#        for i in range(n):
+#            fileout.write(file_lines[i])    
+#        fileout.close()    
         return
         
     grab_list = [x-1 for x in grab_list]
@@ -299,16 +329,25 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
             lines = file_lines[grab_list[i]].strip("\n").strip("\r").split(" ")            
             lines = [x for x in lines if x != ''] 
             form_lines.append(lines)
-                        
-        fileout = open(file_out,'w')
-        if (group > 0):
-            for i in range(n):
+        
+        with open(file_out,'w') as fileout:
+            if(group>0):
                 fileout.write(raw_lines[i])
-                if(i > 0 and (i+1)%group == 0):
+                if(i>0 and (i+1)%group == 0):
                     fileout.write("\n")
-        else:
-            for i in range(n):
-                fileout.write(raw_lines[i])                       
+            else:
+                for i in range(n):
+                    fileout.write(raw_lines[i])
+        
+#        fileout = open(file_out,'w')
+#        if (group > 0):
+#            for i in range(n):
+#                fileout.write(raw_lines[i])
+#                if(i > 0 and (i+1)%group == 0):
+#                    fileout.write("\n")
+#        else:
+#            for i in range(n):
+#                fileout.write(raw_lines[i])                       
                 
     if(repeat == True):  
         bnd = grab_list[0]+1
@@ -320,19 +359,28 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
                 raw_lines.append(file_lines[line_tag])
                 lines = file_lines[line_tag].strip("\n").strip("\r").split(" ")            
                 lines = [x for x in lines if x != '']                 
-                form_lines.append(lines)            
-        fileout = open(file_out,'w')
-        if (group > 0):
-#            group = group - 1
-            for i in range(n*len(saut)):
-                fileout.write(raw_lines[i])
-                if(i>0 and (i+1)%group == 0):
-                    fileout.write("\n")    
-        else:
-            for i in range(n*len(saut)):
-                fileout.write(raw_lines[i])       
+                form_lines.append(lines)
+        with open(file_out,'w') as fileout:
+            if(group>0):
+                for i in range(n*len(saut)):
+                    fileout.write(raw_lines[i])
+                    if(i>0 and (i+1)%group == 0):
+                        fileout.write("\n")
+            else: 
+                for i in range(n*len(saut)):
+                    fileout.write(raw_lines[i])
+                    
+#        fileout = open(file_out,'w')
+#        if (group > 0):
+#            for i in range(n*len(saut)):
+#                fileout.write(raw_lines[i])
+#                if(i>0 and (i+1)%group == 0):
+#                    fileout.write("\n")    
+#        else:
+#            for i in range(n*len(saut)):
+#                fileout.write(raw_lines[i])       
         
-    fileout.close()        
+#    fileout.close()        
     
 
 #--------------------------------------------------------------------------------------------------
@@ -354,9 +402,12 @@ def list_file_grab(file_in,grab_list,repeat,formater):
     assert str(type(repeat)) == "<type 'bool'>" , "Error: 'repeat' is not a boolean"
     assert str(type(formater)) == "<type 'bool'>" , "Error: 'formater' is not a boolean"
 
-    file_in_r = open(file_in,'r')
-    file_lines = file_in_r.readlines()
-    file_in_r.close() 
+#    file_in_r = open(file_in,'r')
+#    file_lines = file_in_r.readlines()
+#    file_in_r.close() 
+    
+    with open(file_in,'r') as file_in_r:
+        file_lines = file_in_r.readlines()    
     
     raw_lines = []
     form_lines = []   
@@ -482,4 +533,27 @@ def convert_time(tt,numeric_bool):
         return hrs_counter(tt,numeric_bool)        
     else:
         return days_counter(tt,numeric_bool)
-		
+    
+
+def list_matrix_trans(n):
+    
+    assert str(type(n)) == "<type 'list'>" , "Error: 'n' is not a list"
+    
+    len_vals=[]
+    for i in range(len(n)):
+        len_vals.append(len(n[i]))
+    print(len_vals)
+    if(len(len_vals) > 1):
+        x = len(len_vals)
+        assert int(dup_check(len_vals)[1]) == int((x)*(x-1)/2), "Error: 'n' is not a proper matrix"
+    old_row_len = len(n[0])
+    old_col_len = len(n)
+    new_row_set=[]
+    new_row=[]
+    for i in range(old_row_len):
+        for j in range(old_col_len):
+            new_row.append(n[j][i])
+        new_row_set.append(new_row)
+        new_row = []
+    return new_row_set
+    
