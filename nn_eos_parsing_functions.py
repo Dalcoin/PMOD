@@ -31,15 +31,6 @@
 # n4lo450new.f
 # n4lo500new.f
 
-# This subroutine must have access to the following functions:
-
-# __dup_check__
-# __text_file_replace__
-# __text_file_grab__
-# __list_file_grab__
-# __int_list__
-# __convert_time__
-
 
 import subprocess
 import time
@@ -47,11 +38,10 @@ import numpy as np
 import scipy as sp
 import math as mt
 
-
 def nn_eos_scripter():
     
     # 'par_ins.don' e.g. 
-    par_values = list_file_grab('par_ins.don',[1],False,True)  
+    par_values = list_file_grab('par_ins.txt',[1],False,True)  
     val_line = par_values[0]
     
     assert len(val_line) > 2, "Error: two few parameters in 'par_ins.don' "
@@ -60,13 +50,13 @@ def nn_eos_scripter():
     #Universal Parameter Values
     mat = int(val_line[0])
     temp = int(val_line[1])
-    test_bool = bool(val_line[2])
+    test_bool = bool(int(val_line[2]))
     
     #----------------------If the Test Boolean is True:----------------------#
     
     if(test_bool == True):
         
-        test_lines = list_file_grab('test_ins.don',[],False,False)
+        test_lines = list_file_grab('test_ins.txt',[],False,False)
         
         # Testing parameters
         test_lines_pars = test_lines[0].strip("\n").strip("\r").split(" ")  
@@ -106,7 +96,7 @@ def nn_eos_scripter():
     
     #----------------------If the Test Boolean is False:----------------------#
             
-    val_lines = list_file_grab('val_ins.don',[],False,True)
+    val_lines = list_file_grab('val_ins.txt',[],False,True)
     val_vals = val_lines[0]
     
     n = int(val_vals[0])
@@ -114,7 +104,7 @@ def nn_eos_scripter():
     for i in range(n): 
         
         lines = list_file_grab('matin.d',[],False,False)
-        l13 = par_lines[i+1]
+        l13 = val_lines[i+1]
     
         blk5 = str('     ')
         blk4 = str('    ')
@@ -158,7 +148,7 @@ def nn_eos_scripter():
             print("'temp' must be either a 1 or 0!")
             return False
             
-        subprocess.call("./xl",shell=True)
+#        subprocess.call("./xl",shell=True)
 
         raw_out = list_file_grab('matout.d',[],False,False)
 
@@ -167,3 +157,25 @@ def nn_eos_scripter():
                 filegrab.write(raw_out[j])
             filegrab.write(str("\n"))    
     return True
+
+
+# Main Program
+
+ti = time.time()
+check = nn_eos_scripter()
+tf = time.time()
+deltat = tf - ti
+time_took = convert_time(deltat,False)
+
+with open('log_file.txt','w') as log_file:
+    if(check == True):
+        log_file.write("Success!"+str("\n"))
+        log_file.write('The process took '+time_took+' to finish.'+"\n")
+        log_file.write('Check the file "tot_out.etr" for the outputs\n')
+        log_file.write('\n')
+        log_file.write('Koreet ahe barrit, geigh ay lech ek Skorem ek kort!\n')
+        log_file.write('Shair, Shairee gal rieatem!\n')
+        log_file.write('\n')        
+    else: 
+        log_file.write("Failure..."+str("\n"))
+        log_file.write('The process took: '+time_took+' to finish.'+"\n")

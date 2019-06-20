@@ -1,6 +1,6 @@
 #  parsing_lib
 # 
-#  Version 0.9 Contruct
+#  Version 0.5 Contruct
 #
 #
 # List of functions contained in this file: number = 7
@@ -509,6 +509,11 @@ def int_list(n):return [x+1 for x in range(n)]
 def convert_time(tt,numeric_bool):
     import math as mt
     
+    global secs_counter
+    global mins_counter
+    global hrs_counter
+    global days_counter
+    
     def secs_counter(tt,numeric_bool):
         if(numeric_bool == False):
             if(tt == 1.):
@@ -553,7 +558,7 @@ def convert_time(tt,numeric_bool):
             else:
                 return str(str(days)+' days, ' + str(hrs)) 
         else:
-            return [days,hrs[0],hrs[1],hrs[2]]
+            return [days,hrs[0],hrs[1],hrs[2]]        
         
     assert str(type(tt)) == "<type 'int'>" or str(type(tt)) == "<type 'float'>" , "Error: 'time' is not a number"
     assert str(type(numeric_bool)) == "<type 'bool'>" , "Error: 'numeric_bool' is not a boolean"
@@ -562,8 +567,10 @@ def convert_time(tt,numeric_bool):
     if(tt < 0):
         tt=-1.*tt
 
-    if (tt < 60.):
-        return sec_counter(tt,numeric_bool)
+    if (tt < 1.):
+        return str(str(tt)+" secs")
+    elif (tt< 60.):
+        return secs_counter(tt,numeric_bool)
     elif (tt < 3600):
         return mins_counter(tt,numeric_bool)
     elif (tt < 86400):
