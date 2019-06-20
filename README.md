@@ -12,5 +12,5 @@ Tested on Windows machine without calling the potential or summation programs.
 
 Things to do:
 
-1) Final Code review.
-2) Test alpha build on coscompile machine. 
+1) Final Code review. (Completed 06/20/2019)
+2) Test alpha build on coscompile machine. (In progress...)
