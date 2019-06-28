@@ -29,7 +29,8 @@
 #
 #          Note that dup_check(n) starting from integer 1 and incrementing by 1 will
 #          generate a list of the triangle numbers, also given by the 
-#          binomial coefficient formula: (n+1 / 2)
+#          binomial coefficient formula: (n+1 
+#                                          2)
 #
 # Returns: A list with two entries: the first is a boolean indicating whether a duplicate occurs,
 #                                   the second is an integer of pair-wise number of duplicate.
@@ -519,9 +520,9 @@ def convert_time(tt,numeric_bool):
             if(tt == 1.):
                 return str(str(int(tt))+' sec')
             else:
-                return str(str(int(tt))+' secs')        
+                return str(str(tt)+' secs')        
         else:
-            return [int(tt)]
+            return [tt]
         
     def mins_counter(tt,numeric_bool):        
         mins = mt.floor(tt/60.) 
@@ -541,9 +542,9 @@ def convert_time(tt,numeric_bool):
         mins = mins_counter(secs_left,numeric_bool)
         if(numeric_bool == False): 
             if(hrs == 1):
-                return str(str(hrs)+' hr, ' + str(mins))
+                return str(str(int(hrs))+' hr, ' + str(mins))
             else:
-                return str(str(hrs)+' hrs, ' + str(mins))
+                return str(str(int(hrs))+' hrs, ' + str(mins))
         else: 
             return [hrs,mins[0],mins[1]]
         
@@ -554,15 +555,16 @@ def convert_time(tt,numeric_bool):
         hrs=hrs_counter(secs_left,numeric_bool)
         if(numeric_bool == False):
             if(days == 1):
-                return str(str(days)+' day, ' + str(hrs))
+                return str(str(int(days))+' day, ' + str(hrs))
             else:
-                return str(str(days)+' days, ' + str(hrs)) 
+                return str(str(int(days))+' days, ' + str(hrs)) 
         else:
             return [days,hrs[0],hrs[1],hrs[2]]        
         
-    assert str(type(tt)) == "<type 'int'>" or str(type(tt)) == "<type 'float'>" , "Error: 'time' is not a number"
+    assert str(type(tt)) == "<type 'int'>" or str(type(tt)) == "<type 'float'>"  or \
+                                                  str(type(tt)) == "<type 'long'>", "Error: 'time' is not a number"
     assert str(type(numeric_bool)) == "<type 'bool'>" , "Error: 'numeric_bool' is not a boolean"
-    
+        
     tt = float(tt)
     if(tt < 0):
         tt=-1.*tt
