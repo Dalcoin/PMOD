@@ -387,7 +387,7 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
     if(repeat == True):  
         bnd = grab_list[0]+1
         saut = grab_list[1:-1]
-        n = grab_list[-1]
+        n = grab_list[-1]+1
         for i in range(n):
             for j in range(len(saut)):
                 line_tag = saut[j]+bnd*i
@@ -462,7 +462,7 @@ def list_file_grab(file_in,grab_list,repeat,formater):
         
     grab_list = [x-1 for x in grab_list]    
     n = len(grab_list)
-         
+    
     if(repeat == False):
         grab_list_check = grab_list
     else:
@@ -488,7 +488,7 @@ def list_file_grab(file_in,grab_list,repeat,formater):
         assert len(grab_list) > 2, "Error: grab_list must take at least three values"
         bnd = grab_list[0]+1
         saut = grab_list[1:-1]
-        n = grab_list[-1]
+        n = grab_list[-1]+1
         for i in range(n):
             for j in range(len(saut)):
                 line_tag = saut[j]+bnd*i
