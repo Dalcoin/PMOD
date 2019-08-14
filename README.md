@@ -21,5 +21,7 @@ Things to do:
 
 "Basic_file_parsing_functions.py" is now been moved to two branches:
 
-PMOD_26.py
-PMOD_27.py
+PMOD_26.py: For use with Python 2.6
+
+PMOD_27.py: For use with Python 2.7
+
