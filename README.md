@@ -17,3 +17,6 @@ Things to do:
 2) Test alpha build on coscompile machine. (Completed 06/27/2019)
 3) Test testing option on coscompile machine. (Completed 07/23/2019)
 4) Build a selection of numeric output formating libraries (...in progress)
+
+
+"Basic
