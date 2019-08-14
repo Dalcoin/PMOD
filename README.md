@@ -19,7 +19,7 @@ Things to do:
 4) Build a selection of numeric output formating libraries (...in progress)
 
 
-"Basic_file_parsing_functions.py" is now been moved to two branches:
+"Basic_file_parsing_functions.py" is now been moved to two branches: (Completed 08/14/2019)
 
 PMOD_26.py: For use with Python 2.6
 
