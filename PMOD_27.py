@@ -1,17 +1,16 @@
-# PMOD_27.py
+# PMOD.py
 # 
 # Version 1.0 Construct
-# Inport as: PMOD_27.py
 #
 # Author: Randy Millerson
 #
-# Description: Contains functions for formatting, input/output and numeric tasks
+# Contains functions for formatting, input/output and numeric tasks
 #
 # Dependencies: Numpy, Scipy, Math, Time
 #
 # Compatibilities: Python 2.7 
 #
-# List of functions contained in this file: 19
+# List of functions contained in this file: 22
 #
 # __numeric_assert__
 # __int_assert__
@@ -28,10 +27,13 @@
 # __text_file_grab__
 # __list_file_grab__
 # __table_file_parse__
+# __table_err_gen_file__
 # __round_decimal__
 # __round_decimal_sci__
 # __numeric_uni_format__
+# __list_to_string__
 # __spline_vals__
+# __spline_int__
 #
 #------------------------------------------------------------------------------------------------------------
 #
@@ -423,11 +425,28 @@
 #             derivative to be evaluated into der, 0 is jno derivative.
 # 
 # Purpose: Provide a quick and relable function to evaluate splined values from an input
-#          of x and y alone. Support for derivatives. 
+#          of discrete x and y points alone. Support for derivatives. 
 #
 # Returns: a list of numeric values
 #
 #--------------------------------------------------------------------------------------------------
+# 
+# __spline_int__
+#
+# spline_int('list','list','numeric','numeric')
+# spline_int(x,y,a,b)
+#
+# spline_vals([1,2,3,4,5,6],[0.12,1.26,3.42,7.20,17.77,42.33],1,2)
+#
+# Directions: place list of x-values from 1-D function into x, place list of y-values
+#             from the same 1-D function, x and y should have the following relationship:
+#             f(x) -> y, where the mapping is at least surjective. Place numeric values 
+#             into a and b, corrosponding to the lower and upper limits of integration. 
+# 
+# Purpose: Provide a quick and relable function to evaluate definite integral values from
+#          an input of discrete x and y points alone.
+#
+# Returns: a list of numeric values 
 
 
 import numpy as np
@@ -464,7 +483,7 @@ def list_assert(n,string):
 
 def bool_assert(n,string):
     assert str(type(string)) == "<type 'str'>", "Error in numeric_assert(), 'string' is not a string"
-    assert str(type(n)) == "<type 'list'>" , "Error: Input "+string+" is not a boolean"        
+    assert str(type(n)) == "<type 'bool'>" , "Error: Input "+string+" is not a boolean"        
     
 #--------------------------------------------------------------------------------------------------
         
@@ -487,8 +506,8 @@ def dup_check(list_to_check):
 # (n+1)
 #  (2)
 
+    list_assert(list_to_check,'list_to_check')
     
-    assert str(type(list_to_check)) == "<type 'list'>" , "Error: 'list_to_check' is not a list"
     n = len(list_to_check)
     m = 0
     for i in range(n):
@@ -515,7 +534,7 @@ def dup_check(list_to_check):
 
 def list_matrix_trans(n):
     
-    assert str(type(n)) == "<type 'list'>" , "Error: 'n' is not a list"
+    list_assert(n,'n')
     
     len_vals=[]
     for i in range(len(n)):
@@ -538,7 +557,7 @@ def list_matrix_trans(n):
     
 def list_irr_matrix_trans(n):
     
-    assert str(type(n)) == "<type 'list'>" , "Error: 'n' is not a list"
+    list_assert(n,'n')
     
     len_vals=[]
     for i in range(len(n)):
@@ -579,7 +598,8 @@ def convert_time(tt,numeric_bool):
             if(tt == 1.):
                 return str(str(int(tt))+' sec')
             else:
-                return str(str(tt)+' secs')        
+                tt = round_decimal(tt,3,True)
+                return str(tt+' secs')        
         else:
             return [tt]
         
@@ -619,17 +639,16 @@ def convert_time(tt,numeric_bool):
                 return str(str(int(days))+' days, ' + str(hrs)) 
         else:
             return [days,hrs[0],hrs[1],hrs[2]]        
-        
-    assert str(type(tt)) == "<type 'int'>" or str(type(tt)) == "<type 'float'>"  or \
-                                                  str(type(tt)) == "<type 'long'>", "Error: 'time' is not a number"
-    assert str(type(numeric_bool)) == "<type 'bool'>" , "Error: 'numeric_bool' is not a boolean"
+    
+    numeric_assert(tt,'tt')
+    bool_assert(numeric_bool,'numeric_bool')
         
     tt = float(tt)
     if(tt < 0):
         tt=-1.*tt
 
     if (tt < 1.):
-        return str(str(tt)+" secs")
+        return secs_counter(tt,numeric_bool)
     elif (tt< 60.):
         return secs_counter(tt,numeric_bool)
     elif (tt < 3600):
@@ -641,66 +660,81 @@ def convert_time(tt,numeric_bool):
 
 #--------------------------------------------------------------------------------------------------
 
+def text_file_print(file_name,add_list):
+    
+    # text_file_replace('file.in',["line_1: 0 1","line_2: 1 1"])
+    # file_name: output file string
+    # add_list: list of strings, each string is a separate line, order denoted by the index. 
+    
+    string_assert(file_name,'file_name')
+    list_assert(add_list,'add_list')
+    
+    n=len(add_list)
+    for i in range(n):
+        string_assert(add_list[i],str('add_list line #: '+str(i)))
+            
+    with open(file_name,'w') as file_out:
+        for i in range(n): 
+            file_out.write(add_list[i]+"\n")  
 
+#--------------------------------------------------------------------------------------------------
 
-def text_file_replace(file_name,file_make,grab_list,change_list):
+def text_file_replace(file_name,grab_list,change_list):
     
     # text_file_replace('file.in','file.out',[6,7],["nint, mint  0 1","pint, oint  1 1"])
     # file_name: input file string
     # file_make: output file string
     # grab_list: list of integers with the line to be stored or changed
     # change_list: list of strings to replace the lines from grab_list
+    
+    string_assert(file_name,'file_name')
+    list_assert(grab_list,'grab_list')
 
-    assert str(type(file_name)) == "<type 'str'>" , "Error: 'file_name' is not a string"
-    assert str(type(file_make)) == "<type 'str'>" , "Error: 'file_make' is not a string"
-    assert str(type(grab_list)) == "<type 'list'>" , "Error: 'grab_list' is not an list"
-    for i in range(len(grab_list)):
+    for i in range(len(grab_list)):        
         assert str(type(grab_list[i])) == "<type 'int'>" , "Error: 'grab_list' is not a list of integers"
-    assert str(type(change_list)) == "<type 'list'>" , "Error: 'change_list' is not an list"
+    list_assert(change_list,'change_list')
     for i in range(len(change_list)):
         assert str(type(change_list[i])) == "<type 'str'>" , "Error: 'grab_list' is not a list of strings"    
     assert len(grab_list) == len(change_list) , "Error: the length of grab_list must be the same as that of change_list"
     
     with open(file_name,'r') as file_in:
         file_lines = file_in.readlines()
-
-    key = 1
-    
+        
     length = len(file_lines)
     lines_list = []
     
-    if (key == 1):
-        for i in range(len(grab_list)):
-            assert str(type(grab_list[i])) == "<type 'int'>" , "Error: grab_list must be a list of integers"
-            dup_test = dup_check(grab_list)[0]
-            assert dup_test == False , "Error: grab_list values must be unique"
-
-        grab_list = [x-1 for x in grab_list]
-        n = len(file_lines)
-        m = len(grab_list)
-        replace_list=[]
-        j=0
+    for i in range(len(grab_list)):
+        assert str(type(grab_list[i])) == "<type 'int'>" , "Error: grab_list must be a list of integers"
+        dup_test = dup_check(grab_list)[0]
+        assert dup_test == False , "Error: grab_list values must be unique"
+    
+    grab_list = [x-1 for x in grab_list]
+    n = len(file_lines)
+    m = len(grab_list)
+    replace_list=[]
+    j=0
+    
+    for i in range(m):
+        if(grab_list[i] < n):
+            replace_list.append([grab_list[i],str(change_list[i])])
+    nonzero = 0
         
-        for i in range(m):
-            if(grab_list[i] < n):
-                replace_list.append([grab_list[i],str(change_list[i])])
-        nonzero = 0
-        
-        with open(file_make,'w') as file_out:
-            for i in range(n):
-                for j in range(m):
-                    if(i == int(replace_list[j][0])):
-                        gellig = j
-                        nonzero=1+nonzero         
-                if(nonzero > 0):      
-                    file_out.write(replace_list[gellig][1]+"\n")
-                else:
-                    file_out.write(file_lines[i])
-                nonzero=0
+    assert n>=m , "Error: The number of replacement lines is greater than the number of file lines"
+    assert n >= (max(grab_list)+1) , "Error: A replacement line is greater than the largest file line"
+    
+    with open(file_name,'w') as file_out:
+        for i in range(n):
+            for j in range(m):                
+                if(i == int(replace_list[j][0])):
+                    gellig = j
+                    nonzero=1+nonzero         
+            if(nonzero > 0):      
+                file_out.write(replace_list[gellig][1]+"\n")
+            else:
+                file_out.write(file_lines[i])
+            nonzero=0
             
-
 #--------------------------------------------------------------------------------------------------
-            
             
 def text_file_grab(file_in,file_out,grab_list,repeat,group):
     
@@ -708,22 +742,24 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
     # file_name: input file string
     # file_make: output file string
     # grab_list: list of integers with the lines to be parsed and printed
+    #            the entire file is grabbed if grab_list is empty
     # repeat:    boolean, true for option to repeat; if true then the repetition
     #            value is the first value in the grab_list, the middle values are 
     #            the shifted repeated indicies, and the last value is number of cycles
     # group:     Integer number for lines to be grouped by paragraph, 0 if no grouping
-
-    assert str(type(file_in)) == "<type 'str'>" , "Error: 'file_in' is not a string"
-    assert str(type(file_out)) == "<type 'str'>" , "Error: 'file_out' is not a string"
-    assert str(type(grab_list)) == "<type 'list'>" , "Error: 'grab_list' is not an list"
+    
+    string_assert(file_in,'file_in')
+    string_assert(file_out,'file_out')
+    list_assert(grab_list,'grab_list')
+    assert file_in != file_out , "Error: file_in must be different than file_out"
     for i in range(len(grab_list)):
         assert str(type(grab_list[i])) == "<type 'int'>" , "Error: 'grab_list' is not a list of integers"     
-    assert str(type(repeat)) == "<type 'bool'>" , "Error: 'repeat' is not a boolean"
-    assert str(type(group)) == "<type 'int'>" , "Error: 'groupe' is not an integer"
+    bool_assert(repeat,'repeat')
+    int_assert(group,'group')
     assert group >= 0 , "Error: 'group' is negative, group should be non-negative"
     
-    with open(file_name,'r') as file_in:
-        file_lines = file_in.readlines()
+    with open(file_in,'r') as file_in_open:
+        file_lines = file_in_open.readlines()
     
     if(len(grab_list) == 0):
         n=len(file_lines) 
@@ -747,8 +783,9 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
         assert str(type(grab_list_check[i])) == "<type 'int'>" , "Error: grab_list must be a list of integers"
         dup_test = dup_check(grab_list_check)[0]
         assert dup_test == False , "Error: grab_list values must be unique"
-    
+        
     if(repeat == False):
+        assert len(file_lines) >= max(grab_list)+1 , "Error: a line value in grab_list exceeds the number of lines file_in"
         for i in range(n):
             raw_lines.append(file_lines[grab_list[i]])
             lines = file_lines[grab_list[i]].strip("\n").strip("\r").split(" ")            
@@ -765,11 +802,18 @@ def text_file_grab(file_in,file_out,grab_list,repeat,group):
                     fileout.write(raw_lines[i])                 
                 
     if(repeat == True):  
+        
         bnd = grab_list[0]+1
         saut = grab_list[1:-1]
+        len_saut = len(saut)
         n = grab_list[-1]+1
+        
+        max_line = len(file_lines)        
+        line_end = grab_list[-2]+(n-1)*bnd+1
+        assert max_line >= line_end , "Error: Your max line grabbed exceeds total file lines"           
+        
         for i in range(n):
-            for j in range(len(saut)):
+            for j in range(len_saut):
                 line_tag = saut[j]+bnd*i
                 raw_lines.append(file_lines[line_tag])
                 lines = file_lines[line_tag].strip("\n").strip("\r").split(" ")            
@@ -798,10 +842,10 @@ def list_file_grab(file_in,grab_list,repeat,formater):
     #            the shifted repeated indicies, and the last value is number of cycles
     # formater:  Boolean, True if returned as scrubbed list, else a raw list is returned  
     
-    assert str(type(file_in)) == "<type 'str'>" , "Error: 'file_in' is not a string"
-    assert str(type(grab_list)) == "<type 'list'>" , "Error: 'grab_list' is not an list"
-    assert str(type(repeat)) == "<type 'bool'>" , "Error: 'repeat' is not a boolean"
-    assert str(type(formater)) == "<type 'bool'>" , "Error: 'formater' is not a boolean"
+    string_assert(file_in,'file_in')
+    list_assert(grab_list,'grab_list')
+    bool_assert(repeat,'repeat')
+    bool_assert(formater,'formater')
     
     with open(file_in,'r') as file_in_r:
         file_lines = file_in_r.readlines()    
@@ -872,8 +916,8 @@ def table_file_parse(file_in,group):
     # file_in: input file string
     # group: an empty list, or a list of two integers
     
-    assert str(type(file_in)) == "<type 'str'>" , "Error: 'file_in' is not a string"
-    assert str(type(group)) == "<type 'list'>" , "Error: 'group' is not a list"    
+    string_assert(file_in,'file_in')
+    list_assert(group,'group')
     
     with open(file_in,'r') as file_in_r:
         file_lines = file_in_r.readlines()    
@@ -923,7 +967,59 @@ def table_file_parse(file_in,group):
                 grouped_table.append(temp_list)
                 temp_list = []
             return grouped_table
-                        
+
+#--------------------------------------------------------------------------------------------------                
+        
+def table_err_gen_file(file_1,file_2,file_out,header,out_header):
+    
+    string_assert(file_1,'file_1')
+    string_assert(file_2,'file_2')
+    string_assert(file_out,'file_out')
+    bool_assert(header,'header')
+    list_assert(out_header,'out_header')
+
+    order_1 = table_file_parse(file_1,[])
+    order_2 = table_file_parse(file_2,[])
+    
+    n = len(order_1)       
+    assert len(order_1) == len(order_2), "Error: The number of variables differ between files"
+    for i in range(n):
+        assert len(order_1[i]) == len(order_1[i]), "Error: The length of variable %i differ between files" %i
+    m = len(order_1[0]) 
+
+    temp_list = []
+    hold_list = []
+    out_list = []
+
+    if(header == True):        
+        if(len(out_header) != n):
+            assert len(out_header) == 0, "Error: 'out_header' is not a valid length, set to [] to reuse native header."
+        if(len(out_header) == 0):
+            for i in range(n):
+                out_header.append(order_1[i][0])        
+        for i in range(n):
+            temp_list.append(out_header[i])
+            for j in range(1,len(order_1[i])):
+                err = abs(float(order_2[i][j])-float(order_1[i][j]))
+                temp_list.append(numeric_uni_format(err))
+            hold_list.append(temp_list)
+            temp_list=[]
+        out_lists = list_irr_matrix_trans(hold_list)
+        for i in range(m):
+            out_list.append(list_to_string(out_lists[i])) 
+        text_file_print(file_out,out_list)
+    else:
+        for i in range(n):
+            for j in range(0,len(order_1[i])):
+                err = abs(float(order_2[i][j])-float(order_1[i][j]))
+                temp_list.append(numeric_uni_format(err))
+            hold_list.append(temp_list)
+            temp_list=[]
+        out_lists = list_irr_matrix_trans(hold_list)
+        for i in range(m):
+            out_list.append(list_to_string(out_lists[i])) 
+        text_file_print(file_out,out_list)
+                                            
 #--------------------------------------------------------------------------------------------------
             
 def round_decimal(x,d,string):
@@ -935,8 +1031,8 @@ def round_decimal(x,d,string):
     # string: boolean, String if True, Float if false
 
     numeric_assert(x,'x')
-    assert str(type(d)) == "<type 'int'>" , "Error: 'd' is not an integer"
-    assert str(type(string)) == "<type 'bool'>" , "Error: 'string' is not a boolean"
+    int_assert(d,'d')
+    bool_assert(string,'string')
     
     assert d >= 0 , "Error: 'd' must be a non-negative integer"
     
@@ -948,7 +1044,7 @@ def round_decimal(x,d,string):
     elif(string == False and d > 0):
         return float(x)
     elif(string == True and d == 0):
-        return(str(int(x)))
+        return(str(int(x))+".")
     elif(string == False and d == 0):
         return(int(x))
     else:
@@ -963,8 +1059,8 @@ def round_decimal_sci(x,d,string):
     # d: a non-negative integer signifying the number of significant digits
 
     numeric_assert(x,'x')
-    assert str(type(d)) == "<type 'int'>" , "Error: 'd' is not an integer"
-    assert str(type(string)) == "<type 'bool'>" , "Error: 'string' is not a boolean"
+    int_assert(d,'d')
+    bool_assert(string,'string')
     
     assert d >= 0 , "Error: 'd' must be a non-negative integer"
     
@@ -981,29 +1077,55 @@ def round_decimal_sci(x,d,string):
 def numeric_uni_format(x):
     
     numeric_assert(x,'x')
+
+    if(np.isnan(x) == True):
+        x = 0.0
     
     pos_bool = (x > 0.0)
+    neg_bool = (x < 0.0)
+    nul_bool = (x == 0.0)
+
     if(pos_bool is True):
-        if(x < 100000000):
+        if(x < 10000000):
             outpt = round_decimal(x,6,True)
             for i in range(6):
                 if(x > 10.0**(i+1)):
                     outpt = round_decimal(x,6-(i+1),True)
-                    if(i == 5):
+                    if(i == 6):
                         outpt = outpt+'.'
-        if(x >= 100000000):
+        if(x >= 10000000):
             outpt = round_decimal_sci(x,3,True)
-    else:
-        if(x > -10000000):
+        if(x < 0.000001):
+            outpt = round_decimal_sci(x,3,True)
+    elif(neg_bool is True):
+        if(x > -1000000):
             outpt = round_decimal(x,5,True)
             for i in range(5):
                 if(x < -10.0**(i+1)):
                     outpt = round_decimal(x,5-(i+1),True)   
-                    if(i == 4):
+                    if(i == 5):
                         outpt = outpt+'.'
-        if(x <= -10000000):
+        if(x <= -1000000):
             outpt = round_decimal_sci(x,2,True)
+        if(x > -0.000001):
+            outpt = round_decimal_sci(x,2,True)
+    else:
+        outpt = '0.000000'
     return outpt
+
+#--------------------------------------------------------------------------------------------------
+
+def list_to_string(n):
+    list_assert(n,'n')
+    return_string = ''
+    for i in range(len(n)):
+        if(type(n[i])=="<type 'float'>"):
+            prex = float(n[i])
+            return_string = return_string + numeric_uni_format(prex) + "  "
+        else:
+            prex = str(n[i])
+            return_string = return_string + prex + "  "
+    return return_string
 
 #--------------------------------------------------------------------------------------------------
 
@@ -1026,3 +1148,18 @@ def spline_vals(xnew,x,y,der):
         bspline_obj = bspline(x,y)
         der_spline_vals = deriv(xnew,bspline_obj,der)
         return(der_spline_vals)
+    
+#--------------------------------------------------------------------------------------------------
+
+def spline_int(x,y,a,b):
+    from scipy.interpolate import splrep as bspline
+    from scipy.interpolate import splint as integ
+    
+    list_assert(x,'x')
+    list_assert(y,'y')
+    numeric_assert(a,'a')
+    numeric_assert(b,'b')
+    
+    bspline_obj = bspline(x,y)
+    int_spline_val = integ(a,b,bspline_obj)
+    return(int_spline_val)
