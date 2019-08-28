@@ -10,8 +10,10 @@
 #
 # Compatibilities: Python 2.7 
 #
-# List of functions contained in this file: 22
+# List of functions contained in this file: 24
 #
+# __type_test__
+# __numeric_test__
 # __numeric_assert__
 # __int_assert__
 # __string_assert__
@@ -34,6 +36,41 @@
 # __list_to_string__
 # __spline_vals__
 # __spline_int__
+#
+#------------------------------------------------------------------------------------------------------------
+#
+# __type_test__
+#
+# type_test('object','type')
+# type_test(object_input,test_type)
+#
+# e.g. : type_test(10.035,float)
+#
+# object_input: python 'object'
+# test_type: python 'type'
+#
+# Directions: put object to be checked in object_input, put type to be tested in test_type.
+#
+# Purpose: Returns bool, True if the objecthas a type equal to test_type, else False.
+#
+# Returns: Boolean
+#
+#------------------------------------------------------------------------------------------------------------
+#
+# __numeric_test__
+#
+# numeric_test('object')
+# numeric_test(x)
+#
+# e.g. : type_test(10.035)
+#
+# x: python 'object'
+#
+# Directions: put object to be checked in x
+#
+# Purpose: Returns bool, True if the object is a numeric type, else False.
+#
+# Returns: Boolean
 #
 #------------------------------------------------------------------------------------------------------------
 #
@@ -448,11 +485,26 @@
 #
 # Returns: a list of numeric values 
 
-
 import numpy as np
 import scipy as sp
 import math as mt
 import time
+
+#--------------------------------------------------------------------------------------------------
+
+def type_test(object_input,test_type):
+    return type(object_input) is test_type
+
+#--------------------------------------------------------------------------------------------------
+
+def numeric_test(x):
+    bool_sum=False
+    bool_sum = type_test(x,int)+bool_sum
+    bool_sum = type_test(x,float)+bool_sum
+    bool_sum = type_test(x,long)+bool_sum
+    bool_sum = type_test(x,complex)+bool_sum
+    bool_sum = bool(bool_sum)
+    return bool_sum
 
 #--------------------------------------------------------------------------------------------------
 
@@ -1119,12 +1171,12 @@ def list_to_string(n):
     list_assert(n,'n')
     return_string = ''
     for i in range(len(n)):
-        if(type(n[i])=="<type 'float'>"):
-            prex = float(n[i])
-            return_string = return_string + numeric_uni_format(prex) + "  "
+        if(numeric_test(n[i])):
+            prex = n[i]
+            return_string = return_string + numeric_uni_format(prex) + " "
         else:
             prex = str(n[i])
-            return_string = return_string + prex + "  "
+            return_string = return_string + prex + " "
     return return_string
 
 #--------------------------------------------------------------------------------------------------
