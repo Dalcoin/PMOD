@@ -22,7 +22,7 @@ Tested on Coscompile machine
 1) Final Code review. (Completed 06/20/2019)
 2) Test alpha build on coscompile machine. (Completed 06/27/2019)
 3) Test testing option on coscompile machine. (Completed 07/23/2019)
-*4) Build a selection of numeric output formating libraries (...in progress)* : Moved to another project
+4) *Build a selection of numeric output formating libraries (...in progress)* : Moved to another project
 
 ### Future additions:
 
