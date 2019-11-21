@@ -42,13 +42,13 @@ PMOD_27.py: For use with Python 2.7
                  
 ### Raw Code: Version 1.0
 
-**PMOD_27.py** : Compatable with Python 2.7 interpreter
-**PMOD_26.py** : Compatable with Python 2.6 interpreter
+**PCMD_27.py** : Compatable with Python 2.7 interpreter
+**PCMD_26.py** : Compatable with Python 2.6 interpreter
 
 ##
 
 Tested on Windows machine : Windows 10 OS (11/20/2019)
-Tested on Linux machine   : Redhat OS (future)
+Tested on Linux machine   : Redhat OS (11/21/2019)
 
 ### Completed activities:
 
