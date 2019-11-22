@@ -31,8 +31,8 @@ Tested on Coscompile machine
 
 **Basic_file_parsing_functions.py** is now been moved to two branches: (Completed 08/14/2019)
 
-PMOD_26.py: For use with Python 2.6
-PMOD_27.py: For use with Python 2.7
+* PMOD_26.py: For use with Python 2.6
+* PMOD_27.py: For use with Python 2.7
 
 # 2.) PCMD
 
@@ -40,10 +40,9 @@ PMOD_27.py: For use with Python 2.7
                  to a python script to navigate file and directory pathways as well as to move 
                  and delete folders and files.
                  
-### Raw Code: Version 1.0
+### Raw Code: Version 1.5
 
-**PCMD_27.py** : Compatable with Python 2.7 interpreter
-**PCMD_26.py** : Compatable with Python 2.6 interpreter
+**PCMD.py** : Compatable with both Python 2.7 and Python 2.6 interpreters
 
 ##
 
@@ -56,4 +55,4 @@ Tested on Linux machine   : Redhat OS (11/21/2019)
 
 ### Future additions:
 
-1) Add Linux compatablility 
+1) Add additional command capabilities
