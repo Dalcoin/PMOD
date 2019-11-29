@@ -361,7 +361,7 @@ class path_parse:
                     dir_inst = dir_inst+motion[i+1]+' '
                 else:
                     dir_inst = dir_inst+motion[i+1]    
-                    
+                       
             if(dir_inst == '..'):  
                 
                 if(len(self.path_list) == 1):
@@ -399,6 +399,36 @@ class path_parse:
                         return 1
                     else:
                         return 1
+            
+            elif(dir_inst[0] == '/'):
+                ndir_inst = dir_inst[1:]
+                   
+                if(ndir_inst in self.path_list):
+                    listin = list(self.path_list)
+                    npath_list = []
+                    switch = True
+                    for i in listin:
+                        if(i != ndir_inst and switch == True):
+                            npath_list.append(i)
+                        else:
+                            switch = False
+                    npath_list.append(ndir_inst)
+                    self.path = self.create_path(npath_list)
+                    self.path_list = npath_list
+                    if(self.path == 'C:'):
+                        self.path = 'C://'
+                    self.path_contain = os.listdir(self.path)
+                    self.path_files = self.get_files()      
+                    if(self.path_print):
+                        self.fancy_print(color)
+                        return 1
+                    else:
+                        return 1                    
+                else:
+                    print("Error: Folder "+ndir_inst+" not found within root path")
+                    return None
+                    
+            
             else:
                 print("Error: '"+dir_inst+"' is not a folder in (path) directory")
                 return None   
@@ -651,3 +681,4 @@ class path_parse:
         else:
             print('Error: Input not resolved')
             return None
+              
