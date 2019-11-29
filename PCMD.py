@@ -59,6 +59,18 @@ class path_parse:
                                 equal to 'dir_name' in the 
                                 current (path) directory
     
+    find_file(self,file_name) : Checks the current (path) directory for a file with 
+                                'file_name' as its identifier. Returns boolean.
+
+    grep_file(self,fragment) : Checks the current (path) directory for any file with
+                               'fragment' in its name. The list of matching file names 
+                               is returned in string format. 
+                                 
+    fancy_print(self,col=False) : Prints the current (path) directory pathway in a
+                                  stylized format. 
+
+    fancy_print_list(self,array) :  Prints a list, 'array', in a stylized format.
+    
     '''
     
     def __init__(self,os_form,new_path=None,path_print=False,print_col=False):
@@ -241,6 +253,21 @@ class path_parse:
         except:
             raise OSError        
             return None 
+                
+    def find_file(self,file_name):
+        spf = self.path_files
+        if(file_name in spf):
+            return True
+        else:
+            return False
+        
+    def grep_file(self,fragment):
+        spf = self.path_files
+        grep_list = []
+        for i in spf:
+            if(fragment in i):
+                grep_list.append(i)
+        return grep_list
         
         
     def fancy_print(self,col=False):
@@ -272,6 +299,14 @@ class path_parse:
                 print(blue+atsp+i)
         print(black)
             
+            
+    def fancy_print_list(self,array):
+
+        nl = '\n'
+        atsp = '   '
+        
+        for i in array:
+            print(atsp+str(i))
         
 
     ####################################################    
@@ -291,22 +326,31 @@ class path_parse:
         Valid Commands: 
         
         'ls' : returns list of strings containing the contents of the present directory
-        'dir': same as 'ls'
+        'dir': returns pathway for file in the current directory
         'cd' : moves into the directory input, note: input directory must be in current directory
                ('..' to move upwards)  
         'mv' : moves file from current directory into subdirectory
                (format note: 'mv file_path.file Directory_Name') [file extension must be included]
         'rm' : remove input file from current directory
-        'mkdir' : make new directory with name equal to input string
+        'mkdir' : make new directory with name equalivalent to input string
         'rmdir' : delete current directory
-               
+        'find' : Searches the current directory for the input file string and returns boolean
+        'grep' : Searches the current directory for the input pattern and returns list of matches
+        'pwd'  : Returns current directory pathway as string; equivalent to 'self.path'
+        'help' : Returns list of valid commands
+        
         '''
         
         def cmd_ls():
             self.path_contain = os.listdir(self.path)
-            self.fancy_print(color)
-            return 1
+            if(self.path_print):
+                self.fancy_print(color)
+            return self.path_contain
                    
+        def cmd_pwd():
+            if(self.path_print):
+                self.fancy_print(color)
+            return self.path            
         
         def cmd_cd(motion,nmot):
             
@@ -330,6 +374,8 @@ class path_parse:
                 self.path = self.create_path(self.path_list)
                 self.path_split = self.path.split(delim)
                 self.path_list = [i for i in self.path_split]
+                if(self.path == 'C:'):
+                    self.path = 'C://'
                 self.path_contain = os.listdir(self.path)
                 self.path_files = self.get_files()                     
                      
@@ -459,23 +505,120 @@ class path_parse:
                 self.fancy_print(color)
             return 1          
         
+        
+        def cmd_find(motion,nmot):
+
+            file_inst = ''
+            
+            # Format
+            for i in range(nmot-1):                
+                if(i < nmot-2):
+                    file_inst = file_inst+motion[i+1]+' '
+                else:
+                    file_inst = file_inst+motion[i+1]
+            if('.' not in [j for j in file_inst]):
+                print('Error: file name is missing type extension')
+                return None     
+            
+            verif = self.find_file(file_inst)
+            if(self.path_print):
+                if(verif):
+                    print("The file '"+file_inst+"' has been found in the current directory!")
+                else:
+                    print("No file named '"+file_inst+"' found in current directory.")
+            return verif
+        
+        
+        def cmd_grep(motion,nmot):
+
+            file_inst = ''
+            
+            # Format
+            for i in range(nmot-1):                
+                if(i < nmot-2):
+                    file_inst = file_inst+motion[i+1]+' '
+                else:
+                    file_inst = file_inst+motion[i+1]  
+            
+            verif = self.grep_file(file_inst)
+            if(self.path_print):
+                if(len(verif) == 0):
+                    print("Match string '"+file_inst+"' does not"+ 
+                          "match any files in path directory")
+                else:
+                    print("Match string '"+file_inst+"' found in the following files:\n")
+                    self.fancy_print_list(verif)                          
+            return verif        
+        
+        
+        def cmd_dir(motion,nmot):
+
+            file_inst = ''
+            
+            # Format
+            for i in range(nmot-1):                
+                if(i < nmot-2):
+                    file_inst = file_inst+motion[i+1]+' '
+                else:
+                    file_inst = file_inst+motion[i+1]  
+            if('.' not in [j for j in file_inst]):
+                print('Error: file name is missing type extension')
+                return None     
+                    
+            verif = self.find_file(file_inst)
+            if(verif):
+                file_path_list = list(self.path_list)
+                file_path_list.append(file_inst)
+                file_path_ret = self.create_path(file_path_list)
+            else:
+                print('Error: file not found in the current directory')
+                file_path_ret = None
+            
+            if(self.path_print):
+                atsp = '   '
+                if(verif):
+                    print('The path way for '+file_inst+' is shown below: ')
+                    print(' ')
+                    print(atsp+file_path_ret)
+                else:
+                    print('Error: No pathway to display')
+            
+            return file_path_ret
+        
+        def cmd_help(cd_list):
+            if(self.path_print):
+                print('Below is a list of valid input commands:\n')
+                self.fancy_print_list(cd_list)
+            return cd_list
+                
+            
         ##################
         # Function: Main #
         ##################
         
         assert isinstance(motion,str), "Error: input must be a string"
               
-        cd_list = ['ls','dir','cd','mv','rm','mkdir']
+        cd_list = ['ls','dir','pwd','cd','mv','rm','mkdir','find','grep','help']
                                                                        
         motion = motion.split(" ")
         nmot = len(motion)            
         cmd_inst = motion[0]
         
-        assert cmd_inst in cd_list, 'Error: command not recognized, '\
-                                    'use help() to view available functions'
+        assert cmd_inst in cd_list, "Error: command not recognized, "\
+                                    "use 'help' to view available functions"
                     
-        if(cmd_inst == 'ls' or cmd_inst == 'dir'):
-            verif = cmd_ls()        
+        if(cmd_inst == 'ls'):
+            value = cmd_ls()
+            return value
+        elif(cmd_inst == 'pwd'):
+            value = cmd_pwd()
+            return value        
+        elif(cmd_inst == 'dir'):
+            value = cmd_dir(motion,nmot)
+            if(isinstance(value,str)):
+                return value
+            else:
+                verif = None   
         elif(cmd_inst == 'cd'):
             verif = cmd_cd(motion,nmot)          
         elif(cmd_inst == 'mv'):    
@@ -484,13 +627,27 @@ class path_parse:
             verif = cmd_rm(motion,nmot)      
         elif(cmd_inst == 'mkdir'):
             verif = cmd_mkdir(motion,nmot) 
+        elif(cmd_inst == 'find'):
+            value = cmd_find(motion,nmot)
+            if(isinstance(value,bool)):
+                return value
+            else:
+                verif = None
+        elif(cmd_inst == 'grep'):
+            value = cmd_grep(motion,nmot)
+            if(isinstance(value,list)):
+                return value
+            else:
+                verif = None
+        elif(cmd_inst == 'help'):
+            value = cmd_help(cd_list)
+            return value
         else:
             print("Error: Input not resolved")
             return None
-        
+         
         if(verif == 1):
             return 1
         else:
             print('Error: Input not resolved')
             return None
-              
