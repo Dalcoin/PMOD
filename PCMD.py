@@ -129,11 +129,11 @@ class path_parse:
             self.path_contain = os.listdir(self.path)
             self.path_files = self.get_files()
             self.path_print = path_print
-            
-            
-    def create_path(self,path_list):
         
+            
+    def create_path(self,path_list):        
         '''
+        
         ---------------
         | create_path |
         ---------------
@@ -148,7 +148,6 @@ class path_parse:
             
         Description: Formats a path-formatted list into a path-formatted string
         
-        
         '''
         out_path = ''
         count = 0
@@ -162,8 +161,8 @@ class path_parse:
             count+=1
         if(self.os == 'Unix' or self.os == 'Linux'):
             out_path = '/'+out_path
-        return out_path       
-    
+        return out_path            
+        
         
     def get_files(self,style = None):
         '''
@@ -200,6 +199,46 @@ class path_parse:
                 if(file_type in i):
                     file_list.append(i)
         return file_list
+    
+
+    def update_path(self,path_updater,sort):        
+        '''
+        
+        ---------------
+        | update_path |
+        ---------------
+        
+        Input: 
+        
+            'path_updater': [list,tuple], A path-formatted list ]
+            'sort'        : [type]      , A python data-type
+                    
+        Description: Formats a path-formatted list into a path-formatted string
+        
+                
+        '''
+        if(sort == list):
+            self.path_list = path_updater
+            self.path = self.create_path(path_updater)
+            if(self.os == 'Windows'):                    
+                if(self.path == self.path_head):
+                    self.path = self.path+'//'
+            self.path_contain = os.listdir(self.path)
+            self.path_files = self.get_files()   
+            return 1
+        elif(sort == str):
+            self.path = path_updater
+            self.path_list = self.path.split(delim)
+            if(self.os == 'Windows'):                    
+                if(self.path == self.path_head):
+                    self.path = self.path+'//'
+            self.path_contain = os.listdir(self.path)
+            self.path_files = self.get_files() 
+            return 1
+        else:
+            print("Error: 'sort' not a valid type")
+            return None 
+        
     
     def move_file(self,file_name,new_location,upbool = False):
         
@@ -299,6 +338,14 @@ class path_parse:
                 print(blue+atsp+i)
         print(black)
             
+    
+    def run_fancy_print():
+        if(self.path_print):
+            self.fancy_print(color)         
+            return 1
+        else:                        
+            return 1   
+        
             
     def fancy_print_list(self,array):
 
@@ -328,7 +375,8 @@ class path_parse:
         'ls' : returns list of strings containing the contents of the present directory
         'dir': returns pathway for file in the current directory
         'cd' : moves into the directory input, note: input directory must be in current directory
-               ('..' to move upwards)  
+               ('..' to move upwards) ('\\' or '/' to specify directory in root directory)
+        'chdir' : moves to the directory input, input must be full directory pathway 
         'mv' : moves file from current directory into subdirectory
                (format note: 'mv file_path.file Directory_Name') [file extension must be included]
         'rm' : remove input file from current directory
@@ -353,7 +401,7 @@ class path_parse:
             return self.path            
         
         def cmd_cd(motion,nmot):
-            
+              
             # Format
             dir_inst = ''
             for i in range(nmot-1):
@@ -362,45 +410,33 @@ class path_parse:
                 else:
                     dir_inst = dir_inst+motion[i+1]    
                        
-            if(dir_inst == '..'):  
-                
+            if(dir_inst == '..'):                  
                 if(len(self.path_list) == 1):
                     if(self.path_print):                        
                         print("Stop: No remaining parent directories left")
-                    return 1
-                
-                del self.path_list[-1]
-                     
-                self.path = self.create_path(self.path_list)
-                self.path_split = self.path.split(delim)
-                self.path_list = [i for i in self.path_split]
-                if(self.path == 'C:'):
-                    self.path = 'C://'
-                self.path_contain = os.listdir(self.path)
-                self.path_files = self.get_files()                     
-                     
-                if(self.path_print):
-                    self.fancy_print(color)         
-                    return 1
-                else:                        
-                    return 1
+                    return 1                
+                new_path_list = list(self.path_list)[:-1]
+                output = self.update_path(new_path_list,list)
+                if(bool(output)):
+                    output = run_fancy_print()
+                    return output
+                else:
+                    print("Error: 'update_path' failed internal check")
+                    return None
             
             elif(dir_inst in self.path_contain):
                 motion_test = self.path+delim+dir_inst
-                if(os.path.isdir(motion_test)):                
-                    self.path_list.append(dir_inst)            
-                    self.path = self.create_path(self.path_list)
-                    self.path_split = self.path.split(delim)
-                    self.path_list = [i for i in self.path_split]
-                    self.path_contain = os.listdir(self.path)
-                    self.path_files = self.get_files()
-                    if(self.path_print):
-                        self.fancy_print(color)
-                        return 1
-                    else:
-                        return 1
+                if(os.path.isdir(motion_test)): 
+                    new_path_list = list(self.path_list).append(dir_inst)
+                    output = self.update_path(new_path_list,list)
+                if(bool(output)):
+                    output = run_fancy_print()
+                    return output
+                else:
+                    print("Error: 'update_path' failed internal check")
+                    return None
             
-            elif(dir_inst[0] == '/'):
+            elif(dir_inst[0] == '/' or dir_inst[0] == '\\'):
                 ndir_inst = dir_inst[1:]
                    
                 if(ndir_inst in self.path_list):
@@ -415,24 +451,65 @@ class path_parse:
                     npath_list.append(ndir_inst)
                     self.path = self.create_path(npath_list)
                     self.path_list = npath_list
-                    if(self.path == 'C:'):
-                        self.path = 'C://'
+                    if(self.os == 'Windows'):                    
+                        if(self.path == self.path_head):
+                            self.path = self.path+'//'
                     self.path_contain = os.listdir(self.path)
                     self.path_files = self.get_files()      
                     if(self.path_print):
                         self.fancy_print(color)
                         return 1
                     else:
-                        return 1                    
+                        return 1                   
                 else:
                     print("Error: Folder "+ndir_inst+" not found within root path")
                     return None
                     
+            elif(dir_inst == '~'):
+                    self.path = self.path_head
+                    self.path_list = [self.path]
+                    if(self.os == 'Windows'):                    
+                        if(self.path == self.path_head):
+                            self.path = self.path+'//'
+                    self.path_contain = os.listdir(self.path)
+                    self.path_files = self.get_files()      
+                    if(self.path_print):
+                        self.fancy_print(color)
+                        return 1
+                    else:
+                        return 1
             
             else:
                 print("Error: '"+dir_inst+"' is not a folder in (path) directory")
                 return None   
-                    
+            
+            
+        def cmd_chdir(motion,nmot):
+            # Format
+            dir_inst = ''
+            for i in range(nmot-1):
+                if(i < nmot-2):
+                    dir_inst = dir_inst+motion[i+1]+' '
+                else:
+                    dir_inst = dir_inst+motion[i+1]   
+            try:
+                self.path = dir_inst
+                self.path_list = self.path.split(delim)
+                if(self.os == 'Windows'):                    
+                    if(self.path == self.path_head):
+                        self.path = self.path+'//'
+                self.path_contain = os.listdir(self.path)
+                self.path_files = self.get_files()
+                if(self.path_print):
+                    self.fancy_print(color)
+                    return 1
+                else:
+                    return 1
+            
+            except:
+                print('Error: pathway '+dir_inst+' not found')
+                return None
+            
                 
         def cmd_mv(motion,nmot):
             
@@ -464,6 +541,7 @@ class path_parse:
             # Move File
             valid_file = file_inst in self.path_files
             valid_fold = fold_inst in self.path_contain
+
             move_down = not move_up
             move_down_assert = valid_file and valid_fold and move_down
             move_up_assert = valid_file and move_up
@@ -479,7 +557,7 @@ class path_parse:
                         print("Stop: No remaining parent directories left")
                     return 1
                 
-                current_path_list = self.path_list
+                current_path_list = list(self.path_list)
                 del current_path_list[-1]
                 new_dir = self.create_path(current_path_list)
                 
@@ -489,7 +567,39 @@ class path_parse:
                 self.path_files = self.get_files()  
                 if(self.path_print):
                     self.fancy_print(color)
-                return 1                
+                return 1 
+            
+            elif(fold_inst[0] == '/' or fold_inst[0] == '\\'):
+                ndir_inst = fold_inst[1:]   
+                if(ndir_inst in self.path_list):
+                    listin = list(self.path_list)
+                    npath_list = []
+                    switch = True
+                    for i in listin:
+                        if(i != ndir_inst and switch == True):
+                            npath_list.append(i)
+                        else:
+                            switch = False
+                    npath_list.append(ndir_inst)                                        
+                    new_path = self.create_path(npath_list)
+                    if(self.os == 'Windows'):                    
+                        if(new_path == self.path_head):
+                            new_path = self.path+'//'
+                    try:
+                        verif = self.move_file(file_inst,new_path,True) 
+                    except OSError as error:
+                        print(error)
+                        print('Error: file '+file_inst+' could not be '+ 
+                              'moved to directory '+ndir_inst)
+                    if(self.path_print):
+                        self.fancy_print(color)
+                        return 1
+                    else:
+                        return 1                   
+                else:
+                    print("Error: Folder "+ndir_inst+" not found within root path")
+                    return None
+            
             else:
                 print("Error: The file couldn't be moved...")
                 return None                 
@@ -650,7 +760,9 @@ class path_parse:
             else:
                 verif = None   
         elif(cmd_inst == 'cd'):
-            verif = cmd_cd(motion,nmot)          
+            verif = cmd_cd(motion,nmot)
+        elif(cmd_inst == 'chdir'):
+            verif = cmd_chdir(motion,nmot)
         elif(cmd_inst == 'mv'):    
             verif = cmd_mv(motion,nmot)
         elif(cmd_inst == 'rm'):
