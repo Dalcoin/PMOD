@@ -239,6 +239,24 @@ class path_parse:
             print("Error: 'sort' not a valid type")
             return None 
         
+        
+    def climb_path(self,up_dir_inst):
+        if(up_dir_inst in self.path_list):
+            spl_copy = list(self.path_list)
+            new_path_list = []
+            switch = True
+            for i in spl_copy:
+                if(i != up_dir_inst and switch == True):
+                    new_path_list.append(i)
+                else:
+                    switch = False
+            new_path_list.append(up_dir_inst)            
+            output = self.update_path(new_path_list,list)
+            return output
+        else:
+            print("Error: Directory "+up_dir_inst+" not found in current (path) hierarchy")
+            return None
+             
     
     def move_file(self,file_name,new_location,upbool = False):
         
@@ -339,7 +357,7 @@ class path_parse:
         print(black)
             
     
-    def run_fancy_print():
+    def run_fancy_print(self):
         if(self.path_print):
             self.fancy_print(color)         
             return 1
@@ -374,6 +392,7 @@ class path_parse:
         
         'ls' : returns list of strings containing the contents of the present directory
         'dir': returns pathway for file in the current directory
+        'pwd'  : Returns current directory pathway as string; equivalent to 'self.path'
         'cd' : moves into the directory input, note: input directory must be in current directory
                ('..' to move upwards) ('\\' or '/' to specify directory in root directory)
         'chdir' : moves to the directory input, input must be full directory pathway 
@@ -384,7 +403,6 @@ class path_parse:
         'rmdir' : delete current directory
         'find' : Searches the current directory for the input file string and returns boolean
         'grep' : Searches the current directory for the input pattern and returns list of matches
-        'pwd'  : Returns current directory pathway as string; equivalent to 'self.path'
         'help' : Returns list of valid commands
         
         '''
@@ -394,6 +412,40 @@ class path_parse:
             if(self.path_print):
                 self.fancy_print(color)
             return self.path_contain
+        
+        def cmd_dir(motion,nmot):
+
+            file_inst = ''
+            
+            # Format
+            for i in range(nmot-1):                
+                if(i < nmot-2):
+                    file_inst = file_inst+motion[i+1]+' '
+                else:
+                    file_inst = file_inst+motion[i+1]  
+            if('.' not in [j for j in file_inst]):
+                print('Error: file name is missing type extension')
+                return None     
+                    
+            verif = self.find_file(file_inst)
+            if(verif):
+                file_path_list = list(self.path_list)
+                file_path_list.append(file_inst)
+                file_path_ret = self.create_path(file_path_list)
+            else:
+                print('Error: file not found in the current directory')
+                file_path_ret = None
+            
+            if(self.path_print):
+                atsp = '   '
+                if(verif):
+                    print('The path way for '+file_inst+' is shown below: ')
+                    print(' ')
+                    print(atsp+file_path_ret)
+                else:
+                    print('Error: No pathway to display')
+            
+            return file_path_ret
                    
         def cmd_pwd():
             if(self.path_print):
@@ -418,7 +470,7 @@ class path_parse:
                 new_path_list = list(self.path_list)[:-1]
                 output = self.update_path(new_path_list,list)
                 if(bool(output)):
-                    output = run_fancy_print()
+                    output = self.run_fancy_print()
                     return output
                 else:
                     print("Error: 'update_path' failed internal check")
@@ -427,10 +479,11 @@ class path_parse:
             elif(dir_inst in self.path_contain):
                 motion_test = self.path+delim+dir_inst
                 if(os.path.isdir(motion_test)): 
-                    new_path_list = list(self.path_list).append(dir_inst)
+                    new_path_list = list(self.path_list)
+                    new_path_list.append(dir_inst)
                     output = self.update_path(new_path_list,list)
                 if(bool(output)):
-                    output = run_fancy_print()
+                    output = self.run_fancy_print()
                     return output
                 else:
                     print("Error: 'update_path' failed internal check")
@@ -438,47 +491,23 @@ class path_parse:
             
             elif(dir_inst[0] == '/' or dir_inst[0] == '\\'):
                 ndir_inst = dir_inst[1:]
-                   
-                if(ndir_inst in self.path_list):
-                    listin = list(self.path_list)
-                    npath_list = []
-                    switch = True
-                    for i in listin:
-                        if(i != ndir_inst and switch == True):
-                            npath_list.append(i)
-                        else:
-                            switch = False
-                    npath_list.append(ndir_inst)
-                    self.path = self.create_path(npath_list)
-                    self.path_list = npath_list
-                    if(self.os == 'Windows'):                    
-                        if(self.path == self.path_head):
-                            self.path = self.path+'//'
-                    self.path_contain = os.listdir(self.path)
-                    self.path_files = self.get_files()      
-                    if(self.path_print):
-                        self.fancy_print(color)
-                        return 1
-                    else:
-                        return 1                   
+                output = self.climb_path(ndir_inst)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output                                   
                 else:
                     print("Error: Folder "+ndir_inst+" not found within root path")
                     return None
                     
-            elif(dir_inst == '~'):
-                    self.path = self.path_head
-                    self.path_list = [self.path]
-                    if(self.os == 'Windows'):                    
-                        if(self.path == self.path_head):
-                            self.path = self.path+'//'
-                    self.path_contain = os.listdir(self.path)
-                    self.path_files = self.get_files()      
-                    if(self.path_print):
-                        self.fancy_print(color)
-                        return 1
-                    else:
-                        return 1
-            
+            elif(dir_inst == '~'):                
+                output = self.climb_path(self.path_head)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output                                   
+                else:
+                    print("Error: Internal conflict, home directory could not be accessed")
+                    return None   
+                
             else:
                 print("Error: '"+dir_inst+"' is not a folder in (path) directory")
                 return None   
@@ -492,20 +521,15 @@ class path_parse:
                     dir_inst = dir_inst+motion[i+1]+' '
                 else:
                     dir_inst = dir_inst+motion[i+1]   
-            try:
-                self.path = dir_inst
-                self.path_list = self.path.split(delim)
-                if(self.os == 'Windows'):                    
-                    if(self.path == self.path_head):
-                        self.path = self.path+'//'
-                self.path_contain = os.listdir(self.path)
-                self.path_files = self.get_files()
-                if(self.path_print):
-                    self.fancy_print(color)
-                    return 1
-                else:
-                    return 1
             
+            try: 
+                output = self.update_path(dir_inst,str)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output                                   
+                else:
+                    print("Error: Internal conflict, new (path) directory could not be accessed")
+                    return None                
             except:
                 print('Error: pathway '+dir_inst+' not found')
                 return None
@@ -551,6 +575,7 @@ class path_parse:
                 if(self.path_print):
                     self.fancy_print(color)
                 return 1
+            
             elif(move_up_assert):
                 if(len(self.path_list) == 1):
                     if(self.path_print):                        
@@ -691,40 +716,6 @@ class path_parse:
             return verif        
         
         
-        def cmd_dir(motion,nmot):
-
-            file_inst = ''
-            
-            # Format
-            for i in range(nmot-1):                
-                if(i < nmot-2):
-                    file_inst = file_inst+motion[i+1]+' '
-                else:
-                    file_inst = file_inst+motion[i+1]  
-            if('.' not in [j for j in file_inst]):
-                print('Error: file name is missing type extension')
-                return None     
-                    
-            verif = self.find_file(file_inst)
-            if(verif):
-                file_path_list = list(self.path_list)
-                file_path_list.append(file_inst)
-                file_path_ret = self.create_path(file_path_list)
-            else:
-                print('Error: file not found in the current directory')
-                file_path_ret = None
-            
-            if(self.path_print):
-                atsp = '   '
-                if(verif):
-                    print('The path way for '+file_inst+' is shown below: ')
-                    print(' ')
-                    print(atsp+file_path_ret)
-                else:
-                    print('Error: No pathway to display')
-            
-            return file_path_ret
-        
         def cmd_help(cd_list):
             if(self.path_print):
                 print('Below is a list of valid input commands:\n')
@@ -738,7 +729,8 @@ class path_parse:
         
         assert isinstance(motion,str), "Error: input must be a string"
               
-        cd_list = ['ls','dir','pwd','cd','mv','rm','mkdir','find','grep','help']
+        cd_list = ['ls','dir','pwd','cd','chdir','mv','rm','mkdir',
+                   'rmdir','find','grep','help']
                                                                        
         motion = motion.split(" ")
         nmot = len(motion)            
