@@ -240,7 +240,7 @@ class path_parse:
             return None 
         
         
-    def climb_path(self,up_dir_inst):
+    def climb_path(self,up_dir_inst,exit):
         if(up_dir_inst in self.path_list):
             spl_copy = list(self.path_list)
             new_path_list = []
@@ -250,41 +250,43 @@ class path_parse:
                     new_path_list.append(i)
                 else:
                     switch = False
-            new_path_list.append(up_dir_inst)            
-            output = self.update_path(new_path_list,list)
-            return output
-        else:
+            new_path_list.append(up_dir_inst)
+            if(exit == 'list'):
+                output = new_path_list
+                return output
+            elif(exit == 'str'):
+                output = self.create_path(new_path_list)
+                return output
+            elif(exit == 'update'):                
+                output = self.update_path(new_path_list,list)
+                return output
+            else:
+                print("Error: 'exit' command: '"+str(exit)+"' not recongized")
+        else: 
             print("Error: Directory "+up_dir_inst+" not found in current (path) hierarchy")
             return None
              
     
-    def move_file(self,file_name,new_location,upbool = False):
+    def move_file(self,file_loc,fold_loc,file_sort,fold_sort):
         
-        if(upbool == True):
-            file_pathway = self.path+delim+file_name
-            fold_loc = new_location
-            try: 
-                shutil.move(file_pathway,fold_loc) 
-            except: 
-                raise OSError
-            self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()
-            return 1
-            
+        if(fold_sort == list):
+            fold_loc = self.create_path(fold_loc)                
+        if(file_sort == list):
+            file_loc = self.create_path(file_loc)
+                      
+        if(self.os == 'Windows'):                    
+            if(fold_sort == self.path_head):
+                fold_sort = fold_sort+'//'
+                   
+        try: 
+            shutil.move(file_loc,fold_loc) 
+        except: 
+            raise OSError
+            print("Error: File could not be moved.")
         
-        file_pathway = self.path+delim+file_name
-        fold_loc = self.path+delim+new_location
-        
-        if(new_location in self.path_contain):
-            try: 
-                shutil.move(file_pathway,fold_loc) 
-            except: 
-                raise OSError
-            self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()
-            return 1
-        else:
-            return None
+        output = self.update_path(self.path,str)
+        return output
+
     
     def del_file(self,file_name):
         file_pathway = self.path+delim+file_name
@@ -477,7 +479,7 @@ class path_parse:
                     return None
             
             elif(dir_inst in self.path_contain):
-                motion_test = self.path+delim+dir_inst
+                motion_test = str(self.path)+delim+dir_inst
                 if(os.path.isdir(motion_test)): 
                     new_path_list = list(self.path_list)
                     new_path_list.append(dir_inst)
@@ -491,7 +493,7 @@ class path_parse:
             
             elif(dir_inst[0] == '/' or dir_inst[0] == '\\'):
                 ndir_inst = dir_inst[1:]
-                output = self.climb_path(ndir_inst)
+                output = self.climb_path(ndir_inst,'update')
                 if(bool(output)):
                     output = self.run_fancy_print()
                     return output                                   
@@ -500,7 +502,7 @@ class path_parse:
                     return None
                     
             elif(dir_inst == '~'):                
-                output = self.climb_path(self.path_head)
+                output = self.climb_path(self.path_head,'update')
                 if(bool(output)):
                     output = self.run_fancy_print()
                     return output                                   
@@ -537,14 +539,10 @@ class path_parse:
                 
         def cmd_mv(motion,nmot):
             
-            point_guard = True
+            point_guard = True            
             file_inst = ''
-            fold_inst = ''
-            move_up = False
-            
-            if(motion[-1] == '..'):
-                move_up = True
-            
+            fold_inst = ''            
+             
             # Format 
             for i in range(nmot-1):
                 if(point_guard):
@@ -563,67 +561,53 @@ class path_parse:
                 return None 
             
             # Move File
-            valid_file = file_inst in self.path_files
-            valid_fold = fold_inst in self.path_contain
-
-            move_down = not move_up
-            move_down_assert = valid_file and valid_fold and move_down
-            move_up_assert = valid_file and move_up
-                        
-            if(move_down_assert):
-                verif = self.move_file(file_inst,fold_inst)
-                if(self.path_print):
-                    self.fancy_print(color)
-                return 1
-            
-            elif(move_up_assert):
+            file_inst = str(self.path)+delim+file_inst
+                                                              
+            if(fold_inst == '..'):
                 if(len(self.path_list) == 1):
                     if(self.path_print):                        
                         print("Stop: No remaining parent directories left")
-                    return 1
-                
-                current_path_list = list(self.path_list)
-                del current_path_list[-1]
-                new_dir = self.create_path(current_path_list)
-                
-                upbool = True
-                verif = self.move_file(file_inst,new_dir,upbool)
-                self.path_contain = os.listdir(self.path)
-                self.path_files = self.get_files()  
-                if(self.path_print):
-                    self.fancy_print(color)
-                return 1 
+                    return 1 
+                dest_path_list = list(self.path_list)[:-1]
+                output = self.move_file(file_inst,dest_path_list,str,list)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output                                   
+                else:
+                    print("Error: Internal conflict, new (path) directory could not be accessed")
+                    return None      
+            
+            elif(fold_inst in self.path_contain):                
+                dest_path_list = list(self.path_list)
+                dest_path_list.append(fold_inst)                
+                output = self.move_file(file_inst,dest_path_list,str,list)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output
+                else:
+                    print("Error: 'update_path' failed internal check")
+                    return None 
             
             elif(fold_inst[0] == '/' or fold_inst[0] == '\\'):
-                ndir_inst = fold_inst[1:]   
-                if(ndir_inst in self.path_list):
-                    listin = list(self.path_list)
-                    npath_list = []
-                    switch = True
-                    for i in listin:
-                        if(i != ndir_inst and switch == True):
-                            npath_list.append(i)
-                        else:
-                            switch = False
-                    npath_list.append(ndir_inst)                                        
-                    new_path = self.create_path(npath_list)
-                    if(self.os == 'Windows'):                    
-                        if(new_path == self.path_head):
-                            new_path = self.path+'//'
-                    try:
-                        verif = self.move_file(file_inst,new_path,True) 
-                    except OSError as error:
-                        print(error)
-                        print('Error: file '+file_inst+' could not be '+ 
-                              'moved to directory '+ndir_inst)
-                    if(self.path_print):
-                        self.fancy_print(color)
-                        return 1
-                    else:
-                        return 1                   
+                ndir_inst = dir_inst[1:]
+                dest_path_list = self.climb_path(ndir_inst,'list')
+                output = self.move_file(file_inst,dest_path_list,str,list)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output                                   
                 else:
                     print("Error: Folder "+ndir_inst+" not found within root path")
                     return None
+                      
+            elif(dir_inst == '~'):                
+                dest_path_list = self.climb_path(self.path_head,'list')
+                output = self.move_file(file_inst,dest_path_list,str,list)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output                                   
+                else:
+                    print("Error: Folder "+ndir_inst+" not found within root path")
+                    return None  
             
             else:
                 print("Error: The file couldn't be moved...")
