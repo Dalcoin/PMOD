@@ -87,12 +87,12 @@ class path_parse:
         print_col  = False (by default)
         
         .path : A string of the path in which the script is run
-        .path_list : A list of strings with values of the folders in .path
-        .path_head : A string containing the primary directory
-        .path_contain : A list of strings with values of the contents in .path
-        .path_files : A list of string with values of the file names in .path   
+        .path_list : A list of strings with values of the directory hiearchy in .path
+        .path_head : A string containing the primary (home) directory
+        .path_contain : A list of strings with values of the contents of .path
+        .path_files : A list of string with values of the file (names with file type) in .path   
         
-        .os:  A string to specify the operating system path file format 
+        .os:  A string to specify the operating system, this determines the path file format 
         .col: True for color Escape code when printing, False by default
         
         '''
@@ -117,20 +117,35 @@ class path_parse:
         
         if(new_path != None):            
             self.path = new_path
-            self.path_list = new_path.split(delim)
-            self.path_head = new_path.split(delim)[0]
+            if(self.os == 'Windows'):
+                self.path_list = self.path.split(delim)
+                self.path_head = self.path.split(delim)[0]
+            else:
+                self.path_list = self.path.split(delim)
+                self.path_list = self.path_list[1:]
+                self.path_head = self.path_list[0]
             self.path_contain = os.listdir(self.path)
             self.path_files = self.get_files()
             self.path_print = path_print
         else:
             self.path = os.getcwd()
-            self.path_list = self.path.split(delim)
-            self.path_head = self.path.split(delim)[0]
+            if(self.os == 'Windows'):
+                self.path_list = self.path.split(delim)
+                self.path_head = self.path.split(delim)[0]
+            else:
+                self.path_list = self.path.split(delim)
+                self.path_list = self.path_list[1:]
+                self.path_head = self.path_list[0]
             self.path_contain = os.listdir(self.path)
             self.path_files = self.get_files()
             self.path_print = path_print
-        
+
             
+    def join_node(self,old_path,new_node):
+        output = old_path+delim+new_node
+        return output
+            
+        
     def create_path(self,path_list):        
         '''
         
@@ -265,6 +280,35 @@ class path_parse:
         else: 
             print("Error: Directory "+up_dir_inst+" not found in current (path) hierarchy")
             return None
+        
+    
+    def get_ctnt(self,path,sort = str,rtrn = 'all'):
+        
+        if(sort == str):
+            new_path = path
+        elif(sort == list):
+            new_path = self.create_path(path)
+        else:
+            print("Error: 'sort' option must be either 'str' or 'list'; '"
+                  +str(sort)+"' is invalid")
+        
+        content = os.listdir(new_path)
+        
+        if(rtrn == 'all'):
+            return content
+        elif(rtrn == 'files'):
+            files = []
+            for i in content: 
+                if('.' in i): files.append(i)
+            return files
+        elif(rtrn == 'folders'):
+            folders = []
+            for i in content: 
+                if('.' not in i): folders.append(i)
+            return folders            
+        else:
+            print("Error: 'rtrn' input; '"+rtrn+"' , not valid")
+            
              
     
     def move_file(self,file_loc,fold_loc,file_sort,fold_sort):
@@ -288,30 +332,52 @@ class path_parse:
         return output
 
     
-    def del_file(self,file_name):
-        file_pathway = self.path+delim+file_name
-        if(file_name in self.path_contain):            
-            try:
-                os.remove(file_pathway)
-            except:
-                raise OSError
-            self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()
+    def del_file(self,file_loc,update):           
+        try:
+            os.remove(file_loc)
+        except:
+            raise OSError
+            
+        if(update):            
+            output = self.update_path(self.path,str)
+        else:
+            output = 1
+            
+        if(output):
             return 1
         else:
+            print('Error: current (path) directory information could not be updated')
             return None
+        
+    def del_all_ctnt(self,fold_loc,warn=False):
+        
+        if(not os.path.isdir(fold_loc)):
+            print("Error: "+fold_loc+" is not a valid directory")
+            return None
+        
+        content = self.get_ctnt(fold_loc)
+        
+        for i in content:
+            file_path = self.join_node(fold_loc,i)
+            if(os.path.isdir(file_path)):
+                verif = self.del_all_ctnt(file_path)                
+            else:                
+                verif = self.del_file(file_path,False)
+        verif = os.rmdir(fold_loc)
+        return 1
+            
+        
                         
-    def create_dir(self,dir_name):
-        pathway = self.path
+    def create_dir(self,in_dir,dir_name):
+        pathway = in_dir
         dir_pathway = pathway+delim+dir_name
         try:
             os.mkdir(dir_pathway)
-            self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()
-            return 1           
-        except:
+            output = self.update_path(self.path,str)
+            return output           
+        except:           
             raise OSError        
-            return None 
+            return None  
                 
     def find_file(self,file_name):
         spf = self.path_files
@@ -395,14 +461,15 @@ class path_parse:
         'ls' : returns list of strings containing the contents of the present directory
         'dir': returns pathway for file in the current directory
         'pwd'  : Returns current directory pathway as string; equivalent to 'self.path'
-        'cd' : moves into the directory input, note: input directory must be in current directory
+        'cd' : moves into the input directory, note: input directory must be in current directory
                ('..' to move upwards) ('\\' or '/' to specify directory in root directory)
+               ('~' moves to home directory)
         'chdir' : moves to the directory input, input must be full directory pathway 
         'mv' : moves file from current directory into subdirectory
                (format note: 'mv file_path.file Directory_Name') [file extension must be included]
         'rm' : remove input file from current directory
         'mkdir' : make new directory with name equalivalent to input string
-        'rmdir' : delete current directory
+        'rmdir' : delete subdirectory (equiv. to 'rm -rf Directory_Name')
         'find' : Searches the current directory for the input file string and returns boolean
         'grep' : Searches the current directory for the input pattern and returns list of matches
         'help' : Returns list of valid commands
@@ -426,7 +493,7 @@ class path_parse:
                 else:
                     file_inst = file_inst+motion[i+1]  
             if('.' not in [j for j in file_inst]):
-                print('Error: file name is missing type extension')
+                print('Error: file name '+file_inst+'is missing type extension')
                 return None     
                     
             verif = self.find_file(file_inst)
@@ -435,7 +502,7 @@ class path_parse:
                 file_path_list.append(file_inst)
                 file_path_ret = self.create_path(file_path_list)
             else:
-                print('Error: file not found in the current directory')
+                print('Error: '+file_inst+' not found in the current directory')
                 file_path_ret = None
             
             if(self.path_print):
@@ -557,7 +624,7 @@ class path_parse:
                     else:
                         fold_inst = fold_inst+motion[i+1]  
             if('.' not in file_inst):
-                print('Error: file name is missing type extension')
+                print('Error: '+file_inst+' is missing type extension')
                 return None 
             
             # Move File
@@ -596,17 +663,17 @@ class path_parse:
                     output = self.run_fancy_print()
                     return output                                   
                 else:
-                    print("Error: Folder "+ndir_inst+" not found within root path")
+                    print("Error: Internal conflict, "+ndir_inst+" could not be accessed")
                     return None
                       
-            elif(dir_inst == '~'):                
+            elif(fold_inst == '~'):                
                 dest_path_list = self.climb_path(self.path_head,'list')
                 output = self.move_file(file_inst,dest_path_list,str,list)
                 if(bool(output)):
                     output = self.run_fancy_print()
                     return output                                   
                 else:
-                    print("Error: Folder "+ndir_inst+" not found within root path")
+                    print("Error: Internal conflict, home directory could not be accessed")
                     return None  
             
             else:
@@ -625,34 +692,40 @@ class path_parse:
                 else:
                     file_inst = file_inst+motion[i+1]
             if('.' not in [j for j in file_inst]):
-                print('Error: file name is missing type extension')
+                print('Error: '+file_inst+' is missing type extension')
                 return None     
              
             if(file_inst in self.path_files):
-                verif = self.del_file(file_inst) 
-                if(self.path_print):
-                    self.fancy_print(color)
-                return 1     
+                file_path_list = list(self.path_list)
+                file_path_list.append(file_inst)
+                file_path_str = self.create_path(file_path_list)
+                output = self.del_file(file_path_str,True)
+                if(bool(output)):
+                    output = self.run_fancy_print()
+                    return output
+                else:
+                    print("Error: 'del_file' failed internal check")
+                    return None
             else:
-                return None
+                print("Error: file "+file_inst+" not found in current (path) directory")
             
 
         def cmd_mkdir(motion,nmot):
+            
+            fold_inst = ''
             
             # Format 
             for i in range(nmot-1):                
                 if(i < nmot-2):
                     fold_inst = fold_inst+motion[i+1]+' '
                 else:
-                    fold_inst = fold_inst+motion[i+1]
-            if('.' in file_inst):
-                print('Error: folder name should not contain type extension')
-                return None     
+                    fold_inst = fold_inst+motion[i+1]     
             
-            verif = self.create_dir(fold_inst)            
-            if(self.path_print):
-                self.fancy_print(color)
-            return 1          
+            verif = self.create_dir(self.path,fold_inst)  
+            if(verif):                
+                if(self.path_print):
+                    self.fancy_print(color)
+            return verif          
         
         
         def cmd_find(motion,nmot):
@@ -666,7 +739,7 @@ class path_parse:
                 else:
                     file_inst = file_inst+motion[i+1]
             if('.' not in [j for j in file_inst]):
-                print('Error: file name is missing type extension')
+                print('Error: '+file_inst+' is missing type extension')
                 return None     
             
             verif = self.find_file(file_inst)
@@ -676,6 +749,32 @@ class path_parse:
                 else:
                     print("No file named '"+file_inst+"' found in current directory.")
             return verif
+        
+        
+        def cmd_rmdir(motion,nmot):
+            
+            fold_inst = ''
+            
+            # Format
+            for i in range(nmot-1):                
+                if(i < nmot-2):
+                    fold_inst = fold_inst+motion[i+1]+' '
+                else:
+                    fold_inst = fold_inst+motion[i+1]    
+             
+            if(fold_inst in self.path_contain):
+                fold_inst = self.join_node(str(self.path),fold_inst)
+                output = self.del_all_ctnt(fold_inst)
+                if(bool(output)):
+                    output = self.update_path(self.path_list,list)
+                    output = self.run_fancy_print()
+                    return output
+                else:
+                    print("Error: 'del_all_ctnt' failed internal check")
+                    return None
+            else:
+                print("Error: file '"+fold_inst+"' not found in current (path) directory")
+                return None    
         
         
         def cmd_grep(motion,nmot):
@@ -711,7 +810,7 @@ class path_parse:
         # Function: Main #
         ##################
         
-        assert isinstance(motion,str), "Error: input must be a string"
+        assert isinstance(motion,str), "Error: input must be a string, not a "+str(type(motion))
               
         cd_list = ['ls','dir','pwd','cd','chdir','mv','rm','mkdir',
                    'rmdir','find','grep','help']
@@ -745,6 +844,8 @@ class path_parse:
             verif = cmd_rm(motion,nmot)      
         elif(cmd_inst == 'mkdir'):
             verif = cmd_mkdir(motion,nmot) 
+        elif(cmd_inst == 'rmdir'):
+            verif = cmd_rmdir(motion,nmot)
         elif(cmd_inst == 'find'):
             value = cmd_find(motion,nmot)
             if(isinstance(value,bool)):
