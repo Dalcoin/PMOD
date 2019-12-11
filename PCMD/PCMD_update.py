@@ -1,5 +1,5 @@
-import os 
-import sys
+import os    
+import sys   
 import shutil
 
 class path_parse:
@@ -88,93 +88,126 @@ class path_parse:
 
     
     def documentation(self,string):
-    '''
+        """
+        ---------------
+        | Description |
+        ---------------
+        
+        path_parse is a class to call commands within python scripts allowing 
+        functionality in the image of Linux command-line inputs for file and folder
+        functions. The main function in the class is 'cmd' : path_parse.cmd(). This 
+        function allows commands to be passed which, return the contents of the current 
+        stored directory string, change the current stored directory string, move files 
+        between directories and delete files and directories. The class allows for 
+        pathway information to be stored and returned as string objects. 
+        
+	    
+        ------------------------
+        | Function guidelines: |
+        ------------------------
+	    
+        1) Path functions read and modify from the class stored path variables
+        2) Non-Path functions take full pathways and perform file and pathway manipulations 
+           from these complete and input pathways.
+        3) Path functions contain the word 'Path' in the name, Non-Path functions do not.
+        4) Non-Path functions should not rely on the class current (path)way nor on any 
+           path class variables.
+        5) Path functions should return a boolean value dependent on the success of the operation,
+           any values they modify should be self. variables, eliminating the need for returning values.
+        6) Non-Path functions should return a boolean value when their operation does not 
+           require a value to be returned (e.g. moving, copying or deleting objects) which is 
+           dependent on the success of the operation. 
+        7) For each Path operation available through the 'cmd' function, there should be a corrosponding
+           means of accomplishing the same take through a Non-Path function. 
+	    
+        Function guideline summary:
+	    
+        1) Complete interdependence for Path functions
+        2) Complete independence for Non-Path functions 
+        3) Strict nameing scheme to distinguish Path from Non-Path functions
+        4) Path Variable restrictions 
+        5) Return restrictions on Path functions (Boolean only) 
+        6) Return restrictions on Non-Path functions 
+        7) Corrospondance in operation between Path and Non-Path functionality      
+	    
+        ------------------
+        | Function List: |
+        ------------------
+	    
+        
+        __init__(self,os_form,new_path=None,path_print=False,print_col=False)
+        
+        create_path(self,path_list) : Creates and returns a pathway string from a pathway list
+        
+        get_files(self,style = None) : Returns a list of strings corrosponding to the names
+                                       of the files, whose names contains file extensions,
+                                       in the current (path) directory, option for selection 
+                                       by extension.
+	    
+        move_file(self,file_name,new_location,upbool = False) : Moves 'file_name' to 'new_location', 
+                                                                note that 'file_name' must be a file
+                                                                with a file extension in the string
+                                                                and 'new_location' must be a folder,
+                                                                both must be in the current directory.
+                                                                if 'upbool' is True, then the file is 
+                                                                moved to the higher directory and the
+                                                                location in 'new_location' is ignored.
+        
+        del_file(self,file_name) : Deletes file with a name equal
+                                   to 'file_name' in the current
+                                   (path) directory
+        
+        create_dir(self,dir_name) : Creates a folder with a name 
+                                    equal to 'dir_name' in the 
+                                    current (path) directory
+        
+        find_file(self,file_name) : Checks the current (path) directory for a file with 
+                                    'file_name' as its identifier. Returns boolean.
+	    
+        grep_file(self,fragment) : Checks the current (path) directory for any file with
+                                   'fragment' in its name. The list of matching file names 
+                                   is returned in string format. 
+                                     
+        fancy_print(self,col=False) : Prints the current (path) directory pathway in a
+                                      stylized format. 
+	    
+        fancy_print_list(self,array) :  Prints a list, 'array', in a stylized format.
+	    
+        """
 
-    ---------------
-    | Description |
-    ---------------
-    
-    path_parse is a class to call commands within python scripts allowing 
-    functionality in the image of Linux command-line inputs for file and folder
-    functions. The main function in the class is 'cmd' : path_parse.cmd(). This 
-    function allows commands to be passed which, return the contents of the current 
-    stored directory string, change the current stored directory string, move files 
-    between directories and delete files and directories. The class allows for 
-    pathway information to be stored and returned as string objects. 
-    
+        cd_list = ['ls','pwd','dir','cd','chdir','mv','rm','mkdir',
+                   'rmdir','find','grep','help','vi']
 
-    ------------------------
-    | Function guidelines: |
-    ------------------------
+        action_list = ["Usage: ['ls',..,..] , returns a list of strings corrosponding to content of path directory",
+                       "Usage: ['pwd',..,..] , returns a string corrosponding to the pathway for path directory",
+                       "Usage: ['dir',['file1.file',..,..],..] , returns list of strings corrosponding "+
+                       "to pathways of grouped files",
+                       "Usage: ['cd',..,pathway] , returns None, modifies the path variables to move from the "+ 
+                       "path directory to that specified in the pathway. The value for pathway may be either "+
+                       "{'..' to move up one directory, '~' to move to home, or a name of a subdirectory}",
+                       "Usage: [chdir,..,full_pathway] , returns None, moves path variables to move from the "+
+                       "current directory to that specified by full_pathway, full_pathway must be a full pathway",
+                       "",
+                       "",
+                       "",
+                       "",      
+                       "",
+                       "",
+                       "",
+                       ""   
+                      ]   
 
-    1) Path functions read and modify from the class stored path variables
-    2) Non-Path functions take full pathways and perform file and pathway manipulations 
-       from these complete and input pathways.
-    3) Path functions contain the word 'Path' in the name, Non-Path functions do not.
-    4) Non-Path functions should not rely on the class current (path)way nor on any 
-       path class variables.
-    5) Path functions should return a boolean value dependent on the success of the operation,
-       any values they modify should be self. variables, eliminating the need for returning values.
-    6) Non-Path functions should return a boolean value when their operation does not 
-       require a value to be returned (e.g. moving, copying or deleting objects) which is 
-       dependent on the success of the operation. 
-    7) For each Path operation available through the 'cmd' function, there should be a corrosponding
-       means of accomplishing the same take through a Non-Path function. 
+        single_command_list = ['ls', 'pwd'] 
+        single_path_list_nogroup = ['cd','chdir','vi','help']
+        single_path_list_group = ['rm','rmdir','mkdir','dir','find','grep']
+        double_path_list = ['mv']
 
-    Function guideline summary:
- 
-    1) Complete interdependence for Path functions
-    2) Complete independence for Non-Path functions 
-    3) Strict nameing scheme to distinguish Path from Non-Path functions
-    4) Path Variable restrictions 
-    5) Return restrictions on Path functions (Boolean only) 
-    6) Return restrictions on Non-Path functions 
-    7) Corrospondance in operation between Path and Non-Path functionality      
- 
-    ------------------
-    | Function List: |
-    ------------------
 
-    
-    __init__(self,os_form,new_path=None,path_print=False,print_col=False)
-    
-    create_path(self,path_list) : Creates and returns a pathway string from a pathway list
-    
-    get_files(self,style = None) : Returns a list of strings corrosponding to the names
-                                   of the files, whose names contains file extensions,
-                                   in the current (path) directory, option for selection 
-                                   by extension.
-
-    move_file(self,file_name,new_location,upbool = False) : Moves 'file_name' to 'new_location', 
-                                                            note that 'file_name' must be a file
-                                                            with a file extension in the string
-                                                            and 'new_location' must be a folder,
-                                                            both must be in the current directory.
-                                                            if 'upbool' is True, then the file is 
-                                                            moved to the higher directory and the
-                                                            location in 'new_location' is ignored.
-    
-    del_file(self,file_name) : Deletes file with a name equal
-                               to 'file_name' in the current
-                               (path) directory
-    
-    create_dir(self,dir_name) : Creates a folder with a name 
-                                equal to 'dir_name' in the 
-                                current (path) directory
-    
-    find_file(self,file_name) : Checks the current (path) directory for a file with 
-                                'file_name' as its identifier. Returns boolean.
-
-    grep_file(self,fragment) : Checks the current (path) directory for any file with
-                               'fragment' in its name. The list of matching file names 
-                               is returned in string format. 
-                                 
-    fancy_print(self,col=False) : Prints the current (path) directory pathway in a
-                                  stylized format. 
-
-    fancy_print_list(self,array) :  Prints a list, 'array', in a stylized format.
-
-    '''
+        help_dict = {k: v for k, v in zip(cd_list,action_list)}
+        
+        
+        if(string == 'help'):
+            return help_dict
 
 
 
@@ -230,35 +263,29 @@ class path_parse:
     
         
         assert isinstance(string,str), "Error: input must be a string, not a "+str(type(string))
-          
-        cd_list = ['ls','dir','pwd','cd','chdir','mv','rm','mkdir',
-                   'rmdir','find','grep','help','vi']
-    
-        single_command_list = ['ls', 'pwd', 'help'] 
-        single_path_list_nogroup = ['cd','chdir','vi']
+        
+        single_command_list = ['ls', 'pwd'] 
+        single_path_list_nogroup = ['cd','chdir','vi','help']
         single_path_list_group = ['rm','rmdir','mkdir','dir','find','grep']
         double_path_list = ['mv']
-    
+        
         mod_list = []
                                                                    
         string_list = string.split(" ")
         string_list = filter(lambda l: l != '',string_list)            
         cmd_inst = string_list[0]
         nstr = len(string_list)
-    
-        assert cmd_inst in cd_list, "Error: command not recognized, "\
-                                    "use 'help' to view available functions"
         
         if(cmd_inst in single_command_list):
-            out_inst = (cmd_inst,[],[])
+            out_inst = (cmd_inst,[],'')
             return out_inst
     
         if(cmd_inst in single_path_list_nogroup):               
             out_inst_str = combine_list_str(string_list,[1,'End'],space=True)
             if(cmd_inst != 'vi'):
-                out_inst = (cmd_inst,[],[out_inst_str])
+                out_inst = (cmd_inst,[],out_inst_str)
             else:
-                out_inst = (cmd_inst,[out_inst_str],[])
+                out_inst = (cmd_inst,[out_inst_str],'')
             return out_inst                     
         
         if(cmd_inst in single_path_list_group):
@@ -266,11 +293,11 @@ class path_parse:
                 inst_str = combine_list_str(string_list,[1,'End'],space=True)
                 out_inst_list = inst_str.split(';')
                 out_inst_list = filter(lambda l: l != '',out_inst_list)
-                out_inst = (cmd_inst,out_inst_list,[])
+                out_inst = (cmd_inst,out_inst_list,'')
                 return out_inst
             else:
                 out_inst_str = combine_list_str(string_list,[1,'End'],space=True)
-                out_inst = (cmd_inst,[out_inst_str],[])
+                out_inst = (cmd_inst,[out_inst_str],'')
                 return out_inst 
     
         if(cmd_inst in double_path_list):
@@ -302,6 +329,10 @@ class path_parse:
                     raise IndexError  
                 
                 return out_inst
+
+        print("Error: command +'"+cmd_inst+"' not recognized, use 'help' to view available functions")
+        return None 
+            
                  
                 
 
@@ -533,16 +564,23 @@ class path_parse:
             
         
                         
-    def create_dir(self,in_dir,dir_name):
-        pathway = in_dir
-        dir_pathway = pathway+delim+dir_name
+    def create_dir(self,inpath,sort='str'):
+        if(sort == 'str'):
+            pathway = inpath
+        elif(sort == 'list'):
+            pathway = self.create_path(inpath)
+        else:
+            print("Error: sort value: '"+str(sort)+"' not recognized")
+            return False
+            
         try:
-            os.mkdir(dir_pathway)
-            output = self.update_path(self.path,str)
-            return output           
+            os.mkdir(pathway)
+            utest = self.update_path(self.path,str)
+            return utest           
         except:           
-            raise OSError        
-            return None  
+            Print("Error: a directory could not be created at the following pathway: "+pathway)     
+            return False 
+ 
                 
     def find_file(self,file_name):
         spf = self.path_files
@@ -550,6 +588,7 @@ class path_parse:
             return True
         else:
             return False
+
         
     def grep_file(self,fragment):
         spf = self.path_files
@@ -664,21 +703,27 @@ class path_parse:
             else:
                 return False
 
-        def updater(new_path,sort,success,value)
-            utest = self.update_path(new_path,sort)                 
-            if(utest):
+        def print_func(test):
+            success = True
+            if(test):
                 ptest = self.run_fancy_print()
                 if(not ptest):
-                   success = False 
-                   print("Error: An unknown error was raised while attempting to print...")
+                    success = False 
+                    print("Error: An unknown error was raised while attempting to print...")
             else:
                 print("Error: Failure while updating current path")
                 success = False
+            return success
+            
+
+        def updater(new_path,sort,success,value):
+            utest = self.update_path(new_path,sort)                 
+            success = print_func(utest)
             result = (success,value)
             return result
 
 
-        def cmd_pwd():
+        def cmd_pwd(tup):
             success = True
             cmd_inst, file_list, dest_str = tup
                         
@@ -689,11 +734,7 @@ class path_parse:
                 success = False
                 print("Error: current (path) directory pathway not found")
 
-            ptest = self.run_fancy_print()
-            if(not ptest):
-                success = False
-                print("Error: An unknown error was raised while attempting to print...")
-               
+            success = print_func(success)               
             result = (success,value)                                       
             return result
             
@@ -703,17 +744,13 @@ class path_parse:
             cmd_inst, file_list, dest_str = tup 
 
             try:
-               value = self.path_contain
+                value = self.path_contain
             except:
-               value = None 
-               success = False
-               print("Error: current (path) directory contents not found")
-
-            ptest = self.run_fancy_print()
-            if(not ptest):
+                value = None 
                 success = False
-                print("Error: An unknown error was raised while attempting to print...")
-            
+                print("Error: current (path) directory contents not found")
+
+            success = print_func(success)            
             result = (success,value)
             return result
             
@@ -731,7 +768,7 @@ class path_parse:
                     new_file_list.append(self.join_node(self.path,i))
                 else:
                     success = False
-                    print("Warning Error: file name, '"+i+"' not found in current (path) directory"
+                    print("Warning Error: file name, '"+i+"' not found in current (path) directory")
             
             value = new_file_list
 
@@ -759,14 +796,14 @@ class path_parse:
                 else:
                     up_path_list = list(self.path_list)[:-1] 
                 
-                result = updater(sup_path_list,list,success,value)
+                result = updater(up_path_list,list,success,value)
                 return result
             
             elif(dest_str in self.path_contain):
                 dest_loc = self.join_node(self.path,dest_str)
                 if(os.path.isdir(dest_loc)): 
                     new_path_list = list(self.path_list)
-                    new_path_list.append(dir_inst)
+                    new_path_list.append(dest_str)
                     utest = self.update_path(new_path_list,list)
                 else:
                     success = False 
@@ -775,46 +812,25 @@ class path_parse:
                     result = (success,value)
                     return result 
 
-                if(utest):
-                    ptest = self.run_fancy_print()
-                    if(not ptest):
-                       success = False 
-                       print("Error: An unknown error was raised while attempting to print...")
-                else:
-                    print("Error: Unknown failure while updating current path")
-                    success = False
+                success = print_func(utest)
                 result = (success,value)
                 return result
             
             elif(dest_str[0] == '/' or dest_str[0] == '\\'):
                 ndir_inst = dest_str[1:]
                 ctest = self.climb_path(ndir_inst,'update')
-                if(ctest):
-                    ptest = self.run_fancy_print()
-                    if(not ptest):
-                       success = False 
-                       print("Error: An unknown error was raised while attempting to print.")                                  
-                else:
-                    success = False 
-                    print("Error: An unknown error while attempting to climb the current path.")
+                success = print_func(ctest)
                 result = (success,value)
                 return result
                     
             elif(dest_str == '~'):                
                 ctest = self.climb_path(self.path_head,'update')
-                if(ctest):
-                    ptest = self.run_fancy_print()
-                    if(not ptest):
-                       success = False 
-                       print("Error: An unknown error was raised while attempting to print.")                                  
-                else:
-                    success = False 
-                    print("Error: An unknown error while attempting to climb the current path.")  
+                success = print_func(ctest)  
                 result = (success,value)
                 return result
                 
             else:
-                print("Error: '"+dir_inst+"' not a valid destination")
+                print("Error: '"+dest_str+"' not a valid destination")
                 success = False
             
             result = (success,value)
@@ -828,14 +844,7 @@ class path_parse:
             
             try: 
                 utest = self.update_path(dest_str,str)
-                if(utest):
-                    ptest = self.run_fancy_print()
-                    if(not ptest):
-                       success = False 
-                       print("Error: An unknown error was raised while attempting to print.")                                
-                else:
-                    success = False
-                    print("Error: Unknown failure while updating current path")               
+                success = print_func(utest)              
             except:
                 print('Error: pathway '+dest_str+' could not be reached')
                 success = False 
@@ -873,10 +882,10 @@ class path_parse:
                     success = False
                     result = (success,value)
             
-            # Move File
             for i in range(len(mv_file_list)):
                 mv_file_list[i] = self.join_node(self.path,mv_file_list[i])
-                                                              
+                         
+            # Move File                                     
             if(dest_str == '..'):                  
                 if(head_check()):
                     result = (success,value)
@@ -895,35 +904,41 @@ class path_parse:
             
             elif(dest_str in self.path_contain):                
                 dest_path_list = list(self.path_list)
-                dest_path_list.append(fold_inst)                
-                output = self.move_file(file_inst,dest_path_list,str,list)
-                if(bool(output)):
-                    output = self.run_fancy_print()
-                    return output
-                else:
-                    print("Error: 'update_path' failed internal check")
-                    return None 
+                dest_path_list.append(dest_str)  
+                     
+                for i in mv_file_list:              
+                    mtest = self.move_file(i,dest_path_list,str,list)
+                    if(not mtest):
+                        success = False 
+                        print("Error: contents of this path: '"+i+"' could not be moved")
+                                     
+                result = updater(self.path_list,list,success,value)
+                return result  
             
             elif(dest_str[0] == '/' or dest_str[0] == '\\'):
-                ndir_inst = dir_inst[1:]
-                dest_path_list = self.climb_path(ndir_inst,'list')
-                output = self.move_file(file_inst,dest_path_list,str,list)
-                if(bool(output)):
-                    output = self.run_fancy_print()
-                    return output                                   
-                else:
-                    print("Error: Internal conflict, "+ndir_inst+" could not be accessed")
-                    return None
-                      
+                dest_str = dest_str[1:]
+                dest_path_list = self.climb_path(dest_str,'str')
+
+                for i in mv_file_list:              
+                    mtest = self.move_file(i,dest_path_list,str,list)
+                    if(not mtest):
+                        success = False 
+                        print("Error: contents of this path: '"+i+"' could not be moved")
+                                     
+                result = updater(self.path_list,list,success,value)
+                return result  
+                                      
             elif(dest_str == '~'):                
                 dest_path_list = self.climb_path(self.path_head,'list')
-                output = self.move_file(file_inst,dest_path_list,str,list)
-                if(bool(output)):
-                    output = self.run_fancy_print()
-                    return output                                   
-                else:
-                    print("Error: Internal conflict, home directory could not be accessed")
-                    return None  
+
+                for i in mv_file_list:              
+                    mtest = self.move_file(i,dest_path_list,str,list)
+                    if(not mtest):
+                        success = False 
+                        print("Error: contents of this path: '"+i+"' could not be moved")
+                                     
+                result = updater(self.path_list,list,success,value)
+                return result  
             
             else:
                 print("Error: The file couldn't be moved...")
@@ -931,128 +946,147 @@ class path_parse:
             
             
         def cmd_rm(tup):
-            
-            file_inst = ''
+                      
+            success = True            
+            value = None
+            cmd_inst, file_list, dest_str = tup 
             
             # Format
-            for i in range(nmot-1):                
-                if(i < nmot-2):
-                    file_inst = file_inst+motion[i+1]+' '
-                else:
-                    file_inst = file_inst+motion[i+1]
-            if('.' not in [j for j in file_inst]):
-                print('Error: '+file_inst+' is missing type extension')
-                return None     
-             
-            if(file_inst in self.path_files):
-                file_path_list = list(self.path_list)
-                file_path_list.append(file_inst)
-                file_path_str = self.create_path(file_path_list)
-                output = self.del_file(file_path_str,True)
-                if(bool(output)):
-                    output = self.run_fancy_print()
-                    return output
-                else:
-                    print("Error: 'del_file' failed internal check")
-                    return None
-            else:
-                print("Error: file "+file_inst+" not found in current (path) directory")
+            
+            for i in file_list:   
+                if(i in self.path_files):
+                    file_path_str = self.join_node(self.path,i)
+                    dtest = self.del_file(file_path_str,True)
+                    if(not dtest):
+                        success = False 
+                        print("Error: contents of the path: '"+i+"' could not be deleted")
+                else: 
+                    success = False 
+                    print("Error: '"+i+"' not found within the current (path) directory")
+            
+                result = updater(self.path_list,list,success,value)
+                return result
             
 
         def cmd_mkdir(tup):
             
-            fold_inst = ''
+            success = True            
+            value = None
+            cmd_inst, file_list, dest_str = tup      
             
-            # Format 
-            for i in range(nmot-1):                
-                if(i < nmot-2):
-                    fold_inst = fold_inst+motion[i+1]+' '
-                else:
-                    fold_inst = fold_inst+motion[i+1]     
+            for i in file_list:
+                file_path_str = self.join_node(self.path,i)
+                ctest = self.create_dir(file_path_str)  
+                if(not ctest):
+                    success = False 
+                    print("Error: contents of this path: '"+i+"' could not be moved")
+                                     
+            result = updater(self.path_list,list,success,value)
+            return result  
+
+        
+        def cmd_rmdir(tup):
+
+            success = True            
+            value = None
+            cmd_inst, file_list, dest_str = tup   
             
-            verif = self.create_dir(self.path,fold_inst)  
-            if(verif):                
-                if(self.path_print):
-                    self.fancy_print(color)
-            return verif          
+            for i in file_list: 
+                if(i in self.path_contain):
+                    file_path_str = self.join_node(self.path,i)
+                    output = self.del_all_ctnt(file_path_str)
+
+            result = updater(self.path_list,list,success,value)
+            return result        
         
         
         def cmd_find(tup):
 
-            file_inst = ''
+            success = True            
+            value = None
+            cmd_inst, file_list, dest_str = tup   
             
-            # Format
-            for i in range(nmot-1):                
-                if(i < nmot-2):
-                    file_inst = file_inst+motion[i+1]+' '
-                else:
-                    file_inst = file_inst+motion[i+1]
-            if('.' not in [j for j in file_inst]):
-                print('Error: '+file_inst+' is missing type extension')
-                return None     
-            
-            verif = self.find_file(file_inst)
+            found_list = []
+            for i in file_list:            
+                ftest = self.find_file(i)
+                found_list.append(ftest)
+
+            found_dict = {k: v for k, v in zip(file_list, found_list)}   
+                
             if(self.path_print):
-                if(verif):
-                    print("The file '"+file_inst+"' has been found in the current directory!")
+                if(all(i == True for i in found_list)):
+                    print("All Files have been found in the current directory!")
                 else:
-                    print("No file named '"+file_inst+"' found in current directory.")
-            return verif
-        
-        
-        def cmd_rmdir(tup):
+                    for j in found_dict:
+                        if(found_dict[j] == False):
+                            print("No file named '"+j+"' found in current directory.")
             
-            fold_inst = ''
-            
-            # Format
-            for i in range(nmot-1):                
-                if(i < nmot-2):
-                    fold_inst = fold_inst+motion[i+1]+' '
-                else:
-                    fold_inst = fold_inst+motion[i+1]    
-             
-            if(fold_inst in self.path_contain):
-                fold_inst = self.join_node(str(self.path),fold_inst)
-                output = self.del_all_ctnt(fold_inst)
-                if(bool(output)):
-                    output = self.update_path(self.path_list,list)
-                    output = self.run_fancy_print()
-                    return output
-                else:
-                    print("Error: 'del_all_ctnt' failed internal check")
-                    return None
-            else:
-                print("Error: file '"+fold_inst+"' not found in current (path) directory")
-                return None    
-        
+            value = found_dict
+            result = (success,value)
+            return result
+          
         
         def cmd_grep(tup):
 
-            file_inst = ''
+            success = True            
+            value = None
+            cmd_inst, file_list, dest_str = tup   
             
-            # Format
-            for i in range(nmot-1):                
-                if(i < nmot-2):
-                    file_inst = file_inst+motion[i+1]+' '
-                else:
-                    file_inst = file_inst+motion[i+1]  
-            
-            verif = self.grep_file(file_inst)
+            grep_list = []
+            for i in file_list:
+                gtest = self.grep_file(i)
+                grep_list.append(i)
+
+            grep_dict = {k: v for k, v in zip(file_list, grep_list)} 
+             
             if(self.path_print):
-                if(len(verif) == 0):
-                    print("Match string '"+file_inst+"' does not"+ 
-                          "match any files in path directory")
-                else:
-                    print("Match string '"+file_inst+"' found in the following files:\n")
-                    self.fancy_print_list(verif)                          
-            return verif        
+                for i in file_list:
+                    if(len(grep_dict[i]) == 0):
+                        print("No matches found for the string, '"+i+"' :")
+                    else:
+                        print("The following matches were found for the string, '"+i+"' :")
+                        self.fancy_print_list(grep_dict[i])
+                        
+            value = grep_dict
+            result = (success,value)                       
+            return result        
         
         
         def cmd_help(tup):
-            if(self.path_print):
-                print('Below is a list of valid input commands:\n')
-                self.fancy_print_list(cd_list)
-            return cd_list
+
+            success = True            
+            value = None
+            cmd_inst, file_list, dest_str = tup 
+
+            cd_list = ['ls','dir','pwd','cd','chdir','mv','rm','mkdir',
+                       'rmdir','find','grep','help','vi']
+            
+            help_dict = self.documentation('help')
+               
+            if(dest_str == ''):
+                if(self.path_print):
+                    print('Below is a list of valid input commands:\n')
+                    self.fancy_print_list(cd_list)
+                    value = cd_list
+                    help_text = "Place command name after 'help' for more info on that command"
+
+            else:
+                cmd_val = dest_str
+                if(cmd_val in cd_list):
+                    help_dict = self.documentation('help')
+                    help_text = help_dict[cmd_val]
+                else:
+                    success = False
+                    help_text = "Error: the command '"+cmd_val+"' not recognized"
+
+            if(self.path_print):                   
+                print(help_text)
+                print('\n')
+
+            value = help_text                                      
+            result = (success,value)
+            return result   
+                
                 
             
         ##################
@@ -1060,16 +1094,16 @@ class path_parse:
         ##################
 
         fail_tup = (False,None)
-        cmd_tuple = cmd_input_parse(self,cmd_string,checker=False)   
-        cmd_inst = cmd_tuple        
+        cmd_tuple = self.cmd_input_parse(cmd_string)   
+        cmd_inst = cmd_tuple[0]        
 
-        result = fail_tup                    
+        result = fail_tup     
+               
+        if(cmd_inst == 'pwd'):
+            result = cmd_pwd(cmd_tuple)
 
-        if(cmd_inst == 'ls'):
-            result = cmd_ls(cmd_tuple)
-
-        elif(cmd_inst == 'pwd'):
-            result = cmd_pwd(cmd_tuple)        
+        elif(cmd_inst == 'ls'):
+            result = cmd_ls(cmd_tuple)        
 
         elif(cmd_inst == 'dir'):
             result = cmd_dir(cmd_tuple)   
@@ -1103,13 +1137,14 @@ class path_parse:
 
         else:
             spc = '     '
+            tup_str = str(cmd_tuple)
             print("Error: Input '"+cmd_string+"' not resolved")
-            print("It appears that either 'cmd_string' was not recognized"
+            print("It appears that either 'cmd_string' was not recognized")
             print("Or that, the operand with which it was combined was not properly parsed")
             print("Below is a summary of the output:")
             print("\n")
             print(spc+"'cmd_inst' = '"+cmd_inst+"'")
-            print(spc+"'cmd_tuple' = '"+str(cmd_tuple)+"'") 
+            print(spc+"'cmd_tuple' = '"+tup_str+"'") 
             print('\n')
             return fail_tup
 
@@ -1118,11 +1153,36 @@ class path_parse:
             if(success):
                 print("cmd evaluation was successful!")
                 if(value != None):
-                   print("The returned value is: "+str(value))
+                    print("The returned value is: "+str(value))
             else:
                 print("cmd evaluation failed...")
                 if(value != None):
-                   print("The returned value is: "+str(value))                
+                    print("The returned value is: "+str(value))                
 
         return result 
               
+
+
+# Generating example for utility
+
+def run(cmdin,pp_inst,output=True):
+   
+    indt = '   '
+    
+    success,value = pp_inst.cmd(cmdin)
+   
+    if(output):
+        print("Output:")
+        print(indt+"Success: "+str(success))
+        print(indt+"Value: "+repr(value))  
+        
+    return (success,value)
+
+winnp = path_parse(os_form='Windows')                                  # No print on Windows
+winpp = path_parse(os_form='Windows',path_print=True,print_col=True)   # Print on Windows  
+linnp = path_parse(os_form='Linux')                                    # No print on Linux
+linpp = path_parse(os_form='Linux',path_print=True,print_col=True)     # Print on Linux
+
+# Running Example
+run('ls',winpp)
+
