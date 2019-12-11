@@ -71,7 +71,7 @@ class path_parse:
                 self.path_list = self.path_list[1:]
                 self.path_head = self.path_list[0]
             self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()
+            self.path_files = self.path_files()
             self.path_print = path_print
         else:
             self.path = os.getcwd()
@@ -83,7 +83,7 @@ class path_parse:
                 self.path_list = self.path_list[1:]
                 self.path_head = self.path_list[0]
             self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()
+            self.path_files = self.path_files()
             self.path_print = path_print
 
     
@@ -124,7 +124,7 @@ class path_parse:
 	    
         1) Complete interdependence for Path functions
         2) Complete independence for Non-Path functions 
-        3) Strict nameing scheme to distinguish Path from Non-Path functions
+        3) Strict naming scheme to distinguish Path from Non-Path functions
         4) Path Variable restrictions 
         5) Return restrictions on Path functions (Boolean only) 
         6) Return restrictions on Non-Path functions 
@@ -133,13 +133,21 @@ class path_parse:
         ------------------
         | Function List: |
         ------------------
+
+        convention: 
+
+        * path : designates a function which modifies the path variables
+        * trac : designates a function which modifies an input path, does not affect path variables.
 	    
         
-        __init__(self,os_form,new_path=None,path_print=False,print_col=False)
+        __init__(self,os_form,new_path=None,path_print=False,print_col=False): Initalizing function, sets path variables
+
+        cmd_input_parse(self,string): parses input strings for the 'cmd' function, converts input string to tuple of len. 3.
         
-        create_path(self,path_list) : Creates and returns a pathway string from a pathway list
+        create_trac(self,path_list) : Creates and returns a pathway string from a pathway list
+         
         
-        get_files(self,style = None) : Returns a list of strings corrosponding to the names
+        path_files(self,style = None) : Returns a list of strings corrosponding to the names
                                        of the files, whose names contains file extensions,
                                        in the current (path) directory, option for selection 
                                        by extension.
@@ -179,36 +187,60 @@ class path_parse:
                    'rmdir','find','grep','help','vi']
 
         action_list = ["Usage: ['ls',..,..] , returns a list of strings corrosponding to content of path directory",
+                       
                        "Usage: ['pwd',..,..] , returns a string corrosponding to the pathway for path directory",
-                       "Usage: ['dir',['file1.file',..,..],..] , returns list of strings corrosponding "+
+                       
+                       "Usage: ['dir',['file1.file','file2.file'],..] , returns list of strings corrosponding "+
                        "to pathways of grouped files",
+                       
                        "Usage: ['cd',..,pathway] , returns None, modifies the path variables to move from the "+ 
                        "path directory to that specified in the pathway. The value for pathway may be either "+
                        "{'..' to move up one directory, '~' to move to home, or a name of a subdirectory}",
+                       
                        "Usage: [chdir,..,full_pathway] , returns None, moves path variables to move from the "+
                        "current directory to that specified by full_pathway, full_pathway must be a full pathway",
-                       "",
-                       "",
-                       "",
-                       "",      
-                       "",
-                       "",
-                       "",
-                       ""   
+                       
+                       "Usage: [mv,['file1.file','file2.file'],destination] , returns None, moves files in path "+
+                       "directory to the destination directory.",
+                       
+                       "Usage: [rm,['file1.file','file2.file'],..] , returns None, removes files in path directory", 
+                       
+                       "Usage: [mkdir,['fold1','fold2'],..] , returns None, creates folders in path directory",
+                       
+                       "Usage: [rmdir,['fold1','fold2'],..] , returns None, deletes folders and content in path directory",                             
+                       "Usage: [find,['file1.file','file2.file'],..] , returns dictionary, searches for files by name, "+
+                       " and returns a dictionary with boolean values for the existance of the files",
+                          
+                       "Usage: [grep,['file1.file','file2.file'],..] , returns dictionary, searches for fragments, "+
+                       " and returns a dictionary with boolean values for the files containing searched fragments",
+
+                       "Usage: [help,['command'],..] , returns either a list or string, "+
+                       "if no command is specified, 'help' returns a list of possible commands, else if a "+
+                       "command is specified a string describing the commands usage is returned",
+                         
+                       "Usage: [grep,['file1.file','file2.file'],..] , returns dictionary, searches for fragments, "+
+                       " and returns a dictionary with boolean values for the files containing searched fragments", 
                       ]   
+
+        help_dict = {k: v for k, v in zip(cd_list,action_list)}
 
         single_command_list = ['ls', 'pwd'] 
         single_path_list_nogroup = ['cd','chdir','vi','help']
         single_path_list_group = ['rm','rmdir','mkdir','dir','find','grep']
         double_path_list = ['mv']
-
-
-        help_dict = {k: v for k, v in zip(cd_list,action_list)}
-        
-        
+                 
         if(string == 'help'):
             return help_dict
-
+        elif(string == 'single_cmd'):
+            return single_command_list
+        elif(string == 'single_ng_cmd'):
+            return single_path_list_nogroup
+        elif(string == 'single_gp_cmd'):
+            return single_path_list_group
+        elif(string == 'double_cmd'):
+            return double_path_list
+         
+         
 
 
     def cmd_input_parse(self,string):
@@ -342,44 +374,61 @@ class path_parse:
         return output
             
         
-    def create_path(self,path_list):        
+    def create_trac(self,trac_in,node_add=None,insort='list',outsort='str'):        
         '''
         
         ---------------
-        | create_path |
+        | create_trac |
         ---------------
+
+        if(insort == 'list')
         
-        Input: 
-        
-            'path_list': [list,tuple], A path-formatted list 
-        
-        Return:
-         
-            'out_path': [string], a path-formatted string
+            Input: 'trac_in': [list,tuple], A path-formatted list             
+            Return: 'trac_out': [string], a path-formatted string
+
+        if(insort == 'str')
+
+                'trac_in': [list,tuple], A path-formatted list 
+                'trac_out': [string], a path-formatted string
             
         Description: Formats a path-formatted list into a path-formatted string
+                     options to add a node and format return in both string and list 
         
         '''
-        out_path = ''
+        trac_out = ''
         count = 0
-        while('' in path_list):
-            path_list.remove('')
-        for i in path_list:
-            if(count == 0):
-                out_path = str(i) 
-            else:
-                out_path = out_path + delim + str(i)
-            count+=1
-        if(self.os == 'Unix' or self.os == 'Linux'):
-            out_path = '/'+out_path
-        return out_path            
+
+        if(insort == 'list'):
+
+            while('' in trac_in):
+                trac_in.remove('')
+            for i in trac_in:
+                if(count == 0):
+                    trac_out = str(i) 
+                else:
+                    trac_out = self.join_node(trac_out,i)
+                count+=1
+            
+            if(self.os == 'Unix' or self.os == 'Linux'):
+                trac_out = '/'+trac_out
+             
+            if(outsort == 'list'):
+                trac_out = trac_out.split(delim)
+                trac_out = filter(lambda l: l != '',trac_out)                 
+             
+        elif(insort == 'str'):
+            if(outsort == 'list'):
+                trac_out = trac_out.split(delim)
+                trac_out = filter(lambda l: l != '',trac_out)                         
+
+        return trac_out            
         
         
-    def get_files(self,style = None):
+    def path_files(self,style = None):
         '''
-        -------------
-        | get_files |
-        -------------
+        --------------
+        | path_files |
+        --------------
         
         Input: 
         
@@ -430,13 +479,13 @@ class path_parse:
         '''
         if(sort == list):
             self.path_list = path_updater
-            self.path = self.create_path(path_updater)
+            self.path = self.create_trac(path_updater)
             if(self.os == 'Windows'):                    
                 if(self.path == self.path_head):
                     self.path = self.path+'//'
             self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files()   
-            return 1
+            self.path_files = self.path_files()   
+            return True
         elif(sort == str):
             self.path = path_updater
             self.path_list = self.path.split(delim)
@@ -444,11 +493,11 @@ class path_parse:
                 if(self.path == self.path_head):
                     self.path = self.path+'//'
             self.path_contain = os.listdir(self.path)
-            self.path_files = self.get_files() 
-            return 1
+            self.path_files = self.path_files() 
+            return True
         else:
             print("Error: 'sort' not a valid type")
-            return None 
+            return False 
         
         
     def climb_path(self,up_dir_inst,exit):
@@ -466,7 +515,7 @@ class path_parse:
                 output = new_path_list
                 return output
             elif(exit == 'str'):
-                output = self.create_path(new_path_list)
+                output = self.create_trac(new_path_list)
                 return output
             elif(exit == 'update'):                
                 output = self.update_path(new_path_list,list)
@@ -475,7 +524,7 @@ class path_parse:
                 print("Error: 'exit' command: '"+str(exit)+"' not recongized")
         else: 
             print("Error: Directory "+up_dir_inst+" not found in current (path) hierarchy")
-            return None
+            return False
         
     
     def get_ctnt(self,path,sort = str,rtrn = 'all'):
@@ -483,7 +532,7 @@ class path_parse:
         if(sort == str):
             new_path = path
         elif(sort == list):
-            new_path = self.create_path(path)
+            new_path = self.create_trac(path)
         else:
             print("Error: 'sort' option must be either 'str' or 'list'; '"
                   +str(sort)+"' is invalid")
@@ -510,9 +559,9 @@ class path_parse:
     def move_file(self,file_loc,fold_loc,file_sort,fold_sort):
         
         if(fold_sort == list):
-            fold_loc = self.create_path(fold_loc)                
+            fold_loc = self.create_trac(fold_loc)                
         if(file_sort == list):
-            file_loc = self.create_path(file_loc)
+            file_loc = self.create_trac(file_loc)
                       
         if(self.os == 'Windows'):                    
             if(fold_sort == self.path_head):
@@ -568,7 +617,7 @@ class path_parse:
         if(sort == 'str'):
             pathway = inpath
         elif(sort == 'list'):
-            pathway = self.create_path(inpath)
+            pathway = self.create_trac(inpath)
         else:
             print("Error: sort value: '"+str(sort)+"' not recognized")
             return False
@@ -1177,6 +1226,10 @@ def run(cmdin,pp_inst,output=True):
         print(indt+"Value: "+repr(value))  
         
     return (success,value)
+
+
+
+# Examples
 
 winnp = path_parse(os_form='Windows')                                  # No print on Windows
 winpp = path_parse(os_form='Windows',path_print=True,print_col=True)   # Print on Windows  
