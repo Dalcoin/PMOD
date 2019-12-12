@@ -473,7 +473,9 @@ class path_parse:
             'path_updater': [list,tuple], A path-formatted list ]
             'sort'        : [type]      , A python data-type
                     
-        Description: Formats a path-formatted list into a path-formatted string
+        Description: Formats a path-formatted list into a path-formatted string,
+                     the new path then replaces the old path directory along with 
+                     replacing the old path variables with those of the new path.
         
                 
         '''
@@ -527,7 +529,7 @@ class path_parse:
             return False
         
     
-    def get_ctnt(self,path,sort = str,rtrn = 'all'):
+    def get_trac_contain(self,path,sort = str,rtrn = 'all'):
         
         if(sort == str):
             new_path = path
@@ -564,59 +566,99 @@ class path_parse:
             file_loc = self.create_trac(file_loc)
                       
         if(self.os == 'Windows'):                    
-            if(fold_sort == self.path_head):
-                fold_sort = fold_sort+'//'
+            if(fold_loc == self.path_head):
+                fold_loc = fold_loc+'//'
                    
         try: 
             shutil.move(file_loc,fold_loc) 
         except: 
-            raise OSError
             print("Error: File could not be moved.")
+            print("File pathway: "+file_loc)
+            print("Destination pathway: "+fold_loc)
         
         output = self.update_path(self.path,str)
         return output
 
     
-    def del_file(self,file_loc,update):           
+    def del_file(self,file_loc,update=False):           
         try:
             os.remove(file_loc)
         except:
-            raise OSError
+            print("Error: File could not be deleted.")
+            print("File pathway: "+file_loc)
+            return False
             
         if(update):            
-            output = self.update_path(self.path,str)
+            utest = self.update_path(self.path,str)
+            if(utest):
+                return utest
+            else:
+                print("Error: path not updated")     
+                return False
         else:
-            output = 1
-            
-        if(output):
-            return 1
+            return True
+
+        
+    def del_fold(self,fold_loc,sort=str,update=False):
+        
+        verif = False
+
+        if(sort == str):
+            foldtype = isinstance(fold_loc,str)
+            if(not foldtype):
+                print("[del_fold] Error: input pathway must be a string")
+                return False
+        elif(sort == list):
+            try: 
+                fold_loc = create_trac(fold_loc)
+            else: 
+                print("[del_fold] Error: input pathway could not be parsed into a string")
+                return False
         else:
-            print('Error: current (path) directory information could not be updated')
-            return None
+            print("[del_fold] Error: 'sort' is not a valid data type")
+            return False
         
-    def del_all_ctnt(self,fold_loc,warn=False):
-        
-        if(not os.path.isdir(fold_loc)):
-            print("Error: "+fold_loc+" is not a valid directory")
-            return None
-        
-        content = self.get_ctnt(fold_loc)
+        try: 
+            content = self.get_trac_contain(fold_loc)
+        except:
+            print("[del_fold] Error: The pathway "+fold_loc+" did not yield a folder whose content could be accessed")
+            return False
         
         for i in content:
             file_path = self.join_node(fold_loc,i)
             if(os.path.isdir(file_path)):
-                verif = self.del_all_ctnt(file_path)                
-            else:                
-                verif = self.del_file(file_path,False)
-        verif = os.rmdir(fold_loc)
-        return 1
+                try:
+                    verif = self.del_fold(file_path)
+                    if(verif == False):
+                        print("[del_fold] Error: the folder at pathway "+file_path+" could not be deleted")
+                except: 
+                    print("[del_fold] Error: the folder at pathway "+file_path+" could not be deleted")             
+            else:
+                try:                
+                    verif = self.del_file(file_path)
+                    if(verif == False):
+                        print("[del_fold] Error: the file at pathway "+file_path+" could not be deleted")
+                except: 
+                    print("[del_fold] Error: the folder at pathway "+file_path+" could not be deleted")  
+        try:  
+            verif = os.rmdir(fold_loc)
+            if(verif == False):
+                print("[del_fold] Error: the file at pathway "+fold_loc+" could not be deleted")
+        except: 
+            print("[del_fold] Error: the folder at pathway "+fold_loc+" could not be deleted") 
+
+        if(verif and update):
+            utest = self.update_path(self.path,str)
+            return utest
+ 
+        return verif
             
         
                         
-    def create_dir(self,inpath,sort='str'):
-        if(sort == 'str'):
+    def create_dir(self,inpath,sort=str,update=False):
+        if(sort == str):
             pathway = inpath
-        elif(sort == 'list'):
+        elif(sort == list):
             pathway = self.create_trac(inpath)
         else:
             print("Error: sort value: '"+str(sort)+"' not recognized")
@@ -624,28 +666,82 @@ class path_parse:
             
         try:
             os.mkdir(pathway)
-            utest = self.update_path(self.path,str)
-            return utest           
+            if(update):
+                utest = self.update_path(self.path,str)
+                return utest           
         except:           
             Print("Error: a directory could not be created at the following pathway: "+pathway)     
             return False 
+        return True
  
                 
-    def find_file(self,file_name):
-        spf = self.path_files
+    def find_file(self,file_name,pathway=None,pathopt = False,files=True,sort=str):
+        
+        if(pathopt):
+            if(files):
+                spf = self.path_files
+            else:
+                spf = self.path_contain
+            if(file_name in spf):
+                return True
+            else:
+                return False
+        
+        if(sort == str and pathway != None):
+            trac = pathway
+        elif(sort == list and pathway != None):
+            trac = self.create_trac(pathway)
+        elif(pathway == None):
+            print("[find_file] Error: 'pathway' is empty")
+            return False
+        else: 
+            print("[find_file] Error: check 'pathway' and 'sort'. 'sort' should be either list or str. ")
+            return False   
+
+        if(files):
+            spf = self.get_trac_contain(trac,rtrn='files')
+        else:     
+            spf = self.get_trac_contain(trac) 
         if(file_name in spf):
             return True
         else:
-            return False
-
+            return False            
         
-    def grep_file(self,fragment):
-        spf = self.path_files
-        grep_list = []
+
+    def grep_file(self,fragment,pathway=None,pathopt = False,files=True,sort=str):
+
+        if(pathopt):
+            if(files):
+                spf = self.path_files
+            else:
+                spf = self.path_contain
+            grep_list = []
+            for i in spf:
+                if(fragment in i):
+                    grep_list.append(i)
+            return grep_list
+
+        if(sort == str and pathway != None):
+            trac = pathway
+        elif(sort == list and pathway != None):
+            trac = self.create_trac(pathway)
+        elif(pathway == None):
+            print("[find_file] Error: 'pathway' is empty")
+            return False
+        else: 
+            print("[find_file] Error: check 'pathway' and 'sort'. 'sort' should be either list or str. ")
+            return False   
+
+        if(files):
+            spf = self.get_trac_contain(trac,rtrn='files')
+        else:     
+            spf = self.get_trac_contain(trac) 
+              
         for i in spf:
             if(fragment in i):
                 grep_list.append(i)
         return grep_list
+
         
         
     def fancy_print(self,col=False):
@@ -1043,7 +1139,7 @@ class path_parse:
             for i in file_list: 
                 if(i in self.path_contain):
                     file_path_str = self.join_node(self.path,i)
-                    output = self.del_all_ctnt(file_path_str)
+                    output = self.del_fold(file_path_str)
 
             result = updater(self.path_list,list,success,value)
             return result        
