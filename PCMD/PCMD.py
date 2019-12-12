@@ -140,17 +140,32 @@ class path_parse:
         * trac : designates a function which modifies an input path, does not affect path variables.
 	    
         
-        __init__(self,os_form,new_path=None,path_print=False,print_col=False): Initalizing function, sets path variables
+        __init__(self,os_form,new_path=None,path_print=False,print_col=False) : 
 
-        cmd_input_parse(self,string): parses input strings for the 'cmd' function, converts input string to tuple of len. 3.
+                                    Initalizing function, sets path variables
+
+        cmd_input_parse(self,string) : 
+                          
+                                    Parses input strings for the 'cmd' function, 
+                                    converts input string to tuple of length 3.
+
+        join_node(self,old_path,new_node) : 
+
+                                    Adds the file or folder name in 'new_node' to
+                                    the pathway in 'old_path'. Input and output 
+                                    are strings 
         
-        create_trac(self,path_list) : Creates and returns a pathway string from a pathway list
+        create_trac(self,path_list) : 
+   
+                                    Creates and returns a pathway string from a pathway list
          
         
-        get_path_files(self,style = None) : Returns a list of strings corrosponding to the names
-                                            of the files, whose names contains file extensions,
-                                            in the current (path) directory, option for selection 
-                                            by extension.
+        get_path_files(self,style = None) : 
+
+                                    Returns a list of strings corrosponding to the names
+                                    of the files, whose names contains file extensions,
+                                    in the current (path) directory, option for selection 
+                                    by extension.
 	    
         move_file(self,file_name,new_location,upbool = False) : Moves 'file_name' to 'new_location', 
                                                                 note that 'file_name' must be a file
@@ -169,10 +184,14 @@ class path_parse:
                                     equal to 'dir_name' in the 
                                     current (path) directory
         
-        find_file(self,file_name) : Checks the current (path) directory for a file with 
-                                    'file_name' as its identifier. Returns boolean.
+        find_file(self,file_name,pathway=None,pathopt = False,files=True,sort=str) : 
+
+                                   Checks the current (path) directory for a file with 
+                                   'file_name' as its identifier. Returns boolean.
 	    
-        grep_file(self,fragment) : Checks the current (path) directory for any file with
+        grep_file(self,fragment,pathway=None,pathopt = False,files=True,sort=str) :
+
+                                   Checks the current (path) directory for any file with
                                    'fragment' in its name. The list of matching file names 
                                    is returned in string format. 
                                      
@@ -223,7 +242,7 @@ class path_parse:
                       ]   
 
 #        help_dict = {k: v for k, v in zip(cd_list,action_list)}        
-        help_dict = dict(zip(cd_list,action_list)) 
+        help_dict = dict(zip(cd_list,action_list))  # Added for backward compatability
         
         single_command_list = ['ls', 'pwd'] 
         single_path_list_nogroup = ['cd','chdir','vi','help']
@@ -242,8 +261,8 @@ class path_parse:
             return double_path_list
          
          
-
-
+        
+         
     def cmd_input_parse(self,string):
         '''
         -------------------
@@ -294,15 +313,14 @@ class path_parse:
                     count+=1
                 return out_string
     
-        
-        assert isinstance(string,str), "Error: input must be a string, not a "+str(type(string))
+        if(not isinstance(string,str)): 
+            print("Error: input must be a string, not a "+str(type(string)))
+            return ('',[],'')
         
         single_command_list = ['ls', 'pwd'] 
         single_path_list_nogroup = ['cd','chdir','vi','help']
         single_path_list_group = ['rm','rmdir','mkdir','dir','find','grep']
         double_path_list = ['mv']
-        
-        mod_list = []
                                                                    
         string_list = string.split(" ")
         string_list = filter(lambda l: l != '',string_list)            
@@ -365,11 +383,8 @@ class path_parse:
 
         print("Error: command +'"+cmd_inst+"' not recognized, use 'help' to view available functions")
         return None 
-            
-                 
-                
-
-            
+    
+                             
     def join_node(self,old_path,new_node):
         output = old_path+delim+new_node
         return output
@@ -499,7 +514,7 @@ class path_parse:
             self.path_files = self.get_path_files() 
             return True
         else:
-            print("Error: 'sort' not a valid type")
+            print("[update_path] Error: 'sort' not a valid type")
             return False 
         
         
@@ -524,9 +539,9 @@ class path_parse:
                 output = self.update_path(new_path_list,list)
                 return output
             else:
-                print("Error: 'exit' command: '"+str(exit)+"' not recongized")
+                print("[climb_path] Error: 'exit' command: '"+str(exit)+"' not recongized")
         else: 
-            print("Error: Directory "+up_dir_inst+" not found in current (path) hierarchy")
+            print("[climb_path] Error: Directory "+up_dir_inst+" not found in current (path) hierarchy")
             return False
         
     
@@ -537,7 +552,7 @@ class path_parse:
         elif(sort == list):
             new_path = self.create_trac(path)
         else:
-            print("Error: 'sort' option must be either 'str' or 'list'; '"
+            print("[get_trac_contain] Error: 'sort' option must be either 'str' or 'list'; '"
                   +str(sort)+"' is invalid")
         
         content = os.listdir(new_path)
@@ -555,7 +570,7 @@ class path_parse:
                 if('.' not in i): folders.append(i)
             return folders            
         else:
-            print("Error: 'rtrn' input; '"+rtrn+"' , not valid")
+            print("[get_trac_contain] Error: 'rtrn' input; '"+rtrn+"' , not valid")
             
              
     
@@ -573,9 +588,10 @@ class path_parse:
         try: 
             shutil.move(file_loc,fold_loc) 
         except: 
-            print("Error: File could not be moved.")
+            print("[move_file] Error: File could not be moved.")
             print("File pathway: "+file_loc)
             print("Destination pathway: "+fold_loc)
+            return False
         
         output = self.update_path(self.path,str)
         return output
@@ -585,7 +601,7 @@ class path_parse:
         try:
             os.remove(file_loc)
         except:
-            print("Error: File could not be deleted.")
+            print("[del_file] Error: File could not be deleted.")
             print("File pathway: "+file_loc)
             return False
             
@@ -594,7 +610,7 @@ class path_parse:
             if(utest):
                 return utest
             else:
-                print("Error: path not updated")     
+                print("[del_file] Error: path not updated")     
                 return False
         else:
             return True
@@ -662,18 +678,20 @@ class path_parse:
         elif(sort == list):
             pathway = self.create_trac(inpath)
         else:
-            print("Error: sort value: '"+str(sort)+"' not recognized")
+            print("[create_dir] Error: sort value: '"+str(sort)+"' not recognized")
             return False
             
         try:
             os.mkdir(pathway)
             if(update):
                 utest = self.update_path(self.path,str)
-                return utest           
+                return utest     
+            else:
+                return True      
         except:           
-            Print("Error: a directory could not be created at the following pathway: "+pathway)     
+            print("[create_dir] Error: a directory could not be created at this pathway")
+            print("Pathway : "+pathway)     
             return False 
-        return True
  
                 
     def find_file(self,file_name,pathway=None,pathopt = False,files=True,sort=str):
