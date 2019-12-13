@@ -6,15 +6,15 @@ class ioparse:
         global check
         self.file_in = file_in 
         self.file_out = file_out
-
+        
         self.pyver = pyver
-
+         
         check = tcheck.tcheck()
-
+         
         self.ptype_list = ['r','r+','rb','w','w+','wb','wb+','a','ab','a+','ab+']
         self.ptype_read = ['r','r+','rb']
         self.ptype_write = ['w','w+','wb','wb+','a','ab','a+','ab+']
-
+              
     
     def set_file(self,file_in,file_out):
         self.file_in = file_in 
@@ -70,6 +70,63 @@ class ioparse:
             success = False 
                   
         return success
+
+
+    def grab_list_test(self, grab_list, change_list = None, n, m):
+
+        test = check.type_test_print(grab_list,list,'grab_list','grab_list_test')
+        if(not test):
+            return False
+
+        if(n>0):
+            for i in range(n):
+                test = check.type_test_print(grab_list[i],int,'grab_list['+str(i)+']','grab_list_test') 
+                if(not test):
+                    return False 
+
+        if(repeat == False):
+            test = self.dup_check(grab_list)
+            if(test):
+                print("[grab_list_test] Error: 'grab_list' values must be unique")
+            return False
+
+        if(change_list != None):
+            if(len(grab_list) != len(change_list)):  
+                print("[grab_list_test] Error: 'grab_list' and 'change_list' must have the same length")
+                return False
+		    
+            for i in range(len(change_list)):
+                test = check.type_test_print(change_list[i],str,'change_list['+str(i)+']','flat_file_replace') 
+                if(not test):
+                    return False
+            
+        if(n>m):
+            print("[grab_list_test] Error: 'grab_list' is longer than the number of file lines")
+            return False
+        if(m < (max(grab_list)+1)):
+            print("[grab_list_test] Error: replacement line number greater than the max number of files lines")
+            return False
+        
+        return True
+
+
+    def list_repeat(self,grab_list,file_lines,scrub):
+        if(len(grab_list)<3):
+            print("[list_repeat] Error: 'grab_list' must have at least 3 entries when 'repeat' is True"
+            return False
+
+        raw_lines = []          
+        
+        bnd = grab_list[0]+1
+        saut = grab_list[1:-1]
+        n = grab_list[-1]+1
+        for i in range(n):
+            for j in range(len(saut)):
+                line_tag = saut[j]+bnd*i
+                raw_lines.append(file_lines[line_tag])
+                if(scrub):
+                    raw_lines[j] = raw_input[i].strip("\n").strip("\r")         
+        return raw_lines
   
     
     def flat_file_read(self,file_in,ptype='r'):
@@ -90,7 +147,7 @@ class ioparse:
          
         '''    
 
-        test = io_opt_test(ptype,'read')
+        test = self.io_opt_test(ptype,'read')
         if(not test):
             return False            
 
@@ -129,7 +186,7 @@ class ioparse:
         ''' 
 
         # Testing proper variable types
-        test = io_opt_test(ptype,'write',par=par)
+        test = self.io_opt_test(ptype,'write',par=par)
         if(not test):
             return False         
 
@@ -184,13 +241,23 @@ class ioparse:
         '''
         
         # Testing proper variable types
-        test = io_opt_test(ptype,io,par=par,count_offset=count_offset)
+        test = self.io_opt_test(ptype,io,par=par,count_offset=count_offset)
         if(not test):
             return False
-
         test = check.type_test_print(file_out,str,'file_out','flat_file_replace') 
         if(not test):
             return False
+
+        if(count_offset):      
+            grab_list = [x-1 for x in grab_list]
+
+        # Read in file
+        file_lines = self.flat_file_read(file_out)
+        m = len(file_lines)   
+        
+        # Testing the lengths of variable arrays 
+        n = len(grab_list)
+
         test = check.type_test_print(grab_list,list,'grab_list','flat_file_replace')
         if(not test):
             return False
@@ -208,15 +275,6 @@ class ioparse:
         if(test):
             print("[flat_file_replace] Error: 'grab_list' values must be unique")
 
-        # Read in file
-        file_lines = self.flat_file_read(file_out)
-    
-        # Testing the lengths of variable arrays 
-        m = len(file_lines)
-        n = len(grab_list)
-
-        if(count_offset):      
-            grab_list = [x-1 for x in grab_list]
 
         if(len(grab_list) != len(change_list)):  
             print("[flat_file_replace] Error: 'grab_list' and 'change_list' must have the same length")
@@ -241,35 +299,20 @@ class ioparse:
         result = self.flat_file_write(file_out,file_lines,ptype=ptype)
         return result
         
-
-
-    def flat_file_grab(file_in,grab_list,scrub=False,repeat=False,count_offset=True,ptype='w'):
         
-        n = len(grab_list)
-
+    def flat_file_grab(file_in,grab_list,scrub=False,repeat=False,count_offset=True,ptype='w'):
+                
         # Testing proper variable types
-        test = io_opt_test(ptype,'read',count_offset=count_offset)
+        test = self.io_opt_test(ptype,'read',count_offset=count_offset)
         if(not test):
             return False
-
         test = check.type_test_print(file_in,str,'file_in','flat_file_grab') 
         if(not test):
             return False
-        test = check.type_test_print(grab_list,list,'grab_list','flat_file_grab')
-        if(not test):
-            return False
 
-        if(n>0):
-            for i in range(n):
-                test = check.type_test_print(grab_list[i],int,'grab_list['+str(i)+']','flat_file_grab') 
-                if(not test):
-                    return False 
-
-        if(repeat == False):
-            test = self.dup_check(grab_list)
-            if(test):
-                print("[flat_file_grab] Error: 'grab_list' values must be unique")
-            return False
+        if(count_offset):      
+            grab_list = [x-1 for x in grab_list]
+        n = len(grab_list)
 
         # Read in file
         file_lines = self.flat_file_read(file_in)
@@ -280,51 +323,23 @@ class ioparse:
                 return file_lines   
             else:
                 return file_lines     
-
-        # Testing the lengths of variable arrays 
-        m = len(file_lines)
-
-        if(count_offset):      
-            grab_list = [x-1 for x in grab_list]
-
-        if(len(grab_list) != len(change_list)):  
-            print("[flat_file_grab] Error: 'grab_list' and 'change_list' must have the same length")
+        m = len(file_lines)  
+        
+        # Testing the grab_list 
+               
+        test = self.grab_list_test(grab_list, n, m)
+        if(not test):
             return False
-
-        if(n>m):
-            print("[flat_file_grab] Error: 'grab_list' is longer than the number of file lines")
-            return False
-        if(m < (max(grab_list)+1)):
-            print("[flat_file_grab] Error: replacement line number greater than the max number of files lines")
-            return False
-
+        
         # parse file_lines through repeat options:
                 
         out_lines = [] 
-
-        if(repeat == False):
+                                                             
+        if(repeat):  
+            out_lines = self.list_repeat(self,grab_list,file_lines,scrub)  
+        else:                
             for i in range(n):
                 out_lines.append(file_lines[grab_list[i]])     
                 if(scrub == True):
                     out_lines[i] = out_lines[i].strip("\n").strip("\r")
-            return out_lines  
-
-        raw_lines = []
-        form_lines = []                              
-                    
-        if(repeat == True):  
-            assert len(grab_list) > 2, "Error: grab_list must take at least three values"
-            bnd = grab_list[0]+1
-            saut = grab_list[1:-1]
-            n = grab_list[-1]+1
-            for i in range(n):
-                for j in range(len(saut)):
-                    line_tag = saut[j]+bnd*i
-                    raw_lines.append(file_lines[line_tag])
-                    lines = file_lines[line_tag].strip("\n").strip("\r").split(" ")            
-                    lines = filter(None,lines)          
-                    form_lines.append(lines)            
-            if(scrub == True):
-                return form_lines
-            else:
-                return raw_lines                    
+        return out_lines                  
