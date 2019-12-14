@@ -1,4 +1,13 @@
 class tcheck:
+    '''
+    tcheck:
+
+       tcheck(var=None)
+
+    Description: A class for aiding with error checking through type assertion functions.
+                 Each function returns either a None type or Bool type. 
+
+    '''
 
     def __init__(self,var=None):
         

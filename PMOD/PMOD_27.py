@@ -788,7 +788,7 @@ def text_file_replace(file_name,grab_list,change_list):
             
 #--------------------------------------------------------------------------------------------------
             
-def text_file_grab(file_in,file_out,grab_list,repeat,group):
+def text_file_grab(file_in,file_out,grab_list,repeat, ):
     
     # text_file_grab('file.in','file.out',[6,7],False,0)    
     # file_name: input file string
