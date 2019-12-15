@@ -3,6 +3,7 @@
 import time
 import datetime
 import math as mt
+import tcheck 
 
 class zzparse:
     
@@ -183,14 +184,6 @@ class zzparse:
         ptime = self.time_parse_sec(secs,nbool)
         return ptime
 
-    
-
-
-
-
-
-
-
 
 
 
@@ -198,43 +191,168 @@ class zzparse:
 
 
 class clock():
+    '''
+    class: clock
+     
+    Description:  
+     
+    '''
 
-    def __init__(self, opt):
-        self.init_time = datetime.datetime.now()
+    def __init__(self, in_date = None, in_time = None):
+        global check
+        check = tcheck.tcheck()
+
+        self.init_datetime = datetime.datetime.now()
+        self.date = in_date
+        self.time = in_time        
+
+    def str_to_date_list(self,string,delim='-'):
+        test = check.type_test_print(string,str,'string','str_to_date_list') 
+        if(not test):
+            return test 
         
-            
-    def current_datetime(self,value='time',form='strlist'):
-        time_now= datetime.datetime.now()
-        date_str = str(time_now).split(' ')[0]
-        time_str = str(time_now).split(' ')[1]
+        array = string.split(delim)
+        date_list = [int(array[2]),int(array[0]),int(array[1])]
+        return date_list 
+
+    def date_list_to_str(self,array):
+        test = check.type_test_print(array,list,'array','date_list_to_str') 
+        if(not test):
+            return test 
+         
+        string = array[1]+'-'+array[2]+'-'+array[0] 
+        return string
         
-        time_list = time_str.split(':')
-        time_list_numeric = [int(time_list[0]),int(time_list[1]),float(time_list[2])]
-        time_list_int = [int(time_list[0]),int(time_list[1]),int(round(float(time_list[2]),0))]
+    def date_list_to_ordate(self, array):
+        test = check.type_test_print(array,list,'array','date_list_to_ordate') 
+        if(not test):
+            return test 
+                
+        try:
+            dateobj = datetime.date(int(array[0]),int(array[1]),int(array[2]))
+            ordate = dateobj.toordinal()
+            return ordate
+        except:
+            print("[date_list_to_ordate] Error: input array could not be parsed as a date_list")
+            return False
+
+    def str_to_ordate(self, string):
+        date_list = self.str_to_date_list(string)
+        if(date_list == False):
+            return False 
         
-        date_list = date_str.split('-')
-        date_list_int = [int(date_list[0]),int(date_list[1]),int(date_list[2])]
-        
-        date = ['DATE','Date','date']
-        time = ['TIME','Time','time']
-        if(value in time):
-            if(form == 'intlist'):
-                return time_list_int
-            elif(form == 'numlist'):
-                return time_list_numeric
-            elif(form == 'strlist'):
-                return time_list
-            else:
-                return time_str
-        elif(value in date):
-            if(form == 'intlist' or form == 'numlist'):
-                return date_list_int
-            elif(form == 'strlist'):
-                return date_list
-            else:
-                return date_str       
+        ordate = self.date_list_to_ordate(date_list) 
+        if(ordate == False):
+            return False
         else:
-            return [date_str,time_str]
+            return ordate        
+        
+    def days_between_dates(self,early,later):
+        tot = self.str_to_ordate(early)
+        if(tot == False):
+            return False 
+
+        tard = self.str_to_ordate(later)
+        if(tard == False):
+            return False                     
+              
+        day_dif = int(tard) - int(tot) 
+        if(day_dif < 0):
+            day_dif = (-1)*day_dif
+        
+        return day_dif
+
+
+    def weekday(self,string):
+        test = check.type_test_print(string,str,'string','weekday') 
+        if(not test):
+            return test         
+
+        date_list = self.str_to_date_list(string)
+        if(date_list == False):
+            return False
+
+        year, month, day = date_list
+        
+        weekday_nums  = [i for i in range(7)]
+        weekday_names = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Sunday'] 
+        weekday_dict = dict(zip(weekday_nums,weekday_names))
+
+        weekday_val = datetime.date(year, month, day).weekday()
+        return weekday_dict[weekday_val]
+
+            
+    def date_time(self,value='datetime',form='str'):
+          
+        time_now = datetime.datetime.now()
+                                                     
+        datevals = ['DATE','Date','date']
+        timevals = ['TIME','Time','time']
+        datetimevals = ['DATETIME','Datetime','datetime']
+
+
+        time_str = str(time_now).split(' ')[1]         
+        time_list = time_str.split(':')
+        time_int = [int(time_list[0]),int(time_list[1]),int(round(float(time_list[2]),0))]
+        time_num = [int(time_list[0]),int(time_list[1]),float(time_list[2])]
+                     
+        if(value in timevals):
+            if(form == 'int'):   
+                return time_int
+            elif(form == 'num'):
+                return time_num
+            elif(form == 'list'):                
+                return time_list
+            elif(form == 'str'):
+                return time_str
+            else:
+                print("[date_time] Error: 'form' value, "+form+" not recognized")
+                return False
+
+        date_str = str(time_now).split(' ')[0]
+        date_list = date_str.split('-')     
+        date_str = self.date_list_to_str(date_list)    
+        date_list = [date_list[1],date_list[2],date_list[0]]
+        date_int = [int(date_list[0]),int(date_list[1]),int(date_list[2])]
+
+        date_str = self.date_list_to_str(date_list)
+
+        if(value in datevals):
+            if(form == 'int' or form == 'num'):                
+                return date_int
+            elif(form == 'list'):
+                return date_list
+            elif(form == 'str'):
+                return date_str
+            else:
+                print("[date_time] Error: 'form' value, "+form+" not recognized")
+                return False       
+
+        dt_int = (date_int,time_int)
+        dt_num = (date_int,time_num)
+        dt_list = (date_list,time_list)
+        dt_str = (date_str,time_str)
+     
+        if(value in datetimevals):
+            if(form == 'int'):                     
+                return dt_int
+            elif(form == 'num'):                
+                return dt_num
+            elif(form == 'list'):                
+                return dt_list
+            elif(form == 'str'):
+                return dt_str
+            else:
+                print("[date_time] Error: 'form' value, "+form+" not recognized")
+                return False
+
+        else:
+            print("[date_time] Error: 'value' "+value+" not recognized; no action taken")
+            return False
+
+   
+
+
     
     
     def clock_outstr(self,base = None, time_array = None):
@@ -244,38 +362,88 @@ class clock():
             minute = time_array[1]
             second = time_array[2]
         else:
-            cdt = self.current_datetime('Time','numlist')
+            cdt = self.date_time('Time','list')
             hour = str(cdt[0])
             minute = str(cdt[1])
-            second = int(round(cdt[2],0))        
+            second = int(round(float(cdt[2]),0))        
         
-        if(base == None):
+        if(base == None or base == '24'):
             if(second < 10):
                 second = '0'+str(second)
             else:
                 second = str(second)
-            time_str = str(hour)+':'+str(minute)+':'+str(second)
-            return time_str
-        elif(base == '18hr'):
+
+        elif(base == '18'):
             time_sec = int(second)+60*int(minute)+60*60*int(hour)
-            hr_18 = time_sec/4800
-            sec_rem = time_sec-hr_18*4800
-            min_18 = sec_rem/120
-            sec_rem = sec_rem-min_18*120
-            sec_18 = sec_rem
-            if(sec_18 < 10):
-                sec_18 = '00'+str(sec_18)
-            elif(sec_18 < 100):
-                sec_18 = "0"+str(sec_18)
+            hour = time_sec/4800
+            sec_rem = time_sec-hour*4800
+            minute = sec_rem/120
+            sec_rem = sec_rem-minute*120
+            second = sec_rem
+            if(second < 10):
+                second = '00'+str(second)
+            elif(second < 100):
+                second = "0"+str(second)
             else:
-                sec_18 = str(sec_18)
-            if(min_18 < 10):
-                min_18 = '0'+str(min_18)
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
             else:
-                min_18 = str(min_18)
-            if(hr_18 < 10):
-                hr_18 = '0'+str(hr_18)
+                minute = str(minute)
+            if(hour < 10):
+                hour = '0'+str(hour)
             else:
-                hr_18 = str(hr_18)
-            time_str = str(hr_18)+':'+str(min_18)+':'+str(sec_18)
-            return time_str
+                hour = str(hour)
+
+        elif(base == '6'):
+
+            #seconds through a day:
+            #
+            #1 min = 60 s
+            #1 hr  = 60 min = 60*60 (= 3600) s 
+            #1 day = 24 hr  = 24*(60*60) = 24*3600 (=72000+14400) =(86400 s)
+            #
+            #86400/4 = 21600 s
+            #
+            #86400/6 = 14400 s
+            #
+            #00:00:00 :     0 s   ->    2:00:00:00
+            #06:00:00 : 21600 s   ->    3:00:00:00
+            #12:00:00 : 43200 s   ->    4:00:00:00
+            #18:00:00 : 64800 s   ->    1:00:00:00
+            #
+            #format:
+            #
+            #watch : hour : minute : second 
+
+
+            sixsec = 21600
+            newday = 64800 
+
+            time_sec = int(second)+60*int(minute)+60*60*int(hour)
+
+            if(time_sec >= newday):
+                watch == 1
+            else:
+                watch = (time_sec/sixsec)+2  
+
+            sec_left = time_sec%sixsec 
+            hour = sec_left/3600
+            sec_rem = sec_left-hour*3600
+            minute = sec_rem/60
+            sec_rem = sec_rem-minute*60
+            second = sec_rem            
+             
+            if(second < 10):
+                second = '0'+str(second)
+            else:
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            hour = str(hour)            
+
+
+        time_str = str(hour)+':'+str(minute)+':'+str(second)
+        return time_str
