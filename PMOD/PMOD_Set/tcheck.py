@@ -47,7 +47,14 @@ class tcheck:
         
         result = (numeric_bool,var_name)
         return result 
-         
+
+                       
+    def array_test(self,var,name=None):
+        list_inst = isinstance(var, list)
+        tuple_inst = isinstance(var, tuple)
+                  
+        array_bool = list_inst or tuple_inst
+             
          
     def type_test(self,var,sort,name=None):             
         type_bool = isinstance(var, sort) 

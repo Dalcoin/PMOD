@@ -204,7 +204,11 @@ class clock():
 
         self.init_datetime = datetime.datetime.now()
         self.date = in_date
-        self.time = in_time        
+        self.time = in_time
+
+    ##################                            ##################  
+    # date functions ############################## date functions #
+    ##################                            ##################        
 
     def str_to_date_list(self,string,delim='-'):
         test = check.type_test_print(string,str,'string','str_to_date_list') 
@@ -239,48 +243,217 @@ class clock():
     def str_to_ordate(self, string):
         date_list = self.str_to_date_list(string)
         if(date_list == False):
-            return False 
-        
+            return False         
         ordate = self.date_list_to_ordate(date_list) 
         if(ordate == False):
             return False
         else:
             return ordate        
         
-    def days_between_dates(self,early,later):
-        tot = self.str_to_ordate(early)
-        if(tot == False):
-            return False 
 
-        tard = self.str_to_ordate(later)
-        if(tard == False):
-            return False                     
-              
-        day_dif = int(tard) - int(tot) 
-        if(day_dif < 0):
-            day_dif = (-1)*day_dif
+    ###################                           ###################  
+    # clock functions ############################# clock functions #
+    ###################                           ###################
+
+        # Set-up:
+        # 
+        # seconds through a day:
+        #
+        # 1 min = 60 s
+        # 1 hr  = 60 min = 60*60 (= 3600) s 
+        # 1 day = 24 hr  = 24*3600 (= 86400 s)
+        #
+        # 86400/4 = 21600 s     quarter day
+        #
+        # 86400/6 = 14400 s     sextile day = 120*120
+        #
+        # For a sextile hour system, the new day starts about sunset at 18:00:00 in 24 hr time 
+        #
+        # 00:00:00 :     0 s   ->    2:00:00:00 - second watch  
+        # 06:00:00 : 21600 s   ->    3:00:00:00 - third watch 
+        # 12:00:00 : 43200 s   ->    4:00:00:00 - fourth watch
+        # 18:00:00 : 64800 s   ->    1:00:00:00 - first watch
+        #
+        # format: six hr (there are four 'watches')
+        #
+        # watch : hour : minute : second 
+
+
+        def time_str_to_list(self,string,output=list):
+            test = check.type_test_print(string,str,'string','time_str_to_list') 
+            if(not test):
+                return test
+            string_split = string.split(':')
+            hour = string_split[0]
+            minute = string_split[1]
+            second = string_split[2] 
+            if(output == list):            
+                array = [int(float(hour)),int(float(minute)),int(float(second))]
+                return array
+            elif(output == tuple):
+                array = (int(float(hour)),int(float(minute)),int(float(second)))
+                return array 
+            else: 
+                print("[time_str_to_list] Error: 'output' value, "+str(output)+" not recognized")
+                return False
+
+        def time_list_to_time_str(self,array):
+            test = check.type_test_print(array,str,'string','time_str_to_list') 
+            if(not test):
+                return test            
+
+        def convert_clock_18hr(hour,minute,second):
+            time_sec = int(second)+60*int(minute)+60*60*int(hour)
+            hour = time_sec/4800
+            sec_rem = time_sec-hour*4800
+            minute = sec_rem/120
+            sec_rem = sec_rem-minute*120
+            second = sec_rem
+            if(second < 10):
+                second = '00'+str(second)
+            elif(second < 100):
+                second = "0"+str(second)
+            else:
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            if(hour < 10):
+                hour = '0'+str(hour)
+            else:
+                hour = str(hour)
+           
+            time_str = str(hour)+':'+str(minute)+':'+str(second)
+            return time_str
+
+
+        def convert_clock_16hr_hs(hour,minute,second):
+            time_sec = int(second)+60*int(minute)+60*60*int(hour)
+            time_sec = time_sec/2
+            hour = time_sec/2700
+            sec_rem = time_sec-hour*2700
+            minute = sec_rem/90
+            sec_rem = sec_rem-minute*90
+            second = sec_rem
+            if(second < 10):
+                second = '00'+str(second)
+            elif(second < 100):
+                second = "0"+str(second)
+            else:
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            if(hour < 10):
+                hour = '0'+str(hour)
+            else:
+                hour = str(hour)
+           
+            time_str = str(hour)+':'+str(minute)+':'+str(second)+' HS'       
+            return time_str
+            
+            
+        def convert_clock_15hr(hour,minute,second):
+            time_sec = int(second)+60*int(minute)+60*60*int(hour)
+            hour = time_sec/5760
+            sec_rem = time_sec-hour*5760
+            minute = sec_rem/120
+            sec_rem = sec_rem-minute*120
+            second = sec_rem
+            if(second < 10):
+                second = '00'+str(second)
+            elif(second < 100):
+                second = "0"+str(second)
+            else:
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            if(hour < 10):
+                hour = '0'+str(hour)
+            else:
+                hour = str(hour)
+           
+            time_str = str(hour)+':'+str(minute)+':'+str(second)
+
         
-        return day_dif
+        def convert_clock_12hr(hour,minute,second):
+            
+            midday = 43200 
 
+            time_sec = int(second)+60*int(minute)+60*60*int(hour)
 
-    def weekday(self,string):
-        test = check.type_test_print(string,str,'string','weekday') 
-        if(not test):
-            return test         
+            if(time_sec >= midday):                
+                watch = 1
+                time_sec = time_sec - midday
+            else:
+                watch = 0
+ 
+            hour = time_sec/3600
+            sec_rem = time_sec-hour*3600
+            minute = sec_rem/60
+            sec_rem = sec_rem-minute*60
+            second = sec_rem            
+             
+            if(second < 10):
+                second = '0'+str(second)
+            else:
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            hour = str(hour)            
+             
+            if(watch == 0):        
+                time_str = str(hour)+':'+str(minute)+':'+str(second)+' AM'
+            else:                
+                time_str = str(hour)+':'+str(minute)+':'+str(second)+' PM'
+            return time_str
+             
 
-        date_list = self.str_to_date_list(string)
-        if(date_list == False):
-            return False
+        def convert_clock_6hr(hour,minute,second):
 
-        year, month, day = date_list
-        
-        weekday_nums  = [i for i in range(7)]
-        weekday_names = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Sunday'] 
-        weekday_dict = dict(zip(weekday_nums,weekday_names))
+            sixsec = 21600
+            newday = 64800 
 
-        weekday_val = datetime.date(year, month, day).weekday()
-        return weekday_dict[weekday_val]
+            time_sec = int(second)+60*int(minute)+60*60*int(hour)
 
+            if(time_sec >= newday):
+                watch = 1
+            else:
+                watch = (time_sec/sixsec)+2  
+
+            sec_left = time_sec%sixsec 
+            hour = sec_left/3600
+            sec_rem = sec_left-hour*3600
+            minute = sec_rem/60
+            sec_rem = sec_rem-minute*60
+            second = sec_rem            
+             
+            if(second < 10):
+                second = '0'+str(second)
+            else:
+                second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            hour = str(hour)            
+
+            time_str = str(watch)+':'+str(hour)+':'+str(minute)+':'+str(second) 
+            return time_str
+
+    ##################                             ##################  
+    # Main functions ############################### Main functions #
+    ##################                             ##################
+
+    ######################
+    # Datetime functions # : Returns current datetime data
+    ######################
             
     def get_datetime(self,value='datetime',form='str'):
           
@@ -315,8 +488,6 @@ class clock():
         date_list = [date_list[1],date_list[2],date_list[0]]
         date_int = [int(date_list[0]),int(date_list[1]),int(date_list[2])]
 
-        date_str = self.date_list_to_str(date_list)
-
         if(value in datevals):
             if(form == 'int' or form == 'num'):                
                 return date_int
@@ -350,97 +521,87 @@ class clock():
             print("[get_datetime] Error: 'value' "+value+" not recognized; no action taken")
             return False
 
-       
-    
-    def get_clock(self,base = None, time_array = None):
+    ##################
+    # Date functions #
+    ##################
+
+    def get_days_between_dates(self,early,later):
+        tot = self.str_to_ordate(early)
+        if(tot == False):
+            return False 
+
+        tard = self.str_to_ordate(later)
+        if(tard == False):
+            return False                     
+              
+        day_dif = int(tard) - int(tot) 
+        if(day_dif < 0):
+            day_dif = (-1)*day_dif
         
-        if(time_array != None):
-            hour = time_array[0]
-            minute = time_array[1]
-            second = time_array[2]
+        return day_dif
+
+
+    def get_weekday(self,string):
+        test = check.type_test_print(string,str,'string','get_weekday') 
+        if(not test):
+            return test         
+
+        date_list = self.str_to_date_list(string)
+        if(date_list == False):
+            return False
+
+        year, month, day = date_list
+        
+        weekday_nums  = [i for i in range(7)]
+        weekday_names = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Sunday'] 
+        weekday_dict = dict(zip(weekday_nums,weekday_names))
+
+        weekday_val = datetime.date(year, month, day).weekday()
+        return weekday_dict[weekday_val]
+
+    ##################
+    # Time functions #
+    ##################
+       
+    def get_clock(self, time = None, heure = None):
+        
+        if(time != None):
+            if(isinstance(time,list) or isinstance(time,tuple)):
+                hour = int(time[0])
+                minute = int(time[1])
+                second = int(time[2])
+            elif(isinstance(time,str)):
+                time_array = time.split(':')
+                hour = int(time_array[0])
+                minute = int(time_array[1])
+                second = int(time_array[2])
+            else:
+                print("[get_clock] Error: 'time' object must be string or list/tuple; not a "+str(type(time))) 
         else:
             cdt = self.get_datetime('Time','list')
-            hour = str(cdt[0])
-            minute = str(cdt[1])
+            hour = int(cdt[0])
+            minute = int(cdt[1])
             second = int(round(float(cdt[2]),0))        
         
-        if(base == None or base == '24'):
+        if(heure == None or heure == '24' or heure == ''):
             if(second < 10):
                 second = '0'+str(second)
             else:
                 second = str(second)
-
-        elif(base == '18'):
-            time_sec = int(second)+60*int(minute)+60*60*int(hour)
-            hour = time_sec/4800
-            sec_rem = time_sec-hour*4800
-            minute = sec_rem/120
-            sec_rem = sec_rem-minute*120
-            second = sec_rem
-            if(second < 10):
-                second = '00'+str(second)
-            elif(second < 100):
-                second = "0"+str(second)
-            else:
-                second = str(second)
-            if(minute < 10):
-                minute = '0'+str(minute)
-            else:
-                minute = str(minute)
-            if(hour < 10):
-                hour = '0'+str(hour)
-            else:
-                hour = str(hour)
-
-        elif(base == '6'):
-
-            #seconds through a day:
-            #
-            #1 min = 60 s
-            #1 hr  = 60 min = 60*60 (= 3600) s 
-            #1 day = 24 hr  = 24*3600 (= 86400 s)
-            #
-            #86400/4 = 21600 s
-            #
-            #86400/6 = 14400 s
-            #
-            #00:00:00 :     0 s   ->    2:00:00:00
-            #06:00:00 : 21600 s   ->    3:00:00:00
-            #12:00:00 : 43200 s   ->    4:00:00:00
-            #18:00:00 : 64800 s   ->    1:00:00:00
-            #
-            #format:
-            #
-            #watch : hour : minute : second 
-
-
-            sixsec = 21600
-            newday = 64800 
-
-            time_sec = int(second)+60*int(minute)+60*60*int(hour)
-
-            if(time_sec >= newday):
-                watch == 1
-            else:
-                watch = (time_sec/sixsec)+2  
-
-            sec_left = time_sec%sixsec 
-            hour = sec_left/3600
-            sec_rem = sec_left-hour*3600
-            minute = sec_rem/60
-            sec_rem = sec_rem-minute*60
-            second = sec_rem            
-             
-            if(second < 10):
-                second = '0'+str(second)
-            else:
-                second = str(second)
-            if(minute < 10):
-                minute = '0'+str(minute)
-            else:
-                minute = str(minute)
-            hour = str(hour)            
-
-
-        time_str = str(hour)+':'+str(minute)+':'+str(second)
+            time_str = str(hour)+':'+str(minute)+':'+str(second)           
+        elif(heure == '18'):
+            time_str = convert_clock_18hr(hour,minute,second)
+        elif(heure == '16hs'):
+            time_str = convert_clock_16hr_hs(hour,minute,second)                 
+        elif(heure == '15'):
+            time_str = convert_clock_15hr(hour,minute,second)        
+        elif(heure == '12'):
+            time_str = convert_clock_12hr(hour,minute,second)
+        elif(heure == '6'):
+            time_str = convert_clock_6hr(hour,minute,second)
+        else:
+            print("[] Error: 'heure' hour parameter, "+str(heure)+" not recognized")      
+            return False          
         return time_str
+
+
