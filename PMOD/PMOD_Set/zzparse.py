@@ -282,7 +282,7 @@ class clock():
         return weekday_dict[weekday_val]
 
             
-    def date_time(self,value='datetime',form='str'):
+    def get_datetime(self,value='datetime',form='str'):
           
         time_now = datetime.datetime.now()
                                                      
@@ -306,7 +306,7 @@ class clock():
             elif(form == 'str'):
                 return time_str
             else:
-                print("[date_time] Error: 'form' value, "+form+" not recognized")
+                print("[get_datetime] Error: 'form' value, "+form+" not recognized")
                 return False
 
         date_str = str(time_now).split(' ')[0]
@@ -325,7 +325,7 @@ class clock():
             elif(form == 'str'):
                 return date_str
             else:
-                print("[date_time] Error: 'form' value, "+form+" not recognized")
+                print("[get_datetime] Error: 'form' value, "+form+" not recognized")
                 return False       
 
         dt_int = (date_int,time_int)
@@ -343,26 +343,23 @@ class clock():
             elif(form == 'str'):
                 return dt_str
             else:
-                print("[date_time] Error: 'form' value, "+form+" not recognized")
+                print("[get_datetime] Error: 'form' value, "+form+" not recognized")
                 return False
 
         else:
-            print("[date_time] Error: 'value' "+value+" not recognized; no action taken")
+            print("[get_datetime] Error: 'value' "+value+" not recognized; no action taken")
             return False
 
-   
-
-
+       
     
-    
-    def clock_outstr(self,base = None, time_array = None):
+    def get_clock(self,base = None, time_array = None):
         
         if(time_array != None):
             hour = time_array[0]
             minute = time_array[1]
             second = time_array[2]
         else:
-            cdt = self.date_time('Time','list')
+            cdt = self.get_datetime('Time','list')
             hour = str(cdt[0])
             minute = str(cdt[1])
             second = int(round(float(cdt[2]),0))        
@@ -401,7 +398,7 @@ class clock():
             #
             #1 min = 60 s
             #1 hr  = 60 min = 60*60 (= 3600) s 
-            #1 day = 24 hr  = 24*(60*60) = 24*3600 (=72000+14400) =(86400 s)
+            #1 day = 24 hr  = 24*3600 (= 86400 s)
             #
             #86400/4 = 21600 s
             #
