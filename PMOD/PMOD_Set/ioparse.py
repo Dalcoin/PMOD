@@ -81,10 +81,16 @@ class ioparse:
         return False        
 
 
-    def attempt_path_print(self,filepath):
+    def attempt_path_print(self,filepath,path_name=None,func_name=None):       
         try:
-            print("Given pathway: "+str(filepath))
-            return True
+            if(path_name != None):
+                if(func_name != None):
+                    print("["+func_name+"] Error")
+                print("Given pathway '"+path_name+"': "+str(filepath))
+                return True                
+            else:
+                print("Given pathway: "+str(filepath))
+                return True
         except:
             print("Pathway could not be parsed")  
             return False       
@@ -312,8 +318,40 @@ class ioparse:
             return True 
         except: 
             print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-            self.attempt_path_print(file_out)
+            self.attempt_path_print(file_out,'file_out')
             return False
+
+
+    def flat_file_append(self,file_out,add_list,par=False):
+
+        ptype = 'a+'
+        # Testing proper variable types
+        test = check.type_test_print(file_out,str,'file_out','flat_file_append') 
+        if(not test):
+            return False
+        test = check.type_test_print(add_list,'arr','add_list','flat_file_append') 
+        if(not test):
+            return False
+        
+        n=len(add_list)
+        for i in range(n):
+            test = check.type_test_print(add_list[i],str,'add_list['+str(i)+']','flat_file_append')
+            if(not test):
+                return False           
+            
+        # Print content to file   
+        try: 
+            with open(file_out,ptype) as fout:
+                for i in add_list: 
+                    if(par):
+                        fout.write(i+"\n")
+                    else:
+                        fout.write(i) 
+            return True 
+        except: 
+            print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
+            self.attempt_path_print(file_out,'file_out')
+            return False         
          
          
     def flat_file_replace(self,file_out,grab_list,change_list,count_offset=True,par=True,ptype='w'):
@@ -461,3 +499,5 @@ class ioparse:
         result = self.flat_file_write(file_out,out_list,ptype=ptype) 
         return result
         
+    
+
