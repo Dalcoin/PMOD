@@ -1,4 +1,6 @@
-# zzparse: Zeit-Zahl (Time and Number) parsing
+# zzparse: Zeit-Zahl (Time and Number) parsing 
+# clock: Calculating through time (both second and date)
+
 
 import time
 import datetime
@@ -170,6 +172,7 @@ class zzparse:
             print("[convert_secs] Error: "+str(outunit)+" not a recognized abbreviated unit of time")  
             return False
         
+        zeit = int(zeit)
         secs = zeit*conv_dict[inunit]
 
         if(outunit == 'sec'): 
@@ -226,6 +229,15 @@ class clock():
          
         string = array[1]+'-'+array[2]+'-'+array[0] 
         return string
+
+    def date_str_to_str(self,string):
+        test = check.type_test_print(string,list,'string','date_str_to_str') 
+        if(not test):
+            return test 
+        
+        array = string.split('-') 
+        string = array[1]+'-'+array[2]+'-'+array[0] 
+        return string    
         
     def date_list_to_ordate(self, array):
         test = check.type_test_print(array,list,'array','date_list_to_ordate') 
@@ -248,12 +260,12 @@ class clock():
         if(ordate == False):
             return False
         else:
-            return ordate        
-        
+            return ordate      
+          
 
-    ###################                           ###################  
-    # clock functions ############################# clock functions #
-    ###################                           ###################
+    ##################                            ################## 
+    # time functions ############################## time functions #
+    ##################                            ##################
 
         # Set-up:
         # 
@@ -279,8 +291,8 @@ class clock():
         # watch : hour : minute : second 
 
 
-        def time_str_to_list(self,string,output=list):
-            test = check.type_test_print(string,str,'string','time_str_to_list') 
+        def str_to_time_list(self,string,output=list):
+            test = check.type_test_print(string,str,'string','str_to_time_list') 
             if(not test):
                 return test
             string_split = string.split(':')
@@ -294,14 +306,9 @@ class clock():
                 array = (int(float(hour)),int(float(minute)),int(float(second)))
                 return array 
             else: 
-                print("[time_str_to_list] Error: 'output' value, "+str(output)+" not recognized")
+                print("[str_to_time_list] Error: 'output' value, "+str(output)+" not recognized")
                 return False
-
-        def time_list_to_time_str(self,array):
-            test = check.type_test_print(array,str,'string','time_str_to_list') 
-            if(not test):
-                return test            
-
+           
         def convert_clock_18hr(hour,minute,second):
             time_sec = int(second)+60*int(minute)+60*60*int(hour)
             hour = time_sec/4800
@@ -447,30 +454,186 @@ class clock():
             time_str = str(watch)+':'+str(hour)+':'+str(minute)+':'+str(second) 
             return time_str
 
+    ######################                     ######################  
+    # datetime functions ####################### datetime functions #
+    ######################                     ######################
+
+    def dtobj_check(self,testobj,name=None):
+        dtobj = datetime.datetime            
+        if(isinstance(testobj,dtobj)):
+            return True 
+        else: 
+            if(name == None):
+                print("[dtobj_check] Error: input is a "+str(type(testobj))+" and not a datetime object")
+            else:
+                print("[dtobj_check] Error: '"+str(name)+"' is a "+str(type(testobj))+" and not a datetime object")
+            return False
+
+    def str_to_datetime(self,datestr,timestr=None):
+        try:
+            datelist = self.str_to_date_list(datestr)            
+            if(timestr = None):
+                timelist = [0,0,0]
+            else:
+                timelist = self.str_to_time_list(timestr)
+        except:
+            print("[str_to_datetime] Error: input strings could not be parsed as a datetime object")
+            return False
+
+        dl0,dl1,dl2 = datelist
+        tl0,tl1,tl2 = timelist
+        dt_obj = datetime.datetime(int(dl0),int(dl1),int(dl2),int(tl0),int(tl1),int(tl2))
+        return dt_obj
+
+    def datetime_to_str(self,datetime,output='datetime'):
+
+        chk = self.dtobj_check(dt,'dt'))
+        if(not chk):
+            return False
+
+        datevals = ['DATE','Date','date']
+        timevals = ['TIME','Time','time']
+        datetimevals = ['DATETIME','Datetime','datetime']
+
+        date_str = str(datetime.date())
+        time_str = str(datetime.time())
+
+        date_str = self.date_str_to_str(date_str)
+         
+        if(output in datetimevals):
+            return (date_str,time_str)       
+        elif(output in datevals):
+            return date_str 
+        elif(output in time_str):
+            return time_str 
+        else:
+            print("[datetime_to_str] Error: 'output' not recognized")
+            return False       
+
+    def datetime_rel(self,dt1,dt2):
+
+        chk1 = self.dtobj_check(dt1,'dt1'))
+        chk2 = self.dtobj_check(dt2,'dt2')) 
+
+        if(not chk1 or not chk2):
+            return False
+           
+        if(dt1 > dt2):
+            return dt1
+        elif(dt2 > dt1):
+            return dt2 
+        else:
+            return cont
+        
+    def datetime_dif(self,dt1,dt2,output=None):
+
+        '''
+        'output' options:
+
+        'sec' or None  : returns integer, total number of seconds between datetime instances 
+        'days'         : returns integer, floor rounded number of days between datetime instances
+        'int' or 'tup' : returns tuple, tuple version of raw difference between datetime instances 
+        'raw'          : returns datetime.deltatime instance, 
+                         returns raw result of the difference between datetime instances 
+        '''
+
+        chk1 = dtobj_check(self,dt1,'dt1'))
+        chk2 = dtobj_check(self,dt2,'dt2')) 
+
+        if(not chk1 or not chk2):
+            return False            
+
+        dt_dif_raw = dt1 - dt2 
+        
+        if(output == 'sec' or output == '' or output == None):
+            out_val = dt_dif_raw.total_seconds()
+            return out_val
+        elif(output == 'days'):
+            out_val= dt_dif_raw.days
+        elif(output == 'int' or 'tup'):
+            out_val = (dt_dif_raw.days,dt_dif_raw.seconds)    
+            return out_val 
+        elif(output == 'raw'):
+            return dt_dif_raw
+        else:
+            return False
+
+    def datetime_addtime(self,dt,secs,neg=False,days=0):
+
+        chk1 = dtobj_check(self,dt1,'dt1'))
+        if(not chk1):
+            return False 
+         
+        test = check.type_test_print(secs,int,'secs','datetime_addtime') 
+        if(not test):
+            return test      
+        test = check.type_test_print(days,int,'days','datetime_addtime') 
+        if(not test):
+            return test
+
+        if(neg):
+           coef=-1
+        else:
+           coef=1  
+        
+        try:
+            delt_t = datetime.timedelta(days,secs)
+            final_dt = dt+coef*delt_t
+        except:
+            print("[datetime_addtime] Error: adding 'secs' to datetime object 'dt' failed")
+            return False 
+          
+        return final_dt
+           
+          
+         
+
+
     ##################                             ##################  
     # Main functions ############################### Main functions #
     ##################                             ##################
 
     ######################
-    # Datetime functions # : Returns current datetime data
+    # Datetime functions # : Returns datetime data
     ######################
             
-    def get_datetime(self,value='datetime',form='str'):
-          
-        time_now = datetime.datetime.now()
+    def get_datetime(self,value='datetime',form='str',indt=None):
+        
+        if(indt == None):  
+            datetime_now = datetime.datetime.now()
+        else:
+            test = check.type_test_print(indt,'arr','indt','get_datetime') 
+            if(not test):
+                return test
+            if(len(indt) < 2):
+                print("[get_datetime] Error: 'indt' should be an array with a length of 2")
+                return False
+            for i in indt:
+                test = check.type_test_print(i,str,'indt','get_datetime') 
+                if(not test):
+                    print("[get_datetime] Error: 'indt' should contain two strings; corrosponding to date and time"
+                    return test                      
+            dstr = indt[0]
+            tstr = indt[1]
+            datetime_now = str_to_datetime(self,dstr,tstr)
+        
+        date_now = datetime_now.date()  
+        time_now = datetime_now.time()   
                                                      
         datevals = ['DATE','Date','date']
         timevals = ['TIME','Time','time']
         datetimevals = ['DATETIME','Datetime','datetime']
 
 
-        time_str = str(time_now).split(' ')[1]         
+        time_str = str(datetime_now).split(' ')[1]         
         time_list = time_str.split(':')
         time_int = [int(time_list[0]),int(time_list[1]),int(round(float(time_list[2]),0))]
         time_num = [int(time_list[0]),int(time_list[1]),float(time_list[2])]
                      
         if(value in timevals):
-            if(form == 'int'):   
+            if(form == 'raw'):
+                return time_now
+            elif(form == 'int'):   
                 return time_int
             elif(form == 'num'):
                 return time_num
@@ -482,14 +645,16 @@ class clock():
                 print("[get_datetime] Error: 'form' value, "+form+" not recognized")
                 return False
 
-        date_str = str(time_now).split(' ')[0]
+        date_str = str(datetime_now).split(' ')[0]
         date_list = date_str.split('-')     
         date_str = self.date_list_to_str(date_list)    
         date_list = [date_list[1],date_list[2],date_list[0]]
         date_int = [int(date_list[0]),int(date_list[1]),int(date_list[2])]
 
         if(value in datevals):
-            if(form == 'int' or form == 'num'):                
+            if(form == 'raw'):
+                return date_now
+            elif(form == 'int' or form == 'num'):                
                 return date_int
             elif(form == 'list'):
                 return date_list
@@ -505,7 +670,9 @@ class clock():
         dt_str = (date_str,time_str)
      
         if(value in datetimevals):
-            if(form == 'int'):                     
+            if(form == 'raw'):
+                return datetime_now
+            elif(form == 'int'):                     
                 return dt_int
             elif(form == 'num'):                
                 return dt_num
@@ -559,6 +726,47 @@ class clock():
         weekday_val = datetime.date(year, month, day).weekday()
         return weekday_dict[weekday_val]
 
+
+    def get_time_til_date(self,date,now=None,format=None):
+        '''
+        Description: Returns time (seconds) between 'current' date and future 'date' value           
+        '''
+        if(isinstance(now,None) or isinstance(now,list) or isinstance(now,tuple)):                
+            current = self.get_datetime(value='datetime',form='raw',indt=now)
+        elif(isinstance(now,str)): 
+            current = self.str_to_date_list(now)
+        else:
+            print("[get_time_til_date] Error: 'now' type, "+str(type(now))+" not valid")
+        future = self.str_to_datetime(date)
+         
+        difference = self.datetime_dif(self,future,current,output=format):
+        return difference            
+         
+        
+    def get_date_after_time(self,zeit,date=None,in_form='sec',out_form='date'):
+
+        datevals = ['DATE','Date','date']
+        timevals = ['TIME','Time','time']
+        datetimevals = ['DATETIME','Datetime','datetime']
+        
+        zzobj = zzparse()        
+ 
+        if(isinstance(date,None)):
+            current = self.get_datetime(value='datetime',form='raw',indt=date) 
+        elif(isinstance(date,list) or isinstance(date,tuple)): 
+            current = self.get_datetime(value='datetime',form='raw',indt=date) 
+        elif(isinstance(date,str)):     
+            current = self.str_to_datetime(date)
+        
+        if(in_form != 'sec'):
+            zeit = zzobj.convert_time_unit(zeit,in_form)
+
+        future = self.datetime_addtime(current,zeit)
+           
+        dt_vals = self.datetime_to_str(future,out_form) 
+        return dt_vals
+         
+         
     ##################
     # Time functions #
     ##################
@@ -566,6 +774,7 @@ class clock():
     def get_clock(self, time = None, heure = None):
         
         if(time != None):
+            array_bool = check.type_test_print(time,'arr',name='time',func_name='get_clock')
             if(isinstance(time,list) or isinstance(time,tuple)):
                 hour = int(time[0])
                 minute = int(time[1])
@@ -577,6 +786,7 @@ class clock():
                 second = int(time_array[2])
             else:
                 print("[get_clock] Error: 'time' object must be string or list/tuple; not a "+str(type(time))) 
+                return False
         else:
             cdt = self.get_datetime('Time','list')
             hour = int(cdt[0])
@@ -588,6 +798,14 @@ class clock():
                 second = '0'+str(second)
             else:
                 second = str(second)
+            if(minute < 10):
+                minute = '0'+str(minute)
+            else:
+                minute = str(minute)
+            if(hour < 10):
+                hour = '0'+str(hour)
+            else:
+                hour = str(hour)
             time_str = str(hour)+':'+str(minute)+':'+str(second)           
         elif(heure == '18'):
             time_str = convert_clock_18hr(hour,minute,second)

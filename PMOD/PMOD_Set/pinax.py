@@ -1,14 +1,14 @@
-import tcheck
+#import tcheck #enable for tcheck functionality
 
 class pinax:
 
     def __init__(self, table = None, eprint = False):
-        global check 
+#        global check #enable for tcheck functionality
         self.table = table
         self.shape = (len(table),len(table[0]))
         self.eprint = oprint
 
-        check = tcheck.tcheck()
+#        check = tcheck.tcheck() #enable for tcheck functionality
 
     def func_eprint(self, msg):
         if(self.eprint):

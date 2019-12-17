@@ -54,15 +54,30 @@ class tcheck:
         tuple_inst = isinstance(var, tuple)
                   
         array_bool = list_inst or tuple_inst
+
+        var_name = self.name_return(name)
+
+        result = (array_bool,var_name)
+        return result 
              
          
-    def type_test(self,var,sort,name=None):             
-        type_bool = isinstance(var, sort) 
+    def type_test(self,var,sort,name=None):     
+        if(isinstance(sort,type)):        
+            type_bool = isinstance(var, sort)
+        elif(sort == 'num'):
+            res_bool = self.numeric_test(var,name)  
+            type_bool = res_bool[0] 
+        elif(sort == 'arr'):
+            res_bool = self.array_test(var,name)
+            type_bool = res_bool[0] 
+        else:
+            result = (False,None)
+            return result        
         var_name = self.name_return(name)    
         result = (type_bool,var_name)
         return result 
-
-    
+     
+     
     def fail_print(self,print_bool,result,correct_type='valid type.',func_name=''):
         if(print_bool):
             if(self.str_test(correct_type)):
@@ -71,14 +86,15 @@ class tcheck:
                 try:
                     correct_type = str(correct_type)
                 except:
-                    correct_type = correct_type
+                    print("[fail_print] Error: 'correct_type' must be a string or type object")
+                    return False
             success = result[0]
             name = result[1]
             if(not success and name != None):
-                print("["+func_name+"]"+" TypeError: the variable '"+name+"' is not a "+correct_type)
+                print("["+func_name+"]"+" TypeError: the variable '"+name+"' is not a(n) "+correct_type)
                 return False
             if(not success and name == None):
-                print("["+func_name+"]"+" TypeError: input variable is not a "+correct_type)
+                print("["+func_name+"]"+" TypeError: input variable is not a(n) "+correct_type)
                 return False 
             return True            
 
