@@ -1,14 +1,25 @@
 #import tcheck #enable for tcheck functionality
 
+import numpy
+import pandas 
+
 class pinax:
 
     def __init__(self, table = None, eprint = False):
 #        global check #enable for tcheck functionality
         self.table = table
-        self.shape = (len(table),len(table[0]))
-        self.eprint = oprint
+        if(table != None):
+            self.shape = (len(table),len(table[0]))
+        self.eprint = eprint
 
 #        check = tcheck.tcheck() #enable for tcheck functionality
+
+    ####################                         #################### 
+    # helper functions ########################### helper functions #
+    ####################                         #################### 
+
+        # functions which began with 'func_' are helper functions 
+        # helper functions are not meant to be called outside of the pinax class      
 
     def func_eprint(self, msg):
         if(self.eprint):
@@ -23,6 +34,23 @@ class pinax:
             return False
         else:
             return True
+
+    ####################                         #################### 
+    # action functions ########################### action functions #
+    ####################                         #################### 
+
+    # Action functions 
+    # These functions are meant to be called on list arrays
+
+    def array_to_str(array,offset='',spacing='  '):        
+        out_str = ''
+        if(not isinstance(array,list) and not isinstance(array,tuple)):
+            func_eprint('[array_to_str] Error: input must be an array')
+            return False
+        for i in array:
+            out_str = out_str+spacing+str(i)
+        out_str = offset+out_str
+        return out_str
 
     def get_shape(self, table):
         shape = False
@@ -43,8 +71,23 @@ class pinax:
                     i.append(None)
         return n
                 
+    ###################                           ################### 
+    # table functions ############################# table functions #
+    ###################                           ################### 
 
-    def trans_table(self, n, coerce_rect=False, check_table=False):
+    # Table (pinax) functions 
+    # These functions are the main function to be used on list arrays.
+
+    # Format:
+    #
+    # The format for tables takes the following basic form: [[],[]]
+    # 
+    # Functions: 
+    # 
+    # table_trans  ([[1,2,3],[4,5,6]])  =>  [[1,4],[2,5],[3,6]]  
+
+    
+    def table_trans(self, n, coerce_rect=False, check_table=False):
 
         if(check_table):
             shape = self.get_shape(n)
@@ -74,10 +117,17 @@ class pinax:
             return err           
 
     
-    def table_str_list(self,line_list,sep=' ',sort=str):
+    def table_numeric(self,line_list,sep=' ',header=False,sort=str):
         
         new_line_list = list(line_list)
         n = len(new_line_list)
+        
+        if(header):
+            new_line_list = table_trans(new_line_list)
+            new_line_list = new_line_list[1:-1]
+            head = new_line_list[0]
+            new_line_list = table_trans(new_line_list)
+        
         for i in range(n):
             new_line_list[i] = new_line_list[i].split(sep)
             new_line_list[i] = filter(None,new_line_list[i])
@@ -89,11 +139,32 @@ class pinax:
                         else:
                             new_line_list[i][j] = sort(new_line_list[i][j])
                     except:
-                        fail=True
+                        success = False 
+                        return success
         return new_line_list     
     
     
+    def table_array_str(self, list_lines, split_str = '  ', row=True):
+     
+        lines = list(list_lines)
     
+        for i in range(len(lines)):
+            lines[i] = filter(None,lines[i].split(split_str))
+
+        n = len(lines)
+        for i in range(n):
+            if(len(lines[i]) == 0):
+                del lines[i]
+                n=n-1
+            if(len(lines[i]) == 1 and lines[i][0].isspace()):
+                del lines[i]
+                n=n-1     
+           
+        if(row):
+            return lines 
+        else:
+            return self.table_trans(lines)
+         
     
     
     

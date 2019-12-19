@@ -692,6 +692,9 @@ class clock():
     # Date functions #
     ##################
 
+    # Dates are all entered in Standard American Format mm/dd/yyyy (e.g. 06/30/2055 )
+    # If no date is entered the current date is assumed
+
     def get_days_between_dates(self,early,later):
         tot = self.str_to_ordate(early)
         if(tot == False):
@@ -770,6 +773,8 @@ class clock():
     ##################
     # Time functions #
     ##################
+
+    # Time is entered as standard 24hr digital formated strings: hh-mm-ss [all integers]: (e.g. 14-30-59)
        
     def get_clock(self, time = None, heure = None):
         
