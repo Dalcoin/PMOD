@@ -1,18 +1,21 @@
-#import tcheck #enable for tcheck functionality
-
 import numpy
 import pandas 
+
+#import tcheck #enable for tcheck functionality
+#check = tcheck.check_mod()
 
 class pinax:
 
     def __init__(self, table = None, eprint = False):
 #        global check #enable for tcheck functionality
+#        check = tcheck.check_mod() #enable for tcheck functionality
+
         self.table = table
         if(table != None):
             self.shape = (len(table),len(table[0]))
         self.eprint = eprint
 
-#        check = tcheck.tcheck() #enable for tcheck functionality
+
 
     ####################                         #################### 
     # helper functions ########################### helper functions #
@@ -21,19 +24,10 @@ class pinax:
         # functions which began with 'func_' are helper functions 
         # helper functions are not meant to be called outside of the pinax class      
 
-    def func_eprint(self, msg):
+    def __func_eprint__(self, msg):
         if(self.eprint):
             print(msg)
         return False
-
-    def func_type_test(self,var,sort,err_msg):
-        test = type_test(var,sort)
-        if(not test):
-            if(self.eprint):
-                print(err_msg)
-            return False
-        else:
-            return True
 
     ####################                         #################### 
     # action functions ########################### action functions #
@@ -45,7 +39,7 @@ class pinax:
     def array_to_str(array,offset='',spacing='  '):        
         out_str = ''
         if(not isinstance(array,list) and not isinstance(array,tuple)):
-            func_eprint('[array_to_str] Error: input must be an array')
+            self.__func_eprint__('[array_to_str] Error: input must be an array')
             return False
         for i in array:
             out_str = out_str+spacing+str(i)
@@ -58,7 +52,7 @@ class pinax:
         m = len(table[-1])
         for i in table[:-1]:            
             if(len(i) != m):
-                err = self.func_eprint("[get_shape] Error: Table does not have a rectangular shape")
+                err = self.__func_eprint__("[get_shape] Error: Table does not have a rectangular shape")
                 return err
         shape = (n,m)
         return shape
@@ -92,7 +86,7 @@ class pinax:
         if(check_table):
             shape = self.get_shape(n)
             if(shape == False):
-                err = self.func_eprint("[trans_table] Error: input is not a rectangular matrix")
+                err = self.__func_eprint__("[trans_table] Error: input is not a rectangular matrix")
                 return err                
 
         nrow = len(n[0])
@@ -102,7 +96,7 @@ class pinax:
             try:
                 n = self.coerce_array_rect(n)
             except:
-                err = self.func_eprint("[trans_table] Error: input could not be coerced into a rectangular matrix")
+                err = self.__func_eprint__("[trans_table] Error: input could not be coerced into a rectangular matrix")
                 return err
         
         try:           
@@ -113,7 +107,7 @@ class pinax:
                 new_row=[]
             return new_matrix
         except: 
-            err = self.func_eprint("[trans_table] Error: input could not be cast into a translated matrix")
+            err = self.__func_eprint__("[trans_table] Error: input could not be cast into a translated matrix")
             return err           
 
     

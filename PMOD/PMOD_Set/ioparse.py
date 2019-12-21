@@ -1,4 +1,6 @@
-import tcheck 
+import tcheck
+
+check = tcheck.check_mod()
 
 class ioparse:
     '''
@@ -51,11 +53,12 @@ class ioparse:
     '''
 
     def __init__(self, file_in=None, file_out=None):
-        global check
+#        global check
+#        check = tcheck.check_mod()
+
         self.file_in = file_in 
         self.file_out = file_out
          
-        check = tcheck.tcheck()
          
         self.ptype_list = ['r','r+','rb','w','w+','wb','wb+','a','ab','a+','ab+']
         self.ptype_read = ['r','r+','rb']

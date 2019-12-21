@@ -1,105 +1,97 @@
-class tcheck:
+class check_mod:
     '''
-    tcheck:
+    check_mod:
 
-       tcheck(var=None)
+       check_mod(print_bool=True,var=None)
 
     Description: A class for aiding with error checking through type assertion functions.
                  Each function returns either a None type or Bool type. 
 
     '''
 
-    def __init__(self,var=None):
+    def __init__(self,print_bool=True,var=None):
         
         self.var = var 
         self.type = type(self.var)
+        self.print_bool = print_bool
+
+    # Acting getter/setter functions
         
-    def set_var(self,var):
+    def pass_var(self,var):
         self.var = var 
         self.type = type(var)
 
-    def str_test(self,var):
-        str_inst = isinstance(var,str)
-        return str_inst
+    def pass_print(self,write):
+        if(isinstance(write,bool)):
+            self.print_bool = write 
 
-    def name_return(self,name):
+    def get_var_type(self):
+        return self.type 
+ 
+    def get_type_test(self,inst):
+        return isinstance(self.var,inst)
 
-        if(name != None):
-            type = self.str_test(name)
-            if(type):
-                var_name = name
-            else:
-                var_name = None 
-        else:
-            var_name = None
 
-        return var_name 
+    ### Type test functions:
     
-
-    def numeric_test(self,var,name=None):
+    def numeric_test(self,var):
         int_inst = isinstance(var, int)
         float_inst = isinstance(var, float)
         long_inst = isinstance(var, long)
 
         numeric_bool = int_inst or float_inst or long_inst
-        
-        var_name = self.name_return(name)
-        
-        result = (numeric_bool,var_name)
-        return result 
+        return numeric_bool
 
                        
-    def array_test(self,var,name=None):
+    def array_test(self,var):
         list_inst = isinstance(var, list)
-        tuple_inst = isinstance(var, tuple)
-                  
+        tuple_inst = isinstance(var, tuple)                  
         array_bool = list_inst or tuple_inst
-
-        var_name = self.name_return(name)
-
-        result = (array_bool,var_name)
-        return result 
+        return array_bool 
              
-         
-    def type_test(self,var,sort,name=None):     
-        if(isinstance(sort,type)):        
-            type_bool = isinstance(var, sort)
-        elif(sort == 'num'):
-            res_bool = self.numeric_test(var,name)  
-            type_bool = res_bool[0] 
-        elif(sort == 'arr'):
-            res_bool = self.array_test(var,name)
-            type_bool = res_bool[0] 
-        else:
-            result = (False,None)
-            return result        
-        var_name = self.name_return(name)    
-        result = (type_bool,var_name)
-        return result 
-     
-     
-    def fail_print(self,print_bool,result,correct_type='valid type.',func_name=''):
-        if(print_bool):
-            if(self.str_test(correct_type)):
+                   
+    def __fail_print__(self, success, var_name=None, correct_type='valid type.', func_name=''):
+        if(self.print_bool):
+            if(isinstance(correct_type,str)):
                 correct_type = correct_type 
             else:
                 try:
                     correct_type = str(correct_type)
                 except:
-                    print("[fail_print] Error: 'correct_type' must be a string or type object")
+                    print("[__fail_print__] Error: 'correct_type' must be a string or type object")
                     return False
-            success = result[0]
-            name = result[1]
-            if(not success and name != None):
-                print("["+func_name+"]"+" TypeError: the variable '"+name+"' is not a(n) "+correct_type)
+            if(not success and var_name != None):
+                if(func_name == ''): 
+                    print("TypeError: the variable '"+var_name+"' is not a "+correct_type)
+                else:
+                    print("["+func_name+"]"+" TypeError: the variable '"+var_name+"' is not a "+correct_type)
                 return False
-            if(not success and name == None):
-                print("["+func_name+"]"+" TypeError: input variable is not a(n) "+correct_type)
+            if(not success and var_name == None):
+                if(func_name == ''):
+                    print("TypeError: input variable is not a "+correct_type)
+                else:
+                    print("["+func_name+"]"+" TypeError: input variable is not a "+correct_type)
                 return False 
-            return True            
+            return True          
+ 
+    # Main functions 
+
+    def type_test(self,var,sort):
+     
+        if(sort == None):
+            type_bool = (var == sort)
+        elif(isinstance(sort,type) or isinstance(sort,object)):        
+            type_bool = isinstance(var, sort)
+        elif(sort == 'num'):
+            type_bool = self.numeric_test(var)  
+        elif(sort == 'arr'):
+            type_bool = self.array_test(var)
+        else:
+            type_bool = False        
+        return type_bool 
 
              
-    def type_test_print(self,var,sort,name=None,func_name='',print_bool=True):
-        result = self.type_test(var,sort,name)
-        test = self.fail_print(print_bool,result,sort,func_name)
+    def type_test_print(self,var,sort,var_name=None,func_name=''):
+        type_bool = self.type_test(var,sort)
+        test = self.__fail_print__(type_bool, var_name, correct_type=str(sort), func_name=func_name)
         return test

@@ -5,18 +5,27 @@ from scipy.interpolate import splrep as bspln
 from scipy.interpolate import splev as deriv
 from scipy.interpolate import splint as integ
 
-from tcheck import tcheck as check
-
+import tcheck 
+check = tcheck.check_mod()
 
 class rund:
+    '''
+    Class for rounding numbers
+    '''
 
     def __init__(self, pyver = '27', num = None, deci = None, digi = None):
+
+#        global check
+#        check = tcheck.check_mod()
+
         self.num = num
         self.deci = deci 
         self.digi = digi 
         self.pyver = pyver
+        self.rnum = None
 
-    def pass_num(self, num, deci = None, digi = None)
+
+    def pass_vals(self, num, deci = None, digi = None)
         self.num = num 
         self.deci = deci
         self.digi = digi 
@@ -126,16 +135,70 @@ class rund:
         else:
             output = '0.000000'
         return output
+    
+    
+    def round(self, round_type , str_bool=True):
+        '''
+        round_type : 
 
+            'dec' : rounds to the decimal points stored in 'deci' 
+            'sci' : rounds according to the digits (stored in 'digi') after the decimal points in scientific notation
+            'uni' : rounds to uniform # of characters for all inputs, outputs in scientific notation               
+        '''
+        
+        if(round_type = 'dec'):
+            output = self.round_decimal(self, self.num, self.deci, str_bool = str_bool)  
+            self.rnum = output   
+        elif(round_type = 'sci'):
+            output = self.round_decimal_sci(self, self.num, self.digi, str_bool = str_bool) 
+            self.rnum = output 
+        elif(round_type = 'uni'):
+            output = self.round_uniform(num)
+            self.rnum = output
+        else:
+            print("[round_self] Error: 'round_type' not recognized"
+            return False 
+        return output       
 
 
 
 class spline:
 
     def __init__(self, x_vec = None, y_vec = None, spln_type=None):
+        global check
         self.x_vec = x_vec
         self.y_vec = y_vec 
         self.spln_type = spln_type
+
+        #Values to be passed 
+        self.spline_inst = None
+        self.bspline_inst = None 
+        self.xarray = None 
+
+        #Values to get 
+        self.spln_array = None
+        self.der_array = None
+        self.int = None     
+
+        #Values for variables
+        self.a = None 
+        self.b = None 
+        self.der = None   
+
+        check = tcheck.check_mod()
+
+
+    def pass_vals(self, x_vec, y_vec, xarray = None)
+        self.x_vec = x_vec 
+        self.y_vec = y_vec 
+        self.xarray = xarray  
+
+    def pass_xarr(self,xarray):
+        self.xarray = xarray       
+
+    def pass_int_lim(self,a,b):
+        self.a = a 
+        self.b = b  
 
 
     def spln_obj(self, x_arr, y_arr, type = 'spline', sort = 'cubic'):
@@ -170,6 +233,20 @@ class spline:
             return False
 
 
+    def pass_spline(self, x_arr, y_arr, type = 'spline', sort = 'cubic'):
+        try:
+            self.spline_inst = spln_obj(x_arr, y_arr, type = 'spline', sort = 'cubic')
+            return True
+        except:
+            return False       
+
+    def pass_bspline():
+        try:
+            self.spline_inst = spln_obj(x_arr, y_arr, type = 'bspline', sort = 'cubic')
+            return True
+        except:
+            return False
+
     def spln_val(self, spline, xvals_arr):
 
         check.type_test_print(spline,spln,'spline','spln_val') 
@@ -203,9 +280,37 @@ class spline:
             return(der_vals)
         except: 
             return False 
-         
 
-    def spline_val_scon(self, xvals_arr, x_arr, y_arr, der = 0 , type = 'cubic'):
+    ### Functions for performing 1-D splines, derivatives and integrals
+
+    def get_spline(self):
+        try: 
+            result = self.spln_val(self.spline_inst, self.xarray)
+            self.spln_array = (result, self.xarray) 
+            return result  
+        except:
+            return False
+
+    def get_der(self):
+        try: 
+            result = self.spln_der(self.bspline_inst, self.xarray, der = self.der)
+            self.der_array = (result, self.der) 
+            return result  
+        except:
+            return False
+
+    def get_int(self):
+        try: 
+            result = self.spln_integ(self, self.bspline_inst, self.a, self.b)
+            self.int_inst = (result, self.a, self.b) 
+            return result  
+        except:
+            return False
+             
+     
+    # SCOS (Self-Contained One-Shot: does not use class variables) 
+
+    def spline_val_scos(self, xvals_arr, x_arr, y_arr, der = 0 , type = 'cubic'):
 
         check.type_test_print(xvals_arr,'arr','xvals_arr','spline_val_scon')     
         check.type_test_print(der,int,'der','spline_val_scon')    
@@ -232,7 +337,7 @@ class spline:
                 return False
    
  
-    def spline_integ_scon(self, x_arr, y_arr, a, b, tol = 0.000000001, nlim = 1000):
+    def spline_integ_scos(self, x_arr, y_arr, a, b, tol = 0.000000001, nlim = 1000):
         
         check.type_test_print(x_arr,'arr','x_arr','spline_integ')
         check.type_test_print(y_arr,'arr','y_arr','spline_integ') 
@@ -251,4 +356,5 @@ class spline:
             print("[spline_integ] Error: integral evaluation error")   
 
         return(int_spline_val)
+
 
