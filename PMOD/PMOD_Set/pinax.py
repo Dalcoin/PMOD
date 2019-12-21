@@ -4,11 +4,17 @@ import pandas
 #import tcheck #enable for tcheck functionality
 #check = tcheck.check_mod()
 
-class pinax:
+'''
+Contains:
+
+    class pinax
+'''
+
+class pinaxas:
 
     def __init__(self, table = None, eprint = False):
-#        global check #enable for tcheck functionality
-#        check = tcheck.check_mod() #enable for tcheck functionality
+#        global check #alt. enable for tcheck functionality
+#        check = tcheck.check_mod() #alt. enable for tcheck functionality
 
         self.table = table
         if(table != None):

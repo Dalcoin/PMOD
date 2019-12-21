@@ -2,7 +2,7 @@ import tcheck
 
 check = tcheck.check_mod()
 
-class ioparse:
+class io_parse:
     '''
     ioparse: 
 
@@ -65,7 +65,7 @@ class ioparse:
         self.ptype_write = ['w','w+','wb','wb+','a','ab','a+','ab+']
               
     
-    def set_file(self,file_in,file_out):
+    def pass_file(self,file_in,file_out):
         self.file_in = file_in 
         self.file_out = file_out  
 
@@ -73,7 +73,7 @@ class ioparse:
     # Helper functions----------------------------------------------#
     #################################################################
 
-    def dup_check(self,array):
+    def __dup_check__(self,array):
         '''If there is a duplicate in array-like object, True is returned, else False'''    
         s = set()
         for i in array:
@@ -84,7 +84,7 @@ class ioparse:
         return False        
 
 
-    def attempt_path_print(self,filepath,path_name=None,func_name=None):       
+    def __attempt_path_print__(self,filepath,path_name=None,func_name=None):       
         try:
             if(path_name != None):
                 if(func_name != None):
@@ -99,75 +99,75 @@ class ioparse:
             return False       
 
 
-    def io_opt_test(self, ptype,io,par=False,count_offset=False):
+    def __io_opt_test__(self, ptype,io,par=False,count_offset=False):
         
         success = True
 
         if(ptype not in self.ptype_list):
             success = False
             try:            
-                print("[io_opt_test] Error: 'ptype', '"+str(ptype)+"' is not a valid 'ptype' option")
+                print("[__io_opt_test__] Error: 'ptype', '"+str(ptype)+"' is not a valid 'ptype' option")
             except:
-                print("[io_opt_test] Error: 'ptype', could not be parsed as a valid 'ptype' option string")   
+                print("[__io_opt_test__] Error: 'ptype', could not be parsed as a valid 'ptype' option string")   
 
         if(io == 'read'):
             if(ptype not in self.ptype_read):
                 success = False                            
-                print("[io_opt_test] Error: ptype, '"+str(ptype)+"' is not a valid read option")
+                print("[__io_opt_test__] Error: ptype, '"+str(ptype)+"' is not a valid read option")
         elif(io == 'write'):
             if(ptype not in self.ptype_write):   
                 success = False                         
-                print("[io_opt_test] Error: ptype, '"+str(ptype)+"' is not a valid write option")      
+                print("[__io_opt_test__] Error: ptype, '"+str(ptype)+"' is not a valid write option")      
         else:
             success = False
-            print("[io_opt_test] Error: option 'io' must be either 'read' or 'write'")
+            print("[__io_opt_test__] Error: option 'io' must be either 'read' or 'write'")
         
-        test = check.type_test_print(par,bool,'par','io_opt_test') 
+        test = check.type_test_print(par,bool,'par','__io_opt_test__') 
         if(not test):
             success = False 
              
-        test = check.type_test_print(count_offset,bool,'count_offset','io_opt_test') 
+        test = check.type_test_print(count_offset,bool,'count_offset','__io_opt_test__') 
         if(not test):
             success = False 
                   
         return success
 
 
-    def grab_list_test(self, grab_list, n, m,repeat = False, change_list = None):
+    def __grab_list_test__(self, grab_list, n, m,repeat = False, change_list = None):
 
-        test = check.type_test_print(grab_list,list,'grab_list','grab_list_test')
+        test = check.type_test_print(grab_list,list,'grab_list','__grab_list_test__')
         if(not test):
             return False
 
         if(n>0):
             for i in range(n):
-                test = check.type_test_print(grab_list[i],int,'grab_list['+str(i)+']','grab_list_test') 
+                test = check.type_test_print(grab_list[i],int,'grab_list['+str(i)+']','__grab_list_test__') 
                 if(not test):
                     return False 
 
         if(repeat):
             saut = grab_list[1:-1]
-            test = self.dup_check(saut)
+            test = self.__dup_check__(saut)
             if(test):
-                print("[grab_list_test] Error: 'saut' values must be unique")
+                print("[__grab_list_test__] Error: 'saut' values must be unique")
                 return False            
         else:
-            test = self.dup_check(grab_list)
+            test = self.__dup_check__(grab_list)
             if(test):
-                print("[grab_list_test] Error: 'grab_list' values must be unique")
+                print("[__grab_list_test__] Error: 'grab_list' values must be unique")
                 return False
 
             
         if(n>m):
-            print("[grab_list_test] Error: 'grab_list' is longer than the number of file lines")
+            print("[__grab_list_test__] Error: 'grab_list' is longer than the number of file lines")
             return False
         if(m < (max(grab_list)+1)):
-            print("[grab_list_test] Error: replacement line number greater than the max number of files lines")
+            print("[__grab_list_test__] Error: replacement line number greater than the max number of files lines")
             return False
 
         if(change_list != None):
             if(len(grab_list) != len(change_list)):  
-                print("[grab_list_test] Error: 'grab_list' and 'change_list' must have the same length")
+                print("[__grab_list_test__] Error: 'grab_list' and 'change_list' must have the same length")
                 return False
 		    
             for i in range(len(change_list)):
@@ -177,7 +177,7 @@ class ioparse:
         return True
 
 
-    def list_repeat(self,grab_list,file_lines,scrub):
+    def __list_repeat__(self,grab_list,file_lines,scrub):
         '''   
         
         variables:
@@ -200,7 +200,7 @@ class ioparse:
 
         ''' 
         if(len(grab_list)<3):
-            print("[list_repeat] Error: 'grab_list' must have at least 3 entries when 'repeat' is True")
+            print("[__list_repeat__] Error: 'grab_list' must have at least 3 entries when 'repeat' is True")
             return False        
 
         raw_lines = []          
@@ -212,16 +212,16 @@ class ioparse:
         n = grab_list[-1]+1
          
         if(bnd < 1):
-            print("[list_repeat] Error: 'bnd' (first value of 'grab_list') must be 1 or greater") 
+            print("[__list_repeat__] Error: 'bnd' (first value of 'grab_list') must be 1 or greater") 
             return False 
         if(len(saut)> lim):
-            print("[list_repeat] IndexError: there are more lines to be grabed than file_lines")
+            print("[__list_repeat__] IndexError: there are more lines to be grabed than file_lines")
             return False 
         for i in saut:
             if(i<0):
-                print("[list_repeat] Error: 'saut' (grab_list[1:-1]) value should not be negative")
+                print("[__list_repeat__] Error: 'saut' (grab_list[1:-1]) value should not be negative")
         if(lim < max(saut)+bnd*n):
-            print("[list_repeat] IndexError: grab_list evaluation exceeds length of file_lines") 
+            print("[__list_repeat__] IndexError: grab_list evaluation exceeds length of file_lines") 
             return False
 
         for i in range(n):
@@ -254,7 +254,7 @@ class ioparse:
          
         '''    
 
-        test = self.io_opt_test(ptype,'read')
+        test = self.__io_opt_test__(ptype,'read')
         if(not test):
             return False            
 
@@ -268,7 +268,7 @@ class ioparse:
             return file_lines 
         except:
             print("[flat_file_read] Error: File could not be read")
-            self.attempt_path_print(file_in)
+            self.__attempt_path_print__(file_in)
             return False             
         
 
@@ -293,7 +293,7 @@ class ioparse:
         ''' 
 
         # Testing proper variable types
-        test = self.io_opt_test(ptype,'write',par=par)
+        test = self.__io_opt_test__(ptype,'write',par=par)
         if(not test):
             return False         
 
@@ -321,7 +321,7 @@ class ioparse:
             return True 
         except: 
             print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-            self.attempt_path_print(file_out,'file_out')
+            self.__attempt_path_print__(file_out,'file_out')
             return False
 
 
@@ -353,7 +353,7 @@ class ioparse:
             return True 
         except: 
             print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-            self.attempt_path_print(file_out,'file_out')
+            self.__attempt_path_print__(file_out,'file_out')
             return False         
          
          
@@ -379,7 +379,7 @@ class ioparse:
         '''
         
         # Testing proper variable types
-        test = self.io_opt_test(ptype,'write',par=par,count_offset=count_offset)
+        test = self.__io_opt_test__(ptype,'write',par=par,count_offset=count_offset)
         if(not test):
             return False
         test = check.type_test_print(file_out,str,'file_out','flat_file_replace') 
@@ -396,7 +396,7 @@ class ioparse:
         
         # Testing the lengths of variable arrays 
         n = len(grab_list)
-        test = self.grab_list_test(grab_list, n, m,repeat = False, change_list = change_list)
+        test = self.__grab_list_test__(grab_list, n, m,repeat = False, change_list = change_list)
         if(not test):
             return False
             
@@ -416,7 +416,7 @@ class ioparse:
     def flat_file_grab(self,file_in,grab_list,scrub=False,repeat=False,count_offset=True,ptype='r'):
                 
         # Testing proper variable types
-        test = self.io_opt_test(ptype,'read',count_offset=count_offset)
+        test = self.__io_opt_test__(ptype,'read',count_offset=count_offset)
         if(not test):
             return False
         test = check.type_test_print(file_in,str,'file_in','flat_file_grab') 
@@ -440,7 +440,7 @@ class ioparse:
         m = len(file_lines)  
         
         # Testing the grab_list                
-        test = self.grab_list_test(grab_list, n, m, repeat = repeat)
+        test = self.__grab_list_test__(grab_list, n, m, repeat = repeat)
         if(not test):
             return False
         
@@ -448,7 +448,7 @@ class ioparse:
         out_lines = [] 
                                                              
         if(repeat):  
-            out_lines = self.list_repeat(grab_list,file_lines,scrub)  
+            out_lines = self.__list_repeat__(grab_list,file_lines,scrub)  
             if(out_lines == False):
                 return False
         else:                
@@ -502,5 +502,28 @@ class ioparse:
         result = self.flat_file_write(file_out,out_list,ptype=ptype) 
         return result
         
+    #################################################################
+    # IOParse internal----------------------------------------------#
+    #################################################################  
+
+    
+    def flat_file_cmd(self, string, add_list = [],):
+        
+        valid_cmds = ['read','write','append','replace','grab']
+        valid_opts = ['t','nt','gt']
+
+        cmd_inst = string 
+         
+        if(cmd_inst not in valid_cmds):
+            print("[flat_file_cmd] Error: '"+str(string)+"' is not a valid command" 
+
+        if(string == 'read'):
+            output = flat_file_read(self.file_in)
+        elif(string == 'write')  
+            if(add_list == []):
+                print("[flat_file_cmd] Warning: 'add_list' is empty")
+            output = flat_file_write(self.file_out,add_list,par=False,ptype='w+') 
+        
+            
     
 

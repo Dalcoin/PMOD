@@ -13,7 +13,7 @@ import maths
 check = tcheck.check_mod()
 rd = maths.rund()
 
-class zzparse:
+class zz_parse:
     
     def __init__(self, num=None, time=None):
         
