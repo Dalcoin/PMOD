@@ -1,7 +1,6 @@
-import numpy
-import pandas 
+ 
 
-#import tcheck #enable for tcheck functionality
+#import tcheck as check #enable for tcheck functionality
 #check = tcheck.check_mod()
 
 '''
@@ -13,15 +12,11 @@ Contains:
 class pinaxas:
 
     def __init__(self, table = None, eprint = False):
-#        global check #alt. enable for tcheck functionality
-#        check = tcheck.check_mod() #alt. enable for tcheck functionality
 
         self.table = table
         if(table != None):
             self.shape = (len(table),len(table[0]))
         self.eprint = eprint
-
-
 
     ####################                         #################### 
     # helper functions ########################### helper functions #
@@ -92,7 +87,7 @@ class pinaxas:
         if(check_table):
             shape = self.get_shape(n)
             if(shape == False):
-                err = self.__func_eprint__("[trans_table] Error: input is not a rectangular matrix")
+                err = self.__func_eprint__("[table_trans] Error: input is not a rectangular matrix")
                 return err                
 
         nrow = len(n[0])
@@ -102,7 +97,7 @@ class pinaxas:
             try:
                 n = self.coerce_array_rect(n)
             except:
-                err = self.__func_eprint__("[trans_table] Error: input could not be coerced into a rectangular matrix")
+                err = self.__func_eprint__("[table_trans] Error: input could not be coerced into a rectangular matrix")
                 return err
         
         try:           
@@ -113,7 +108,7 @@ class pinaxas:
                 new_row=[]
             return new_matrix
         except: 
-            err = self.__func_eprint__("[trans_table] Error: input could not be cast into a translated matrix")
+            err = self.__func_eprint__("[table_trans] Error: input could not be cast into a translated matrix")
             return err           
 
     
