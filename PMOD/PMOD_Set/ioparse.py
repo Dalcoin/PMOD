@@ -1,4 +1,5 @@
 import tcheck as check
+import pinax as px
 
 
 '''
@@ -218,9 +219,11 @@ def __list_repeat__(grab_list,file_lines,scrub):
                 raw_lines[j] = raw_input[i].strip("\n").strip("\r")         
     return raw_lines
 
+
 #################################################################
 # IOParse functions---------------------------------------------#
 #################################################################
+
 
 def flat_file_read(file_in,ptype='r'):
     '''
@@ -345,21 +348,18 @@ def flat_file_append(file_out,add_list,par=False):
      
 def flat_file_replace(file_out,grab_list,change_list,count_offset=True,par=True,ptype='w'):
     '''
-    flat_file_replace(file_out,grab_list,change_list,par=True,count_offset=True,ptype='w')
-
     Description: In the file 'file_out', the lines in 'grab_list' are replaced with the strings in 'change_list'
 
-    (e.g.)
-    flat_file_replace('file.in',[1,2],["This is the first line!","This is line #2!"])
+        (e.g.) flat_file_replace('file.in',[1,2],["This is the first line!","This is line #2!"])
 
     Variables:
     
-    'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
-    'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
-    'change_list': list of strings, each string is a separate line
-    'par': [*] True if endline character is to be added to each output string, else False. 
-    'count_offset': [*] True if values in grab_list corrospond to line numbers, else values corrospond to list index
-    'ptype': [*] a string in found in the ptype_write list.         
+        'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
+        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+        'change_list': list of strings, each string is a separate line
+        'par': [*] True if endline character is to be added to each output string, else False. 
+        'count_offset': [*] True if values in grab_list corrospond to line numbers, else values corrospond to list index
+        'ptype': [*] a string in found in the ptype_write list.         
 
     Output: Boolean   
     '''
@@ -489,6 +489,8 @@ def flat_file_copy(file_in,file_out,grab_list,repeat=False,group=0,ptype='w'):
     return result
     
     
-        
-    
+
+
+
+
 

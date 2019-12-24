@@ -11,7 +11,7 @@ Description: A selection of functions for aiding with error checking
     
 def numeric_test(var):
     '''
-    A numeric is defined as a value which evaluates to a number
+    A numeric is defined as a value which evaluates to a python number
     '''
     int_inst = isinstance(var, int)
     float_inst = isinstance(var, float)
@@ -60,7 +60,18 @@ def __fail_print__(success, var_name=None, correct_type="valid type", func_name=
 ### Main functions 
 
 def type_test(var,sort):
- 
+    '''
+    Inputs:
+    
+        var  : input object 
+        sort : sort is either a type or object against which 'var' is tested
+
+    Description: 
+            
+        This function returns a boolean, 'var' is tested for equivalence to 
+        'sort', 'sort' may a 'type' object.                  
+    '''
+     
     if(sort == None):
         type_bool = (var == sort)
     elif(isinstance(sort,type) or isinstance(sort,object)):        

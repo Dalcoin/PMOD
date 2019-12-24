@@ -8,7 +8,7 @@ from scipy.interpolate import splint as integ
 import tcheck as check
 
 '''
-Class for rounding numbers
+functions for rounding numbers
 
 The version of python must be passed for relevent functions:
 
@@ -146,16 +146,30 @@ def round_uniform(num, pyver = '27'):
 
 
 class spline:
+    '''
+    class spline:
 
-    def __init__(self, x_vec = None, y_vec = None, spln_type=None):
+        spline(x_array, y_array, x_array = x_points_array)
+
+        A class for performing 1-D spline and calculus operations on 
+        discreet arrays of points. 
+
+        A note on usage: this class is only meant to be used as a quick
+                         means to estimate splined values or the derivatives
+                         and integrals of two sets of data with the relationship,
+                         f(X) = Y. This module is not meant to be used when 
+                         accuracy is important, nor is it meant to be scalable and 
+                         used for a large number of operations. 
+    '''
+
+    def __init__(self, x_vec = None, y_vec = None, xarray = None):
         self.x_vec = x_vec
         self.y_vec = y_vec 
-        self.spln_type = spln_type
 
         #Values to be passed 
         self.spline_inst = None
         self.bspline_inst = None 
-        self.xarray = None 
+        self.xarray = xarray 
         
         #Values to get 
         self.spln_array = None
@@ -333,7 +347,7 @@ class spline:
         if(der == 0):    
             try:
                 spline = spln(x_arr,y_arr,kind=type)
-                spline_vals = spline(xnew_arr)
+                spline_vals = spline(xvals_arr)
                 return(spline_vals)
             except:
                 print("[spline_val_scon] Error: spline function(s) failed")
@@ -341,7 +355,7 @@ class spline:
         if(der > 0):
             try:
                 bspline_obj = bspln(x,y)
-                der_spline_vals = deriv(xnew_arr,bspline_obj,der)
+                der_spline_vals = deriv(xvals_arr,bspline_obj,der)
                 return(der_spline_vals)
             except:
                 print("[spline_val_scon] Error: bspline function(s) failed")

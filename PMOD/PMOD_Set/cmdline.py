@@ -144,7 +144,7 @@ class path_parse:
 
                                     Initalizing function, sets path variables
 
-        cmd_input_parse(self,string) : 
+        __cmd_input_parse__(self,string) : 
                           
                                     Parses input strings for the 'cmd' function, 
                                     converts input string to tuple of length 3.
@@ -195,10 +195,10 @@ class path_parse:
                                    'fragment' in its name. The list of matching file names 
                                    is returned in string format. 
                                      
-        fancy_print(self,col=False) : Prints the current (path) directory pathway in a
+        __fancy_print__(self,col=False) : Prints the current (path) directory pathway in a
                                       stylized format. 
 	    
-        fancy_print_list(self,array) :  Prints a list, 'array', in a stylized format.
+        __fancy_print_list__(self,array) :  Prints a list, 'array', in a stylized format.
 	    
         """
 
@@ -263,11 +263,11 @@ class path_parse:
          
         
          
-    def cmd_input_parse(self,string):
+    def __cmd_input_parse__(self,string):
         '''
-        -------------------
-        | cmd_input_parse |
-        -------------------
+        -----------------------
+        | __cmd_input_parse__ |
+        -----------------------
         
         Inputs:
 
@@ -279,7 +279,7 @@ class path_parse:
         
         '''
     
-        def combine_list_str(array,span,ignore=None,space=False):
+        def combine_list_str(array, span, ignore=None, space=False):
             
             out_string = ''
             count = 0
@@ -763,7 +763,7 @@ class path_parse:
 
         
         
-    def fancy_print(self,col=False):
+    def __fancy_print__(self,col=False):
         
         if(col):
             blue = '\033[38;5;4m'
@@ -798,10 +798,10 @@ class path_parse:
             return False
 
     
-    def run_fancy_print(self):
+    def __run_fancy_print__(self):
         if(self.path_print):
             try:
-                ecrive = self.fancy_print(color)         
+                ecrive = __self.fancy_print__(color)         
                 return True
             except:
                 return False
@@ -809,7 +809,7 @@ class path_parse:
             return True   
         
             
-    def fancy_print_list(self,array):
+    def __fancy_print_list__(self,array):
 
         nl = '\n'
         atsp = '   '
@@ -870,7 +870,7 @@ class path_parse:
         def print_func(test):
             success = True
             if(test):
-                ptest = self.run_fancy_print()
+                ptest = self.__run_fancy_print__()
                 if(not ptest):
                     success = False 
                     print("Error: An unknown error was raised while attempting to print...")
@@ -937,9 +937,9 @@ class path_parse:
             value = new_file_list
 
             if(self.path_print):
-                ptest_1 = self.fancy_print()                
+                ptest_1 = self.__fancy_print__()                
                 print("Pathway string(s): " )
-                ptest_2 = self.fancy_print_list(new_file_list)
+                ptest_2 = self.__fancy_print_list__(new_file_list)
                 if(not ptest_1 and not ptest_2):
                     success = False
                     print("Error: An unknown error was raised while attempting to print...")
@@ -1211,7 +1211,7 @@ class path_parse:
                         print("No matches found for the string, '"+i+"' :")
                     else:
                         print("The following matches were found for the string, '"+i+"' :")
-                        self.fancy_print_list(grep_dict[i])
+                        self.__fancy_print_list__(grep_dict[i])
                         
             value = grep_dict
             result = (success,value)                       
@@ -1232,7 +1232,7 @@ class path_parse:
             if(dest_str == ''):
                 if(self.path_print):
                     print('Below is a list of valid input commands:\n')
-                    self.fancy_print_list(cd_list)
+                    self.__fancy_print_list__(cd_list)
                     value = cd_list
                     help_text = "Place command name after 'help' for more info on that command"
 
@@ -1260,7 +1260,7 @@ class path_parse:
         ##################
 
         fail_tup = (False,None)
-        cmd_tuple = self.cmd_input_parse(cmd_string)   
+        cmd_tuple = self.__cmd_input_parse__(cmd_string)   
         cmd_inst = cmd_tuple[0]        
 
         result = fail_tup     

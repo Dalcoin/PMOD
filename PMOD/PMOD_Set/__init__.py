@@ -1,23 +1,19 @@
-import cmdline as cmv
-import ioparse as io 
-import maths as mth 
-import pinax as px 
-import tcheck as check 
-import zzparse as zz
+import cmdline # as cmv
+import ioparse # as iop 
+import mathops # as mops 
+import pinax   # as pnx 
+import tcheck  # as check 
+import zkparse # as zkp
 
 '''
 Class list:
 
 cmdline : path_parse
 
-ioparse : io_parse
-
-maths   : rund
+mathops   : rund
           spline
 
 pinax   : pinaxas
-
-tcheck  : check_mod
 
 zzparse : zz_parse
           clock
