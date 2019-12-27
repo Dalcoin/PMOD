@@ -66,11 +66,11 @@ def array_to_string(array, spc = '  ', print_bool = True):
             out_str = out_str+str(spc)+str(i)
         except:
             if(print_bool):
-                print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string"
+                print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string")
             return False        
              
 
-def array_2d_to_string(array, spc = '  ')
+def array_2d_to_string(array, spc = '  '):
     ''' 
     Input: 
         array   : A 2-D Python array (list or tuple) object  
@@ -90,9 +90,12 @@ def array_2d_to_string(array, spc = '  ')
         return False 
 
 
-def array_select(array, n, list_form = False):
+def array_ln_select(array, n, inverse_filter = False,list_form = True):
     try:
-        out_object = itertools.ifilterfalse(lambda x: array.index(x)%n, array)
+        if(inverse_filter):
+            out_object = itertools.ifilter(lambda x: array.index(x)%n, array)
+        else:
+            out_object = itertools.ifilterfalse(lambda x: array.index(x)%n, array)
         if(list_form):
             out_list = []
             for i in out_object:
@@ -103,6 +106,24 @@ def array_select(array, n, list_form = False):
     except:
         return False
 
+
+def array_flatten(array, out_type = list):
+    try:
+        out_list = [item for subarray in array for item in subarray]
+    except:
+        return False 
+    if(out_type == list):
+        return out_list 
+    elif(out_type == tuple):
+        return tuple(out_list)
+    elif(out_type == set):
+        return set(out_list)
+    else:
+        try:
+            print("[array_flatten] Error: invalid 'out_type' : "+str(out_type)) 
+        except:
+            print("[array_flatten] Error: invalid 'out_type'")
+        return False 
 
 # string functions 
 

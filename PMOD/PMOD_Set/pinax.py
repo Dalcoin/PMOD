@@ -64,11 +64,11 @@ def array_to_string(array, spc = '  ', print_bool = True):
             out_str = out_str+str(spc)+str(i)
         except:
             if(print_bool):
-                print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string"
+                print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string")
             return False
 
 
-def array_of_arrays_to_string(array, spc = '  ')
+def array_of_arrays_to_string(array, spc = '  '):
     ''' 
     Input: 
         array   : A Python array (list or tuple) object  
