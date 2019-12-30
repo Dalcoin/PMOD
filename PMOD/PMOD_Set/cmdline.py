@@ -801,7 +801,7 @@ class path_parse:
     def __run_fancy_print__(self):
         if(self.path_print):
             try:
-                ecrive = __self.fancy_print__(color)         
+                ecrive = self.__fancy_print__(color)         
                 return True
             except:
                 return False
@@ -1025,17 +1025,17 @@ class path_parse:
             all_list = ('ALL','all','All')      
              
             # Format 
-            mv_file_list
-            for i in file_inst: 
+            mv_file_list = [] 
+            for i in file_list: 
                 if(sort == 'File'):
-                    if('.' not in file_inst):
-                        print('Error: '+file_inst+' is missing type extension')
+                    if('.' not in i):
+                        print('Error: '+str(i)+' is missing type extension')
                         success = False
                     else:
                         mv_file_list.append(i)
                 elif(sort == 'Directory' or sort == 'Folder'):
-                    if('.' in file_inst):
-                        print('Error: '+file_inst+' contains file extension; not a valid directory name')
+                    if('.' in i):
+                        print('Error: '+str(i)+' contains file extension; not a valid directory name')
                         success = False
                     else:
                         mv_file_list.append(i)

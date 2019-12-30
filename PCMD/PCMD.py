@@ -1025,7 +1025,7 @@ class path_parse:
             all_list = ('ALL','all','All')      
              
             # Format 
-            mv_file_list
+            mv_file_list = []
             for i in file_inst: 
                 if(sort == 'File'):
                     if('.' not in file_inst):
