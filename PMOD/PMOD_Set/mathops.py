@@ -182,7 +182,7 @@ class spline:
         self.der = None   
 
 
-    def pass_vals(self, x_vec, y_vec, xarray = None)
+    def pass_vals(self, x_vec, y_vec, xarray = None):
         self.x_vec = x_vec 
         self.y_vec = y_vec 
         self.xarray = xarray  
@@ -210,28 +210,28 @@ class spline:
         if(not test):
             return test 
 
-        if(type = 'spline'):
+        if(type == 'spline'):
 
             try: 
                 spline = spln(x_arr,y_arr,kind=sort)
                 return spline
             except: 
                 spline = False 
-                print("[spln_obj] Error: spline object generation failed" 
+                print("[spln_obj] Error: spline object generation failed") 
                 return spline
 
-        elif(type = 'bspline'):
+        elif(type == 'bspline'):
 
             try: 
                 bspline = bspln(x,y)
                 return bspline
             except: 
                 bspline = False 
-                print("[spln_obj] Error: bspline object generation failed" 
+                print("[spln_obj] Error: bspline object generation failed") 
                 return bspline
 
         else: 
-            print("[spln_obj] Error: 'type' not recognized"
+            print("[spln_obj] Error: 'type' not recognized")
             return False
 
 

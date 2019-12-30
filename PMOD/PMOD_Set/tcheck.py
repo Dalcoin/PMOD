@@ -9,26 +9,46 @@ Description: A selection of functions for aiding with error checking
 
 ### Helper functions:
     
-def numeric_test(var):
+def numeric_test(obj):
     '''
     A numeric is defined as a value which evaluates to a python number
     '''
-    int_inst = isinstance(var, int)
-    float_inst = isinstance(var, float)
-    long_inst = isinstance(var, long)
+    int_inst = isinstance(obj, int)
+    float_inst = isinstance(obj, float)
+    long_inst = isinstance(obj, long)
 
     numeric_bool = int_inst or float_inst or long_inst
     return numeric_bool
 
                    
-def array_test(var):
+def array_test(obj):
     '''
-    An array is defined as a iterable object which contains discreetly ordered values: lists and tuples
+    An array is defined as a iterable and numerically indexed object: lists, tuples and sets
     '''
-    list_inst = isinstance(var, list)
-    tuple_inst = isinstance(var, tuple)                  
-    array_bool = list_inst or tuple_inst
+    list_inst = isinstance(obj, list)
+    tuple_inst = isinstance(obj, tuple)                  
+    array_bool = list_inst or tuple_inst 
     return array_bool 
+
+
+def flat_array_test(obj): 
+    '''
+    tests an array for flatness (each object within the array has a dimensionality of zero)
+    ''' 
+    if(array_test(obj)):
+        for i in obj:
+            try:
+                n = len(i)
+                if(isinstance(i,str)):
+                    continue
+                else:
+                    return False
+            except:
+                continue
+        return True
+    else:
+        return False
+
          
                
 def __fail_print__(success, var_name=None, correct_type="valid type", func_name='', print_bool = True):

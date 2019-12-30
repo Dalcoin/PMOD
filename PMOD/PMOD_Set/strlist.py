@@ -5,12 +5,17 @@ import tcheck as check
 A python module which deals with list, lists of strings and strings
 '''
 
-# array functions 
+### array functions
+
+
+# checking and modifying arrays by content:  
+
+
 
 def array_duplicate_check(array):
     '''
     Checks for duplicates in an array-like object 
-
+     
         If duplicates are found, True is returned 
         Else False is returned
     '''    
@@ -48,10 +53,47 @@ def array_duplicate_return(array, inverse = False):
         output = s-set(list_dup)
         return list(output)        
     else:           
-        return list_dup          
+        return list_dup 
+
+
+def array_filter_yield(array, match='', reverse = False):
+    if(reverse):
+        for i in array:
+            if(i != match):
+                continue
+            else:
+                yield i
+    else:
+        for i in array:
+            if(i == match):
+                continue
+            else:
+                yield i
+
+            
+def array_filter(array, match, reverse = False):
+    return [i for i in array_filter_yield(array, match, reverse)]
+
+
+def array_filter_spaces(array, filter_none=False):
+    def space_filter(array):
+        for i in array:     
+            if(str(i).isspace() or i == ''):
+                continue
+            else:
+                yield i
+    if(filter_none):
+        return filter(None,[i for i in space_filter(array)])
+    else:
+        return [i for i in space_filter(array)]
+            
+    
+
+
+# array to string         
        
 
-def array_to_string(array, spc = '  ', print_bool = True):
+def array_to_string(array, spc = ' ', print_bool = True):
     ''' 
     Input: 
         array   : A 1-D Python array (list or tuple) object  
@@ -65,12 +107,12 @@ def array_to_string(array, spc = '  ', print_bool = True):
         try:                            
             out_str = out_str+str(spc)+str(i)
         except:
-            if(print_bool):
+            if(print_bool and isinstance(spc,str)):
                 print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string")
             return False        
              
 
-def array_2d_to_string(array, spc = '  '):
+def array_matrix_to_array_str(array, spc = '  '):
     ''' 
     Input: 
         array   : A 2-D Python array (list or tuple) object  
@@ -90,7 +132,9 @@ def array_2d_to_string(array, spc = '  '):
         return False 
 
 
-def array_ln_select(array, n, inverse_filter = False,list_form = True):
+# modifying array by index 
+
+def array_nth_index(array, n, inverse_filter = False,list_form = True):
     try:
         if(inverse_filter):
             out_object = itertools.ifilter(lambda x: array.index(x)%n, array)
@@ -125,7 +169,8 @@ def array_flatten(array, out_type = list):
             print("[array_flatten] Error: invalid 'out_type'")
         return False 
 
-# string functions 
+
+### string functions 
 
 def str_to_list(string, split_val = ' ', cut = None):
     try:

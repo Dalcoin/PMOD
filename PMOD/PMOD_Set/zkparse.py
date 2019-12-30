@@ -208,7 +208,7 @@ def time_parse_sec(zeit, nbool=False):
         return aeon_counter(zeit,nbool)
     
 
-def time_parse(zeit, inunit, num_bool = False)
+def time_parse(zeit, inunit, num_bool = False):
     '''
     Inputs: 
 
@@ -511,7 +511,7 @@ class clock():
     def __str_to_datetime__(self,datestr,timestr=None):
         try:
             datelist = self.__str_to_date_list__(datestr)            
-            if(timestr = None):
+            if(timestr == None):
                 timelist = [0,0,0]
             else:
                 timelist = self.__str_to_time_list__(timestr)
@@ -526,7 +526,7 @@ class clock():
 
     def __datetime_to_str__(self,datetime,output='datetime'):
 
-        chk = self.__dtobj_check__(dt,'dt'))
+        chk = self.__dtobj_check__(dt,'dt')
         if(not chk):
             return False
 
@@ -551,8 +551,8 @@ class clock():
 
     def __datetime_rel__(self,dt1,dt2):
 
-        chk1 = self.__dtobj_check__(dt1,'dt1'))
-        chk2 = self.__dtobj_check__(dt2,'dt2')) 
+        chk1 = self.__dtobj_check__(dt1,'dt1')
+        chk2 = self.__dtobj_check__(dt2,'dt2') 
 
         if(not chk1 or not chk2):
             return False
@@ -576,8 +576,8 @@ class clock():
                          returns raw result of the difference between datetime instances 
         '''
 
-        chk1 = __dtobj_check__(self,dt1,'dt1'))
-        chk2 = __dtobj_check__(self,dt2,'dt2')) 
+        chk1 = __dtobj_check__(self,dt1,'dt1')
+        chk2 = __dtobj_check__(self,dt2,'dt2') 
 
         if(not chk1 or not chk2):
             return False            
@@ -599,7 +599,7 @@ class clock():
 
     def __datetime_addtime__(self,dt,secs,neg=False,days=0):
 
-        chk1 = __dtobj_check__(self,dt,'dt'))
+        chk1 = __dtobj_check__(self,dt,'dt')
         if(not chk1):
             return False 
          
@@ -647,7 +647,7 @@ class clock():
             for i in indt:
                 test = check.type_test_print(i,str,'indt','get_datetime') 
                 if(not test):
-                    print("[get_datetime] Error: 'indt' should contain two strings; corrosponding to date and time"
+                    print("[get_datetime] Error: 'indt' should contain two strings; corrosponding to date and time")
                     return test                      
             dstr = indt[0]
             tstr = indt[1]
@@ -778,7 +778,7 @@ class clock():
             print("[get_time_til_date] Error: 'now' type, "+str(type(now))+" not valid")
         future = self.__str_to_datetime__(date)
          
-        difference = self.__datetime_dif__(future,current,output=format):
+        difference = self.__datetime_dif__(future,current,output=format)
         return difference            
          
         
