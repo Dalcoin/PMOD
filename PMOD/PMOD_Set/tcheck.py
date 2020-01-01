@@ -94,12 +94,12 @@ def type_test(var,sort):
      
     if(sort == None):
         type_bool = (var == sort)
-    elif(isinstance(sort,type) or isinstance(sort,object)):        
-        type_bool = isinstance(var, sort)
     elif(sort == 'num'):
         type_bool = numeric_test(var)  
     elif(sort == 'arr'):
         type_bool = array_test(var)
+    elif(isinstance(sort,type) or isinstance(sort,object)):        
+        type_bool = isinstance(var, sort)
     else:
         type_bool = False        
     return type_bool 

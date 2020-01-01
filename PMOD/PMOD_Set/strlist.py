@@ -1,8 +1,11 @@
 import itertools
+
 import tcheck as check
 
 '''
-A python module which deals with list, lists of strings and strings
+A python module which faciliates working with list, lists of strings and strings
+
+
 '''
 
 ### array functions
@@ -56,7 +59,7 @@ def array_duplicate_return(array, inverse = False):
         return list_dup 
 
 
-def array_filter_yield(array, match='', reverse = False):
+def array_filter_yield(array, match, reverse = False):
     if(reverse):
         for i in array:
             if(i != match):
@@ -75,7 +78,7 @@ def array_filter(array, match, reverse = False):
     return [i for i in array_filter_yield(array, match, reverse)]
 
 
-def array_filter_spaces(array, filter_none=False):
+def array_filter_spaces(array, filter_none = True):
     def space_filter(array):
         for i in array:     
             if(str(i).isspace() or i == ''):
@@ -107,7 +110,7 @@ def array_to_string(array, spc = ' ', print_bool = True):
         try:                            
             out_str = out_str+str(spc)+str(i)
         except:
-            if(print_bool and isinstance(spc,str)):
+            if(print_bool):
                 print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string")
             return False        
              
@@ -151,9 +154,12 @@ def array_nth_index(array, n, inverse_filter = False,list_form = True):
         return False
 
 
-def array_flatten(array, out_type = list):
+def array_flatten(array, safety = True, out_type = list):
     try:
-        out_list = [item for subarray in array for item in subarray]
+        if(safety):
+            out_list = [item for subarray in array for item in subarray if check.array_test(item)]    
+        else:
+            out_list = [item for subarray in array for item in subarray]
     except:
         return False 
     if(out_type == list):
@@ -172,11 +178,29 @@ def array_flatten(array, out_type = list):
 
 ### string functions 
 
-def str_to_list(string, split_val = ' ', cut = None):
+# string content
+
+def str_space_check(string, none_bool = False):
+    if(none_bool): 
+        checker = string.isspace() or string == '' or string == None
+    else:
+        checker = string.isspace() or string == ''
+    return checker
+
+#
+
+def str_to_list(string, split_val = ' ', filt = False, cut = None):
     try:
-        return filter(cut,string.split(split_val))
+        if(filt):
+            return filter(cut,string.split(split_val))
+        else:
+            return string.split(split_val)
     except:
+        print("[str_to_list] Error: input could not be split")
         return False
+
+
+
 
 
 

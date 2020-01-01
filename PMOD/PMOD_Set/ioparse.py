@@ -399,7 +399,7 @@ def flat_file_replace(file_out,grab_list,change_list,count_offset=True,par=True,
     return result
     
     
-def flat_file_grab(file_in,grab_list,scrub=False,repeat=False,count_offset=True,ptype='r'):
+def flat_file_grab(file_in, grab_list = [], scrub=False, repeat=False, count_offset=True, ptype='r'):
             
     # Testing proper variable types
     test = __io_opt_test__(ptype,'read',count_offset=count_offset)
