@@ -5,6 +5,27 @@ import tcheck as check
 '''
 A python module which faciliates working with list, lists of strings and strings
 
+function list:
+
+    array functions--------------------------- 
+
+    array_duplicate_check(array)
+    array_duplicate_return(array, inverse = False)
+
+    array_filter_yield(array, match, reverse = False)
+    array_filter(array, match, reverse = False)
+    array_filter_spaces(array, filter_none = True)
+
+    array_to_str(array, spc = ' ', print_bool = True)
+    array_matrix_to_array_str(array, spc = '  ')
+
+    array_nth_index(array, n, inverse_filter = False,list_form = True)
+    array_flatten(array, safety = True, out_type = list)
+
+    string functions--------------------------- 
+
+    str_space_check(string, none_bool = False)
+    str_to_list(string, split_val = ' ', filt = False, cut = None)
 
 '''
 
@@ -17,10 +38,9 @@ A python module which faciliates working with list, lists of strings and strings
 
 def array_duplicate_check(array):
     '''
-    Checks for duplicates in an array-like object 
-     
-        If duplicates are found, True is returned 
-        Else False is returned
+    Description: Checks for duplicates in an array-like object 
+                 If duplicates are found, True is returned 
+                 Else False is returned
     '''    
     test = check.type_test_print(array, 'arr', var_name='array', func_name='array_duplicate_check')  
     if(not test):
@@ -36,10 +56,9 @@ def array_duplicate_check(array):
 
 def array_duplicate_return(array, inverse = False): 
     '''
-    Checks for duplicates in an array-like object 
-
-        If duplicates are found, a list of the duplicate values is returned 
-        Else an empty list is returned
+    Description: Checks for duplicates in an array-like object 
+                 If duplicates are found, a list of the duplicate values is returned 
+                 Else an empty list is returned
     '''   
     test = check.type_test_print(array, 'arr', var_name='array', func_name='array_duplicate_check')  
     if(not test):
@@ -59,26 +78,47 @@ def array_duplicate_return(array, inverse = False):
         return list_dup 
 
 
-def array_filter_yield(array, match, reverse = False):
-    if(reverse):
+def array_filter_yield(array, match, inverse = False):
+    '''
+    Description: yields filtered array, match may either be an individual object or an array
+    '''
+    if(inverse):
         for i in array:
-            if(i != match):
-                continue
+            if(check.test_array(match)):
+                if(i not in match):
+                    continue
+                else:
+                    yield i
             else:
-                yield i
+                if(i != match):
+                    continue
+                else:
+                    yield i
     else:
         for i in array:
-            if(i == match):
-                continue
+            if(check.test_array(match)):
+                if(i in match):
+                    continue
+                else:
+                    yield i
             else:
-                yield i
+                if(i == match):
+                    continue
+                else:
+                    yield i
 
             
 def array_filter(array, match, reverse = False):
+    '''
+    Description: returns filtered array, match may either be an individual object or an array
+    '''
     return [i for i in array_filter_yield(array, match, reverse)]
 
 
 def array_filter_spaces(array, filter_none = True):
+    '''
+    Description: Returns non-space string elements of array 
+    ''' 
     def space_filter(array):
         for i in array:     
             if(str(i).isspace() or i == ''):
@@ -96,7 +136,7 @@ def array_filter_spaces(array, filter_none = True):
 # array to string         
        
 
-def array_to_string(array, spc = ' ', print_bool = True):
+def array_to_str(array, spc = ' ', print_bool = True):
     ''' 
     Input: 
         array   : A 1-D Python array (list or tuple) object  
@@ -111,8 +151,9 @@ def array_to_string(array, spc = ' ', print_bool = True):
             out_str = out_str+str(spc)+str(i)
         except:
             if(print_bool):
-                print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string")
+                print("[array_to_str] TypeError: element of 'array' or 'spc' not castable to a string")
             return False        
+    return out_str
              
 
 def array_matrix_to_array_str(array, spc = '  '):
@@ -129,7 +170,7 @@ def array_matrix_to_array_str(array, spc = '  '):
     out_array = []
     try: 
         for i in range(n):
-            out_array.append(array_to_string(array[i],spc))
+            out_array.append(array_to_str(array[i],spc))
         return out_array
     except:
         return False 
@@ -137,7 +178,12 @@ def array_matrix_to_array_str(array, spc = '  '):
 
 # modifying array by index 
 
-def array_nth_index(array, n, inverse_filter = False,list_form = True):
+def array_nth_index(array, n, inverse_filter = False, list_form = True):
+    '''
+    Description: Takes input array and outputs list corrosponding 
+                 to every nth value of input array
+    '''
+
     try:
         if(inverse_filter):
             out_object = itertools.ifilter(lambda x: array.index(x)%n, array)
@@ -155,12 +201,23 @@ def array_nth_index(array, n, inverse_filter = False,list_form = True):
 
 
 def array_flatten(array, safety = True, out_type = list):
-    try:
-        if(safety):
-            out_list = [item for subarray in array for item in subarray if check.array_test(item)]    
-        else:
-            out_list = [item for subarray in array for item in subarray]
-    except:
+    '''
+    Description: Attempts to flatten (reduce dimension by one) input array.
+
+    Inputs:
+
+        safety   : Boolean, if True then all arrays are compatable, else array must be 2D
+        out_type : Type, type of output, must be an iterable 
+    '''
+    try:             
+        if(safety):  
+            new_array = str_filter(str(array), [' ','[',']'])
+            string_rep = array_to_str(new_array, spc='')
+            exec('out_str = '+'['+string_rep+']')
+            out_list = out_str              
+        else:         
+            out_list = [i for j in array for i in j]
+    except:          
         return False 
     if(out_type == list):
         return out_list 
@@ -180,18 +237,28 @@ def array_flatten(array, safety = True, out_type = list):
 
 # string content
 
-def str_space_check(string, none_bool = False):
-    if(none_bool): 
-        checker = string.isspace() or string == '' or string == None
-    else:
-        checker = string.isspace() or string == ''
-    return checker
-
-#
-
-def str_to_list(string, split_val = ' ', filt = False, cut = None):
+def str_space_check(string, none_bool = False, print_bool = True):
+    ''' 
+    Description: checks if a string is all empty spaces (endline characters included)
+    '''
     try:
-        if(filt):
+        if(none_bool): 
+            checker = string.isspace() or string == '' or string == None
+        else:
+            checker = string.isspace() or string == ''
+        return checker
+    except:
+        if(print_bool):
+            print("[str_space_check] Error: internal error, input may not be a string")      
+        
+         
+      
+def str_to_list(string, split_val = ' ', filtre = False, cut = None, print_bool = True):
+    '''
+    Description: parses input string into a list, default demarkation is by single spacing
+    '''
+    try:
+        if(filtre):
             return filter(cut,string.split(split_val))
         else:
             return string.split(split_val)
@@ -200,10 +267,61 @@ def str_to_list(string, split_val = ' ', filt = False, cut = None):
         return False
 
 
+def str_filter(string, filtre, inverse = False, print_bool = True):
+    
+    if(not isinstance(string,str):
+        try:
+            string = str(string)
+        except:
+            if(print_bool):
+                print("[str_filter] Error: 'string' input could not be cast as a string object")
+
+    out_list = []
+    if(inverse):
+        for i in string:
+            if(check.array_test(filtre)):
+                if(i in filtre):
+                    out_list.append(i)
+            else:
+                if(i == filtre):
+                    out_list.append(i)       
+    else:
+        for i in string:
+            if(check.array_test(filtre)):
+                if(i not in filtre):
+                    out_list.append(i)
+            else:
+                if(i != filtre):
+                    out_list.append(i)
+    
+    out_str = array_to_str(out_list, spc = '', print_bool = print_bool)
+    return out_str
 
 
+def str_space_clean(string):
+    '''
+    '''
+    array = str_to_list(string, filtre = True)
+    out_string = array_to_str(array, spc = '')
+    return out_string
 
+      
+def str_set_spacing(string, space = ' ', print_bool = True):
+    ''' 
+    Description: spaces non-space substrings by a set amount
 
+    (e.g.) 'Hey,        Hello    World' becomes 'Hey, Hello World'   
+    '''       
+    try:
+        array = str_to_list(string, filtre = True)
+        output = array_to_str(array, spc = space, print_bool = print_bool)   
+        return output  
+    except:
+        if(print_bool):
+            print("[str_to_list] Error: input could not be split")
+        return False           
+              
+                           
 
 
 
