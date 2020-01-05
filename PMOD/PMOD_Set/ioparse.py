@@ -484,12 +484,17 @@ def flat_file_copy(file_in,file_out,grab_list,repeat=False,group=0,ptype='w'):
             out_list.append(lines[i])
             if(i>0 and (i+1)%group == 0):
                 out_list.append("\n")
-
+     
     result = flat_file_write(file_out,out_list,ptype=ptype) 
     return result
-    
-    
-
+     
+     
+def flat_file_intable(file_in, header = False):
+      
+    table_lines = flat_file_grab(file_in, scrub = True)
+    table_num = px.table_str_to_numeric(table_lines, header = header)
+    return table_num
+     
 
 
 

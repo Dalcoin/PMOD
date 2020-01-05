@@ -1,5 +1,7 @@
 import re 
 
+import strlist as strl 
+
 #import tcheck as check #enable for tcheck functionality 
 
 global re_space
@@ -91,7 +93,7 @@ def array_of_arrays_to_string(array, spc = '  '):
 ###################                           ################### 
 
 # Table (pinax) functions 
-# These functions are the main function to be used on list arrays.
+# These functions are the main function to be used on matrix arrays.
 
 # Format:
 #
@@ -132,31 +134,48 @@ def table_trans(n, coerce_rect=False, check_table=False):
         return err           
 
 
-def table_numeric(line_list,sep=' ',header=False,sort=str):
+def table_str_to_numeric(line_list, sep=' ', header=False, columns = True, sort = float):
     
     new_line_list = list(line_list)
     n = len(new_line_list)
     
     if(header):
-        new_line_list = table_trans(new_line_list)
-        new_line_list = new_line_list[1:-1]
         head = new_line_list[0]
-        new_line_list = table_trans(new_line_list)
+        new_line_list = new_line_list[1:-1]
+        n = len(new_line_list)
+        try:
+            head = strl.str_to_list(head, split_val = sep, filtre = True)
+            nhead = len(head)
+        except:
+            print("[table_str_to_numeric] Error: header could not be parsed]")
+            return False
     
     for i in range(n):
-        new_line_list[i] = new_line_list[i].split(sep)
-        new_line_list[i] = filter(None,new_line_list[i])
-        if(sort != str):
-            for j in range(len(new_line_list[i])):
-                try:
-                    if(sort == int or sort == long):
-                        new_line_list[i][j] = sort(float(new_line_list[i][j]))
-                    else:
-                        new_line_list[i][j] = sort(new_line_list[i][j])
-                except:
-                    success = False 
-                    return success
-    return new_line_list     
+        new_line_list[i] = strl.str_to_list(new_line_list[i], split_val = sep, filtre = True)
+        for j in range(len(new_line_list[i])):
+            try:
+                if(sort == int or sort == long):
+                    new_line_list[i][j] = sort(float(new_line_list[i][j]))
+                if(sort == float):
+                    new_line_list[i][j] = sort(new_line_list[i][j])
+                else:
+                    return False
+            except:
+                return False
+    if(header):
+        try:
+            new_line_list.insert(0,head)
+        except:
+            pass  
+        if(columns):
+            return table_trans(new_line_list)
+        else:
+            return new_line_list
+    else:
+        if(columns):
+            return table_trans(new_line_list)
+        else:
+            return new_line_list
 
 
 def table_array_str(list_lines, split_str = '  ', row=True):

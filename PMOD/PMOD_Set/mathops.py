@@ -69,30 +69,30 @@ def round_decimal(num, deci, str_bool=True):
 def round_scientific(num, digi, pyver = '27', str_bool = True):
     
     # round_scientific(30.112,1,True)    
-    # x: input file string
+    # num: input file string
     # d: a non-negative integer signifying the number of significant digits
 
     test = check.type_test_print(num,'num','num','round_scientific') 
     if(not test):
         return test 
-    test = check.type_test_print(deci,int,'deci','round_scientific')
+    test = check.type_test_print(digi,int,'digi','round_scientific')
     if(not test):
         return test 
     test = check.type_test_print(str_bool,bool,'str_bool','round_scientific') 
     if(not test):
         return test 
     
-    if(deci < 0):
+    if(digi < 0):
         print("[round_scientific] Error: 'digi' decimal value must be non-negative")
         return False
 
     num = float(num)
     if(pyver == '27'):        
         fm = "{:." + str(int(digi)-1) + "e}"
-        rnum = fm.format(x)
+        rnum = fm.format(num)
     elif(pyver == '26'):
         fm = "{0:." + str(int(digi)-1) + "e}"
-        rnum = fm.format(x)             
+        rnum = fm.format(num)             
     else:
         print("[round_scientific] Error: 'pyver' not recognized'")
         return False        

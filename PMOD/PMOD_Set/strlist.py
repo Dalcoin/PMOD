@@ -151,7 +151,7 @@ def array_to_str(array, spc = ' ', print_bool = True):
             out_str = out_str+str(spc)+str(i)
         except:
             if(print_bool):
-                print("[array_to_str] TypeError: element of 'array' or 'spc' not castable to a string")
+                print("[array_to_str] TypeError: element of 'array', or 'spc', not castable to a string")
             return False        
     return out_str
              
@@ -268,8 +268,11 @@ def str_to_list(string, split_val = ' ', filtre = False, cut = None, print_bool 
 
 
 def str_filter(string, filtre, inverse = False, print_bool = True):
-    
-    if(not isinstance(string,str):
+    '''
+    Description: Filters 'filtre' string out of 'string' object, if 
+                 'inverse' then the instances of 'filtre' are returned
+    '''
+    if(not isinstance(string,str)):
         try:
             string = str(string)
         except:
@@ -296,20 +299,21 @@ def str_filter(string, filtre, inverse = False, print_bool = True):
     
     out_str = array_to_str(out_list, spc = '', print_bool = print_bool)
     return out_str
-
-
+       
+       
 def str_space_clean(string):
     '''
+    removes all spaces, endline characters and newline characters from string 
     '''
     array = str_to_list(string, filtre = True)
     out_string = array_to_str(array, spc = '')
     return out_string
-
+     
       
 def str_set_spacing(string, space = ' ', print_bool = True):
     ''' 
     Description: spaces non-space substrings by a set amount
-
+        
     (e.g.) 'Hey,        Hello    World' becomes 'Hey, Hello World'   
     '''       
     try:
