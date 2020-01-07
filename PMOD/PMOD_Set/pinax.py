@@ -134,11 +134,11 @@ def table_trans(n, coerce_rect=False, check_table=False):
         return err           
 
 
-def table_str_to_numeric(line_list, sep=' ', header=False, columns = True, sort = float):
+def table_str_to_numeric(line_list, sep=' ', header=False, columns=True, sort=float):
     
-    new_line_list = list(line_list)
+    new_line_list = strl.array_filter_spaces(list(line_list))
     n = len(new_line_list)
-    
+
     if(header):
         head = new_line_list[0]
         new_line_list = new_line_list[1:-1]

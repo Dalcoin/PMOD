@@ -119,16 +119,16 @@ def array_filter_spaces(array, filter_none = True):
     '''
     Description: Returns non-space string elements of array 
     ''' 
-    def space_filter(array):
+    def __space_filter__(array):
         for i in array:     
             if(str(i).isspace() or i == ''):
                 continue
             else:
                 yield i
     if(filter_none):
-        return filter(None,[i for i in space_filter(array)])
+        return filter(None,[i for i in __space_filter__(array)])
     else:
-        return [i for i in space_filter(array)]
+        return [i for i in __space_filter__(array)]
             
     
 
