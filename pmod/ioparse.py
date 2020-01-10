@@ -261,7 +261,7 @@ def flat_file_read(file_in,ptype='r'):
         return False             
     
 
-def flat_file_write(file_out,add_list,par=False,ptype='w+'):
+def flat_file_write(file_out, add_list = [], par=False, ptype='w+'):
     '''
     flat_file_write(file_out,add_list,ptype='w',par=False)
 

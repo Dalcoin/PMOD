@@ -16,77 +16,22 @@ def __func_eprint__(msg):
     return False
 
 ####################                         #################### 
-# action functions ########################### action functions #
+#  line functions  ###########################  line functions  #
 ####################                         #################### 
 
-# Action functions 
-# These functions are meant to be called on list arrays
+def line_nan_check(array):
+    
+    nan_list = ['nan','NaN','NAN','-nan','-NaN','-NAN']
 
-def get_shape_matrix(table):
-    shape = False
-    n = len(table)
-    m = len(table[-1])
-    for i in table[:-1]:            
-        if(len(i) != m):
-            err = __func_eprint__("[get_shape_matrix] Error: Table does not have a rectangular shape")
-            return err
-    shape = (n,m)
-    return shape
-
-def coerce_to_matrix(n):
-    l = max(len(i) for i in n)    
-    for i in n:
-        if(len(i) < l):
-            while(len(i) < l): 
-                i.append(None)
-    return n
-
-def check_str_allspace(string):    
-    try:
-        sarray = re_space.findall(string)
-        if(len(sarray) == 1):
-            return True
-        else:
-            return False
-    except:
-        return False 
-   
-def array_to_string(array, spc = '  ', print_bool = True):
-    ''' 
-    Input: 
-        array   : A Python array (list or tuple) object  
-        spc [*] : A string object, usually spacing
-
-    Return:
-        out_str : A string if success, A False if failure 
-    '''
-    out_str = ''                          
-    for i in array:                        
-        try:                            
-            out_str = out_str+str(spc)+str(i)
-        except:
-            if(print_bool):
-                print("[array_to_string] TypeError: element of 'array' or 'spc' not castable to a string")
-            return False
-
-
-def array_of_arrays_to_string(array, spc = '  '):
-    ''' 
-    Input: 
-        array   : A Python array (list or tuple) object  
-        spc [*] : A string object, usually spacing
-
-    Return:
-        out_str : A string if success, A False if failure 
-    '''
-    out_str = ''
-    n = len(array)
-    try: 
-        for i in range(n):
-            array[i] = array_to_string(array[i],spc)
-    except:
-        return False 
-     
+    index_list = []
+    for i in range(len(array)):
+        if(i in nan_list):
+            index_list.append(i)
+    if(len(index_list) > 0):
+        return index_list
+    else:
+        return False
+          
             
 ###################                           ################### 
 # table functions ############################# table functions #
@@ -134,7 +79,7 @@ def table_trans(n, coerce_rect=False, check_table=False):
         return err           
 
 
-def table_str_to_numeric(line_list, sep=' ', header=False, columns=True, sort=float):
+def table_str_to_numeric(line_list, sep=' ', header=False, safety = False, columns=True, sort=float):
     
     new_line_list = strl.array_filter_spaces(list(line_list))
     n = len(new_line_list)
@@ -158,24 +103,27 @@ def table_str_to_numeric(line_list, sep=' ', header=False, columns=True, sort=fl
                     new_line_list[i][j] = sort(float(new_line_list[i][j]))
                 if(sort == float):
                     new_line_list[i][j] = sort(new_line_list[i][j])
+            except:
+                if(safety):
+                    pass 
                 else:
                     return False
-            except:
-                return False
+
     if(header):
         try:
             new_line_list.insert(0,head)
         except:
-            pass  
-        if(columns):
-            return table_trans(new_line_list)
-        else:
+            pass
+  
+    if(columns):
+        output = table_trans(new_line_list)  
+        if(output == False):
             return new_line_list
+        else:
+            return output 
     else:
-        if(columns):
-            return table_trans(new_line_list)
-        else:
-            return new_line_list
+        return new_line_list
+
 
 
 def table_array_str(list_lines, split_str = '  ', row=True):

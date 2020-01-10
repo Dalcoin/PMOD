@@ -163,7 +163,7 @@ def array_matrix_to_array_str(array, spc = '  '):
         spc [*] : A string object, usually spacing
 
     Return:
-        out_str : A string if success, A False if failure 
+        out_str : A list of strs if success, False if failure 
     '''
     out_str = ''
     n = len(array)

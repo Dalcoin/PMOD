@@ -8,11 +8,17 @@ from pmod import ioparse as iop
 '''
 To run this script naming conventions must be observed:
 
-for instance: 'n2lo_3nf_12.txt' is a valid name for an input file 
-
 The input data takes the form: 
 
 'nxlo_3nf_yy.txt' : where x = name of chiral order, yy = figure (12 or 13)
+
+(e.g.) 
+
+'n2lo_3nf_12.txt' is a valid name for an input file 
+
+fig_num = 12 # 12 or 13
+nxlo    = 2  # 2 or 3
+
 '''
 
 def fig_file(nxlo,fig_num):
@@ -76,9 +82,9 @@ def four_plotter(tl_data, tr_data, bl_data, br_data, fig_num, nxlo='x', save = F
 
     fig, axs = plt.subplots(2, 2, sharex=False, sharey=False)
     
-    if(fig == 12):
+    if(fig_num == 12):
         label = ['1S0','3S1','3D1','3S1 - 3D1']
-    elif(fig == 13):
+    elif(fig_num == 13):
         label = ['1P1','3P0','3P1','3P2']
     else:
         label = [' ',' ',' ',' ']
@@ -111,7 +117,7 @@ def four_plotter(tl_data, tr_data, bl_data, br_data, fig_num, nxlo='x', save = F
         
     if(save):
 #        print(fig_file(nxlo,fig).split('.')[0])
-        fig.savefig(fig_file(nxlo,fig_num).split('.')[0])
+        fig.savefig(fig_file(nxlo,fig_num).split('.')[0]+'.pdf')
         
         
 ### MAIN()
