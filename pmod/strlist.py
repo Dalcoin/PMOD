@@ -257,11 +257,12 @@ def str_to_list(string, split_val = ' ', filtre = False, cut = None, print_bool 
     '''
     Description: parses input string into a list, default demarkation is by single spacing
     '''
+    mod_string = str(string)
     try:
         if(filtre):
-            return filter(cut,string.split(split_val))
+            return filter(cut,mod_string.split(split_val))
         else:
-            return string.split(split_val)
+            return mod_string.split(split_val)
     except:
         print("[str_to_list] Error: input could not be split")
         return False

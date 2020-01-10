@@ -607,23 +607,23 @@ class path_parse:
             
              
     
-    def move_util(self, obj_loc, fold_loc, obj_sort = str, fold_sort = str, update = False):
+    def move_util(self, obj_loc, new_loc, obj_sort = str, fold_sort = str, update = False):
         
         if(fold_sort == list):
-            fold_loc = self.convert_node(fold_loc)                
+            new_loc = self.convert_node(new_loc)                
         if(obj_sort == list):
             obj_loc = self.convert_node(obj_loc)
                       
         if(self.os == 'Windows'):                    
-            if(fold_loc == self.path_head):
-                fold_loc = fold_loc+'//'
+            if(new_loc == self.path_head):
+                new_loc = new_loc+'//'
                    
         try: 
-            shutil.move(obj_loc,fold_loc) 
+            shutil.move(obj_loc,new_loc) 
         except: 
             print("[move_util] Error: object could not be moved.")
             print("File pathway: "+obj_loc)
-            print("Destination pathway: "+fold_loc)
+            print("Destination pathway: "+new_loc)
             return False
         
         if(update):
@@ -1174,7 +1174,7 @@ class path_parse:
             
             elif(dest_str[0] == '/' or dest_str[0] == '\\'):
                 dest_str = dest_str[1:]
-                dest_path_list = self.__climb_path__(dest_str,'str')
+                dest_path_list = self.__climb_path__(dest_str,'list')
 
                 path_str = self.convert_node(dest_path_list)   
                 path_has = self.node_contain(path_str)
@@ -1207,7 +1207,8 @@ class path_parse:
                 result = updater(self.path_list,list,success,value)
                 return result  
 
-            elif(dest_str not in self.path_contain and len(mv_file_list) == 1):             
+            elif(dest_str not in self.path_contain and len(mv_file_list) == 1):  
+                dest_str = self.join_node(self.path,dest_str)           
                 mtest = self.move_util(mv_file_list[0],dest_str,str,str)
                 if(not mtest):
                     success = False 
