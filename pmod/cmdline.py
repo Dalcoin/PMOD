@@ -5,23 +5,41 @@ import shutil
 import ioparse as iop
 
 '''
-contains the class: path_parse
+---------------
+| Description |
+---------------
+
+   Consists of 'path_parse', which is a class to call commands within python 
+scripts, allowing functionality in the image of Linux command-line inputs for 
+performing manipulations of the locations of file and folder functions. 
+
+   The main function in the class is 'cmd' : path_parse.cmd(). This 
+function allows commands to be passed which, among other things, return the 
+contents of the current stored directory string, change the current stored 
+directory string, move files between directories and delete files and 
+directories. The class allows for pathway information to be stored and 
+returned as string objects. 
+
 '''
 
 class path_parse:
     
     '''
-    path_parse(os_form,new_path,path_print,print_col)
-    
+    path_parse(os_form, new_path=None, path_print=False, print_col=True)    
     
     -----------
     | Inputs: |
     -----------
     
-    os_form = 'Windows' or 'Linux' 
-    new_path = None (by default)
-    path_print = False (by default)
-    print_col = False (by default)
+    os_form = 'windows' or 'linux' 
+    new_path = None (by default), else [string] 
+
+        if [string] : the input string becomes the default .path variable
+        if [None]   : the directory from which the script is run becomes the 
+                      default .path variable.  
+
+    path_print = False (by default) : If True, debug info is printed to console, else nothing is printed 
+    print_col = False (by default)  : If True, directory variable names are denoted by color when printing 
         
     '''
     
@@ -32,44 +50,59 @@ class path_parse:
         | init |
         --------
         
-        Inputs:
-        os : 'Windows' or 'Linux'/'Unix'
-        new_path = None (by default)
-        path_print = False (by default)
-        print_col  = True  (by default)
-        
-        .path : A string of the path in which the script is run
-        .path_list : A list of strings with values of the directory hiearchy in .path
-        .path_head : A string containing the primary (home) directory
-        .path_contain : A list of strings with values of the contents of .path
-        .path_files : A list of string with values of the file (names with file type) in .path   
-        
-        .os:  A string to specify the operating system, this determines the path file format 
-        .col: True for color Escape code when printing, False by default
+        Inputs :
+
+            os : 'windows' or 'linux'/'unix'
+            new_path = None    (by default)
+            path_print = False (by default)
+            print_col  = True  (by default)
+            
+        Path : 
+
+            .path : A string of the path in which the script is run
+            .path_list : A list of strings with values of the directory hiearchy in .path
+            .path_head : A string containing the primary (home) directory
+            .path_contain : A list of strings with values of the contents of .path
+            .path_files : A list of string with values of the file (names with file type) in .path   
+            
+            .os:  A string to specify the operating system, this determines the path file format 
+            .col: True for color Escape code when printing, False by default
         
         '''
         
-        global delim
-        global color
+        global delim, color
+        global cd_list, single_command_list, single_path_list_group
+        global single_path_list_nogroup, double_path_list
+
+        cd_list = ['ls', 'pwd', 'dir', 'cd', 'chdir', 'mv', 'rm', 'cp', 'mkdir',
+                   'rmdir', 'find', 'match', 'help', 'vi']
+
+        lx_distro = ['ubuntu','xubutnu','redhat','debian','fedora','mintos']
+        os_list = ['windows','linux','unix']
+
+        single_command_list = ['ls', 'pwd'] 
+        single_path_list_nogroup = ['cd','chdir','vi','help']
+        single_path_list_group = ['rm','rmdir','mkdir','dir','find','match']
+        double_path_list = ['mv', 'cp', 'cpdir']
         
-        self.os = os_form
-        os_list = ['Ubuntu','Xubutnu','Redhat','Debian','Fedora','MintOS']
-        if(self.os in os_list):
-            self.os = 'Linux'
+        self.os = str(os_form).lower()
+
+        if(self.os in lx_distro):
+            self.os = 'linux'
         
-        if(self.os == 'Windows'):
+        if(self.os == 'windows'):
             delim = '\\'
-        elif(self.os == 'Unix' or self.os == 'Linux'):
+        elif(self.os == 'linux' or self.os == 'unix'):
             delim = '/'
         else:
-            delim = ':'
+            delim = '.'
             
         self.col = print_col
         color = self.col
         
         if(new_path != None):            
             self.path = new_path
-            if(self.os == 'Windows'):
+            if(self.os == 'windows'):
                 self.path_list = self.path.split(delim)
                 self.path_head = self.path.split(delim)[0]
             else:
@@ -81,7 +114,7 @@ class path_parse:
             self.path_print = path_print
         else:
             self.path = os.getcwd()
-            if(self.os == 'Windows'):
+            if(self.os == 'windows'):
                 self.path_list = self.path.split(delim)
                 self.path_head = self.path.split(delim)[0]
             else:
@@ -91,35 +124,20 @@ class path_parse:
             self.path_contain = os.listdir(self.path)
             self.path_files = self.__path_files__()
             self.path_print = path_print
-
     
     def documentation(self, string):
-        """
+        """        	    
         ---------------
-        | Description |
+        | guidelines: |
         ---------------
-        
-        path_parse is a class to call commands within python scripts allowing 
-        functionality in the image of Linux command-line inputs for file and folder
-        functions. The main function in the class is 'cmd' : path_parse.cmd(). This 
-        function allows commands to be passed which, return the contents of the current 
-        stored directory string, change the current stored directory string, move files 
-        between directories and delete files and directories. The class allows for 
-        pathway information to be stored and returned as string objects. 
-        
-	    
-        ------------------------
-        | Function guidelines: |
-        ------------------------
 	    
         1) Path functions read and modify from the class stored path variables
         2) Non-Path functions take full pathways and perform file and pathway manipulations 
            from these complete, input pathways.
         3) Path functions contain the word 'Path' in the name, Non-Path functions do not.
-        4) Non-Path functions should not rely on the class current (path)way nor on any 
-           path class variables.
+        4) Non-Path functions should not rely on the class pathway nor on any path class variables.
         5) Path functions should return a boolean value dependent on the success of the operation,
-           any values they modify should be self. variables, eliminating the need for returning values.
+           any values they modify should be self variables, eliminating the need for returning values.
         6) Non-Path functions should return a boolean value when their operation does not 
            require a value to be returned (e.g. moving, copying or deleting objects) which is 
            dependent on the success of the operation. 
@@ -136,103 +154,12 @@ class path_parse:
         6) Return restrictions on Non-Path functions 
         7) Corrospondance in operation between Path and Non-Path functionality      
 	    
-        ------------------
-        | Function List: |
-        ------------------
 
-        convention: 
+        Naming Convention: 
 
         * path : designates a function which modifies the path variables
         * node : designates a function which modifies an input path, does not affect path variables.
-	    
-
-        --Helper-functions-- (dunder)
-        
-        __init__(self,os_form,new_path=None,path_print=False,print_col=False) : 
-
-                                    Initalizing function, sets path variables
-
-        __cmd_input_parse__(self,string) : 
-                          
-                                    Parses input strings for the 'cmd' function, 
-                                    converts input string to tuple of length 3.
-
-        __path_files__(self,style = None) : 
-
-                                    Returns a list of strings corrosponding to the names
-                                    of the files, whose names contains file extensions,
-                                    in the current (path) directory, option for selection 
-                                    by extension.
-                     
-                     
-        __climb_path__(self, up_dir_inst, sort): Moves the current (path) 
-                                                 directory up by one node
-
-
-        __fancy_print__(self,col=False) : Prints the current (path) directory pathway in a
-                                      stylized format. 
-
-	    
-        __fancy_print_list__(self,array) :  Prints a list, 'array', in a stylized format.
-
-
-        __run_fancy_print__(self) : run __fancy_print__ with print options
-
-       
-        --CMD-functions-- 
-
-
-        join_node(self,old_path,new_node) : 
-
-                                    Adds the file or folder name in 'new_node' to
-                                    the pathway in 'old_path'. Input and output 
-                                    are strings 
-        
-        convert_node(self,path_list) : 
-   
-                                    Creates and returns a pathway string from a pathway list
-         
-	    
-        move_util(self, obj_loc, fold_loc, obj_sort = str, fold_sort = str, update = False) :
-
-                                                                Moves 'file_name' to 'new_location', 
-                                                                note that 'file_name' must be a file
-                                                                with a file extension in the string
-                                                                and 'new_location' must be a folder,
-                                                                both must be in the current directory.
-                                                                if 'upbool' is True, then the file is 
-                                                                moved to the higher directory and the
-                                                                location in 'new_location' is ignored.
-        
-        del_file(self,file_name) : Deletes file with a name equal
-                                   to 'file_name' in the current
-                                   (path) directory
-
-        copy_file(self, new_file_name, old_file_loc, new_file_dir, update = False) : 
-
-                                    Copies file from 'old_file_loc' to 'new_file_dir' using the name given
-                                    in the string 'new_file_name'.
-        
-        create_dir(self,dir_name) : Creates a folder with a name 
-                                    equal to 'dir_name' in the 
-                                    current (path) directory
-        
-        find_file(self,file_name,pathway=None,pathopt = False,files=True,sort=str) : 
-
-                                   Checks the current (path) directory for a file with 
-                                   'file_name' as its identifier. Returns boolean.
-	    
-        grep_file(self,fragment,pathway=None,pathopt = False,files=True,sort=str) :
-
-                                   Checks the current (path) directory for any file with
-                                   'fragment' in its name. The list of matching file names 
-                                   is returned in string format. 
-                                     
-	    
-        """
-
-        cd_list = ['ls', 'pwd', 'dir', 'cd', 'chdir', 'mv', 'rm', 'cp', 'mkdir',
-                   'rmdir', 'find', 'grep', 'help', 'vi']
+	    """
 
         action_list = ["Usage: ['ls',..,..] , returns a list of strings corrosponding to content of path directory",
                        
@@ -262,53 +189,43 @@ class path_parse:
                        "Usage: [find,['file1.file','file2.file'],..] , returns dictionary, searches for files by name, "+
                        " and returns a dictionary with boolean values for the existance of the files",
                           
-                       "Usage: [grep,['file1.file','file2.file'],..] , returns dictionary, searches for fragments, "+
+                       "Usage: [match,['file1.file','file2.file'],..] , returns dictionary, searches for fragments, "+
                        " and returns a dictionary with boolean values for the files containing searched fragments",
 
                        "Usage: [help,['command'],..] , returns either a list or string, "+
                        "if no command is specified, 'help' returns a list of possible commands, else if a "+
                        "command is specified a string describing the commands usage is returned",
                          
-                       "Usage: [grep,['file1.file','file2.file'],..] , returns dictionary, searches for fragments, "+
-                       " and returns a dictionary with boolean values for the files containing searched fragments", 
                       ]   
 
 #        help_dict = {k: v for k, v in zip(cd_list,action_list)}        
-                
-        single_command_list = ['ls', 'pwd'] 
-        single_path_list_nogroup = ['cd', 'chdir', 'vi', 'help']
-        single_path_list_group = ['rm', 'rmdir', 'mkdir', 'dir', 'find', 'grep']
-        double_path_list = ['cp', 'mv']
-                 
+                                 
         if(string == 'help'):
             help_dict = dict(zip(cd_list,action_list))  # Added for backward compatability
             return help_dict
-        if(string == 'single_cmd'):
-            return single_command_list
-        if(string == 'single_ng_cmd'):
-            return single_path_list_nogroup
-        if(string == 'single_gp_cmd'):
-            return single_path_list_group
-        if(string == 'double_cmd'):
-            return double_path_list
         else:
             return None 
          
-        
-         
-    def __cmd_input_parse__(self,string):
+                 
+    def __cmd_input_parse__(self, string):
         '''
         -----------------------
         | __cmd_input_parse__ |
         -----------------------
         
-        Inputs:
+        Input:
 
-        string : a string, formatted for use in the .cmd() function 
+            string : a string, formatted for use in the .cmd() function 
          
         output:
          
-        out_inst : a tuple formatted for parsing in the .cmd() function
+            out_inst : a tuple formatted for parsing in the .cmd() function
+                       takes the form: (cmd_inst, [inst_strs], dest_str)
+            cmd_inst : a string, corrosponding to a valid cmd command
+            inst_strs: one or more strings, corrosponding to instances 
+                        upon which the cmd_inst acts
+            dest_str : a string, corrosponding to a valid destination 
+                       (used only when applicable)     
         
         '''
     
@@ -349,11 +266,6 @@ class path_parse:
         if(not isinstance(string,str)): 
             print("Error: input must be a string, not a "+str(type(string)))
             return ('',[],'')
-        
-        single_command_list = ['ls', 'pwd'] 
-        single_path_list_nogroup = ['cd','chdir','vi','help']
-        single_path_list_group = ['rm','rmdir','mkdir','dir','find','grep']
-        double_path_list = ['mv', 'cp', 'cpdir']
                                                                    
         string_list = string.split(" ")
         string_list = filter(lambda l: l != '',string_list)            
@@ -418,57 +330,65 @@ class path_parse:
         return None 
     
                              
-    def join_node(self,old_path,new_node):
+    def pw_join(self,old_path,new_node):
+        '''
+        Description: Adds a new node onto a pathway
+
+        Input :
+
+            old_path : [string], pathway formatted string 
+            new_path : [string], node 
+
+        Output : [string], pathway formatted string
+        '''
         output = old_path+delim+new_node
         return output
             
         
-    def convert_node(self, trac_in, insort='list', outsort='str'):        
+    def pw_convert(self, trac_in, insort='list', outsort='str'):        
         '''
         
-        ----------------
-        | convert_node |
-        ----------------
+        --------------
+        | pw_convert |  :  Convert Pathway 
+        --------------
 
-        if(insort == 'list')
-        
-            Input: 'trac_in': [list,tuple], A path-formatted list             
-            Return: 'trac_out': [string], a path-formatted string
+        description : converts between list formatted pathways and str formatted pathways
 
-        if(insort == 'str')
-               
-            'trac_in': [list,tuple], A path-formatted list 
-            'trac_out': [string], a path-formatted string
-                
-        Description: Formats a path-formatted list into a path-formatted string
-                     options to add a node and format return in both string and list 
-                 
+        Inputs :
+
+            trac_in : a pathway (formatted as either a string or array)
+            insort  : [string] (Default value : 'list'), corrosponding to a python data-type
+            outsort : [string] (Default value : 'str'), corrosponding to a python data-type      
+                                 
         '''      
         trac_out = ''
         count = 0
               
-        if(insort == 'list'):
-
+        if(insort == 'list' or insort == 'arr'):
+            if(insort == 'arr'):
+                trac_in = list(trac_in)               
             while('' in trac_in):
                 trac_in.remove('')
             for i in trac_in:
                 if(count == 0):
                     trac_out = str(i) 
                 else:
-                    trac_out = self.join_node(trac_out,i)
+                    trac_out = self.pw_join(trac_out,i)
                 count+=1
             
-            if(self.os == 'Unix' or self.os == 'Linux'):
+            if(self.os == 'unix' or self.os == 'linux'):
                 trac_out = '/'+trac_out
              
-            if(outsort == 'list'):
+            if(outsort == 'list' or outsort == 'arr'):
                 trac_out = trac_out.split(delim)
                 trac_out = filter(lambda l: l != '',trac_out)                 
              
         elif(insort == 'str'):
-            if(outsort == 'list'):
+            if(outsort == 'list' or outsort == 'arr'):
                 trac_out = trac_out.split(delim)
-                trac_out = filter(lambda l: l != '',trac_out)                         
+                trac_out = filter(lambda l: l != '',trac_out)     
+            else: 
+                trac_out = trac_in                    
 
         return trac_out            
         
@@ -478,6 +398,10 @@ class path_parse:
         ------------------
         | __path_files__ |
         ------------------
+
+        Description: Returns a list of strings corrosponding to the file names in 
+                     the current (path) directory, option for selecting only a 
+                     specific file extension. 
         
         Input: 
         
@@ -490,17 +414,13 @@ class path_parse:
                                  in the current (path) directory matching the 
                                  'style' extension, if 'style' == None, then all
                                  file names are included in 'file_list'
-            
-        Description: Returns a list of strings corrosponding to the file names in 
-                     the current (path) directory, option for selecting only a 
-                     specific file extension. 
-        
+                    
         '''
-        current_folder_content = self.path_contain
+        current_folder_content = list(self.path_contain)
         file_list = []
         if(style == None):
             for i in current_folder_content:
-                if(os.path.isfile(i) or '.' in i):
+                if(os.path.isfile(self.pw_join(self.path,i))):
                     file_list.append(i)
         else:
             for i in current_folder_content:
@@ -516,42 +436,55 @@ class path_parse:
         -------------------
         | __update_path__ |
         -------------------
-        
-        Input: 
-        
-            'path_updater': [list,tuple], A path-formatted list ]
-            'sort'        : [type]      , A python data-type
                     
         Description: Formats a path-formatted list into a path-formatted string,
                      the new path then replaces the old path directory along with 
                      replacing the old path variables with those of the new path.
+
+        Input: 
         
-                
+            'path_updater': [list,tuple], A path-formatted list 
+            'sort'        : [string], corrosponding to a python data-type
+
+        Output : [Bool], success
+                        
         '''
-        if(sort == list):
+        if(sort == 'list' or sort == 'arr'):
+            if(sort == 'arr'):
+                path_updater = list(path_updater)
             self.path_list = path_updater
-            self.path = self.convert_node(path_updater)
-            if(self.os == 'Windows'):                    
+            self.path = self.pw_convert(path_updater)
+            if(self.os == 'windows'):                    
                 if(self.path == self.path_head):
                     self.path = self.path+'//'
             self.path_contain = os.listdir(self.path)
             self.path_files = self.__path_files__()   
             return True
-        elif(sort == str):
+        elif(sort == 'str'):
             self.path = path_updater
             self.path_list = self.path.split(delim)
-            if(self.os == 'Windows'):                    
+            if(self.os == 'windows'):                    
                 if(self.path == self.path_head):
                     self.path = self.path+'//'
             self.path_contain = os.listdir(self.path)
             self.path_files = self.__path_files__() 
             return True
         else:
-            print("[__update_path__] Error: 'sort' not a valid type")
+            print("[__update_path__] Error: 'sort' must be string corrosponding to a compatible python type")
             return False 
         
         
-    def __climb_path__(self, up_dir_inst, sort):
+    def __climb_path__(self, up_dir_inst, sort = 'str'):
+        '''
+        Description : if 'up_dir_inst' is a node in the default (current) pathway 
+                      then the default (current) pathway is moved to corrospond to that node 
+
+        Input:
+         
+            'sort' : [string] (Default value : 'str'), corrosponding to a python data-type
+      
+        The overhead and updating of class path info is taken care of with this function  
+        '''        
         if(up_dir_inst in self.path_list):
             spl_copy = list(self.path_list)
             new_path_list = []
@@ -562,14 +495,14 @@ class path_parse:
                 else:
                     switch = False
             new_path_list.append(up_dir_inst)
-            if(sort == 'list'):
+            if(sort == 'list' or sort == 'arr'):
                 output = new_path_list
                 return output
             elif(sort == 'str'):
-                output = self.convert_node(new_path_list)
+                output = self.pw_convert(new_path_list)
                 return output
             elif(sort == 'update'):                
-                output = self.__update_path__(new_path_list,list)
+                output = self.__update_path__(new_path_list,'list')
                 return output
             else:
                 print("[__climb_path__] Error: 'sort' command: '"+str(sort)+"' not recongized")
@@ -578,62 +511,108 @@ class path_parse:
             return False
         
     
-    def node_contain(self,path,sort = str,rtrn = 'all'):
-        
-        if(sort == str):
+    def pw_contain(self, path, sort = 'str', rtrn = 'all'):
+        '''
+        Description : Takes a pathway input,
+                      returns either a string formatted pathway or list formatted pathway
+
+        Inputs :
+
+            'path' : [string] or [array], a pathway formatted string or array 
+            'sort' : [string] (Default value : 'str'), corrosponding to a python data-type
+            'rtrn' : [string], valid entries:
+                'all' : returns all contents found at 'path'
+                'files' : returns only string names of the files found at 'path'
+                'folders' : returns only string names of the folders found at 'path'
+
+        Outputs : 
+         
+            output : [string] or [list], a pathway formatted string or list
+               
+             
+        ''' 
+        if(sort == 'str'):
             new_path = path
-        elif(sort == list):
-            new_path = self.convert_node(path)
+        elif(sort == 'list' or sort == 'arr'):
+            new_path = self.pw_convert(path)
         else:
-            print("[node_contain] Error: 'sort' option must be either 'str' or 'list'; '"
+            print("[pw_contain] Error: 'sort' option must be either 'str' or 'list'; '"
                   +str(sort)+"' is invalid")
+            return False
         
-        content = os.listdir(new_path)
+        try: 
+            content = os.listdir(new_path)
+        except:
+            return False
         
         if(rtrn == 'all'):
             return content
         elif(rtrn == 'files'):
-            files = []
+            output = []
             for i in content: 
-                if('.' in i): files.append(i)
-            return files
+                if('.' in i): output.append(i)
+            return output
         elif(rtrn == 'folders'):
-            folders = []
+            output = []
             for i in content: 
-                if('.' not in i): folders.append(i)
-            return folders            
+                if('.' not in i): output.append(i)
+            return output            
         else:
-            print("[node_contain] Error: 'rtrn' input; '"+rtrn+"' , not valid")
+            print("[pw_contain] Error: 'rtrn' input; '"+rtrn+"' , not valid")
             
              
     
-    def move_util(self, obj_loc, new_loc, obj_sort = str, fold_sort = str, update = False):
-        
-        if(fold_sort == list):
-            new_loc = self.convert_node(new_loc)                
-        if(obj_sort == list):
-            obj_loc = self.convert_node(obj_loc)
+    def move(self, obj_loc, new_loc, sort = 'str', update = False):
+        '''
+        Description : Moves and renames file and directory objects
+
+        Inputs : 
+
+            obj_loc : [string], A complete object pathway, the final node may be either a file or directory 
+            new_loc : [string], A complete directory pathway, the final node must be a directory 
+            sort: [string] (Default value : 'str'), corrosponding to a python data-type
+            update : [Bool] (Default value : False), option to update the current path variables
+
+        Output : [Bool], success
+        '''
+        if(sort == 'list' or sort == 'arr'):
+            new_loc = self.pw_convert(new_loc)                
+            obj_loc = self.pw_convert(obj_loc)
                       
-        if(self.os == 'Windows'):                    
+        if(self.os == 'windows' or str(self.os).lower() == 'windows'):                    
             if(new_loc == self.path_head):
                 new_loc = new_loc+'//'
                    
         try: 
             shutil.move(obj_loc,new_loc) 
         except: 
-            print("[move_util] Error: object could not be moved.")
+            print("[move] Error: object could not be moved.")
             print("File pathway: "+obj_loc)
             print("Destination pathway: "+new_loc)
             return False
         
         if(update):
-            output = self.__update_path__(self.path,str)
+            output = self.__update_path__(self.path,'str')
         else:
             output = True
         return output
 
     
-    def del_file(self,file_loc,update=False):           
+    def del_file(self, file_loc, sort = 'str', update=False):           
+        '''
+        Description : Attempts to delete the content at the location of the input pathway 
+            
+        Inputs:
+      
+            file_loc : A complete pathway string pointing to a file 
+            sort: [string] (Default value : 'str'), corrosponding to a python data-type
+            update : [Bool] (Default value : False), option to update the current path variables
+
+        Output : [Bool], success
+        '''  
+        if(sort == 'list' or sort == 'arr'):
+            file_loc = self.pw_convert(file_loc)
+
         try:
             os.remove(file_loc)
         except:
@@ -642,7 +621,7 @@ class path_parse:
             return False
             
         if(update):            
-            utest = self.__update_path__(self.path,str)
+            utest = self.__update_path__(self.path,'str')
             if(utest):
                 return utest
             else:
@@ -652,17 +631,49 @@ class path_parse:
             return True
 
 
-    def copy_file(self, new_file_name, old_file_loc, new_file_dir, update = False):
+    def copy_file(self, old_file_dir, new_file_dir, new_file_name = None, sort = 'str', update = False):
+        '''
+        Description : Attempts to copy a file from the 'old_file_dir' full pathway 
+                      to the full directory pathway 'new_file_dir', with a name 
+                      given by 'new_file_name'   
+
+        Input : 
+          
+            new_file_name : [string], corrosponds to only the name of the copy  
+            old_file_dir  : [string], corrosponds to the full pathway of the copied file
+            new_file_dir  : [string] (Default : None), corrosponds to full pathway of the location of the copy
+            sort: [string] (Default value : 'str'), corrosponding to a python data-type
+            update : [Bool] (Default value : False), option to update the current path variables
+
+        Output : [Bool], success
+        '''
+
+        if(sort == 'list' or sort == 'arr'):
+            old_file_dir = self.pw_convert(old_file_dir)
+            new_file_dir = self.pw_convert(new_file_dir)
             
-        file_dup_loc = self.join_node(new_file_dir, new_file_name)
+        if(new_file_name != None and isinstance(new_file_name,str)):
+            file_dup_loc = self.pw_join(new_file_dir, new_file_name)
+        else: 
+            new_file_name = self.pw_convert(old_file_dir, insort = 'str', outsort = 'list')
+            new_file_name = new_file_name[-1].split('.')
+            if(len(new_file_name) == 2):
+                new_file_name = new_file_name[0]+'_copy.'+new_file_name[1] 
+            else:
+                new_file = new_file_name[0]+'_copy.'
+                for i in range(len(new_file_name)-1):
+                    new_file = new_file+'.'+new_file_name[i+1] 
+                new_file_name = new_file
+            file_dup_loc = self.pw_join(new_file_dir, new_file_name)
+
         try: 
-            shutil.copyfile(old_file_loc, file_dup_loc)
+            shutil.copyfile(old_file_dir, file_dup_loc)
         except:
             print("[copy_file] Error: failure create copy: '"+str(new_file_name))
             return False
 
         if(update):            
-            utest = self.__update_path__(self.path,str)
+            utest = self.__update_path__(self.path,'str')
             if(utest):
                 return utest
             else:
@@ -672,11 +683,21 @@ class path_parse:
             return True
 
 
-    def create_dir(self, inpath, sort=str, update=False):
-        if(sort == str):
-            pathway = inpath
-        elif(sort == list):
-            pathway = self.convert_node(inpath)
+    def create_dir(self, new_path, sort='str', update=False):
+        '''
+        Description : creates a directory with the pathway given by 'new_path'
+                
+        Input : 
+
+            new_path : [string], pathway string corrosponding to a directory 
+            sort: [string] (Default value : 'str'), corrosponding to a python data-type
+        
+        Output : [Bool], success   
+        '''
+        if(sort == 'str'):
+            pathway = new_path
+        elif(sort == 'list'):
+            pathway = self.pw_convert(new_path)
         else:
             print("[create_dir] Error: sort value: '"+str(sort)+"' not recognized")
             return False
@@ -684,7 +705,7 @@ class path_parse:
         try:
             os.mkdir(pathway)
             if(update):
-                utest = self.__update_path__(self.path,str)
+                utest = self.__update_path__(self.path,'str')
                 return utest     
             else:
                 return True      
@@ -694,18 +715,28 @@ class path_parse:
             return False 
  
         
-    def del_dir(self,fold_loc,sort=str,update=False):
-        
+    def del_dir(self, fold_loc, sort='str', update=False):
+        '''
+        Description : Recursively removes content and directory at pathway 'fold_loc'
+               
+        Input : 
+                
+            fold_loc : [string], corrosponds to  
+            sort: [string] (Default value : 'str'), corrosponding to a python data-type
+            update : [Bool] (Default value : False), option to update the current path variables 
+               
+        Output : [Bool], success
+        '''   
         verif = False
 
-        if(sort == str):
-            foldtype = isinstance(fold_loc,str)
+        if(sort == 'str'):
+            foldtype = isinstance(fold_loc, str)
             if(not foldtype):
                 print("[del_dir] Error: input pathway must be a string")
                 return False
-        elif(sort == list):
+        elif(sort == 'list' or sort == 'arr'):
             try: 
-                fold_loc = self.convert_node(fold_loc)
+                fold_loc = self.pw_convert(fold_loc)
             except: 
                 print("[del_dir] Error: input pathway could not be parsed into a string")
                 return False
@@ -714,13 +745,13 @@ class path_parse:
             return False
         
         try: 
-            content = self.node_contain(fold_loc)
+            content = self.pw_contain(fold_loc)
         except:
             print("[del_dir] Error: The pathway "+fold_loc+" did not yield a folder whose content could be accessed")
             return False
         
         for i in content:
-            file_path = self.join_node(fold_loc,i)
+            file_path = self.pw_join(fold_loc,i)
             if(os.path.isdir(file_path)):
                 try:
                     verif = self.del_dir(file_path)
@@ -742,17 +773,37 @@ class path_parse:
         except: 
             print("[del_dir] Error: the folder at pathway "+fold_loc+" could not be deleted") 
 
-        if(verif and update):
-            utest = self.__update_path__(self.path,str)
+        if(update):
+            utest = self.__update_path__(self.path, 'str')
             return utest
  
         return verif
             
         
+    def copy_dir(self, old_fold_loc, new_fold_dir, new_fold_name = None, sort = 'str', update = False):
+        '''
+        Description : Copy directory (including contents) to new location
+               
+        Inputs : 
+                          
+            old_fold_loc  : [string], 
+            new_fold_dir  : [string], 
+            new_fold_name : [string] (Default : 'None'),  
+            sort: [string] (Default : 'str'), corrosponding to a python data-type
+            update : [Bool] (Default : False), option to update the current path variables               
+        '''
 
-    def copy_dir(self, new_fold_name, old_fold_loc, new_fold_dir, update = False):
-    
-        fold_dup_loc = join_node(new_fold_dir, new_fold_name)
+        if(sort == 'list' or sort == 'arr'):
+            old_fold_loc = self.pw_convert(old_fold_loc)
+            new_fold_dir = self.pw_convert(new_fold_dir)
+
+        if(new_fold_name != None and isinstance(new_fold_name,str)):
+            fold_dup_loc = self.pw_join(new_fold_dir, new_fold_name)
+        else: 
+            new_fold_name = self.pw_convert(old_fold_loc, insort = 'str', outsort = 'list')
+            new_fold_name = str(new_fold_name[-1])+'_copy'
+            fold_dup_loc = self.pw_join(new_fold_dir, new_fold_name)
+        
         try: 
             shutil.copytree(old_fold_loc, fold_dup_loc)
         except (WindowsError, OSError):
@@ -762,11 +813,11 @@ class path_parse:
             print("[copy_dir] Error: 'PermissionError', access to file pathway: '"+new_fold_dir+"' is restricted")
             return False
         except:
-            print("[copy_dir] Error: failure to create copy file: '"+new_fold_name+"'")
+            print("[copy_dir] Error: failure to create copy file: '"+str(new_fold_name)+"'")
             return False
 
         if(update):            
-            utest = self.__update_path__(self.path,str)
+            utest = self.__update_path__(self.path,'str')
             if(utest):
                 return utest
             else:
@@ -776,73 +827,48 @@ class path_parse:
             return True
 
                     
-    def find_file(self, file_name, pathway=None, pathopt=False, files=True, sort=str):
-        
-        if(pathopt):
-            if(files):
-                spf = self.path_files
-            else:
-                spf = self.path_contain
-            if(file_name in spf):
-                return True
-            else:
-                return False
-        
-        if(sort == str and pathway != None):
-            trac = pathway
-        elif(sort == list and pathway != None):
-            trac = self.convert_node(pathway)
-        elif(pathway == None):
-            print("[find_file] Error: 'pathway' is empty")
-            return False
-        else: 
-            print("[find_file] Error: check 'pathway' and 'sort'. 'sort' should be either list or str. ")
-            return False   
+    def find(self, file_name, file_path, genre='all', sort='str'):
 
-        if(files):
-            spf = self.node_contain(trac,rtrn='files')
-        else:     
-            spf = self.node_contain(trac) 
+        if(sort == 'list' or sort == 'arr'):
+            file_path = self.pw_convert(file_path)
+        
+        if(isinstance(genre,str) and isinstance(sort,str)):
+            genre = genre.lower()
+            sort = sort.lower()
+                
+        if(genre == 'files'):
+            spf = self.pw_contain(file_path, rtrn='files')
+        elif(genre == 'folders'):     
+            spf = self.pw_contain(file_path, rtrn='folders') 
+        else:
+            spf = self.pw_contain(file_path)
+
         if(file_name in spf):
             return True
         else:
             return False            
         
 
-    def grep_file(self, fragment, pathway=None, pathopt = False, files=True, sort=str):
-
-        if(pathopt):
-            if(files):
-                spf = self.path_files
-            else:
-                spf = self.path_contain
-            grep_list = []
-            for i in spf:
-                if(fragment in i):
-                    grep_list.append(i)
-            return grep_list
-
-        if(sort == str and pathway != None):
-            trac = pathway
-        elif(sort == list and pathway != None):
-            trac = self.convert_node(pathway)
-        elif(pathway == None):
-            print("[grep_file] Error: 'pathway' is empty")
-            return False
-        else: 
-            print("[grep_file] Error: check 'pathway' and 'sort'. 'sort' should be either list or str. ")
-            return False   
-
-        if(files):
-            spf = self.node_contain(trac,rtrn='files')
-        else:     
-            spf = self.node_contain(trac) 
+    def match(self, fragment, file_path, genre='files', sort='str'):
+ 
+        if(sort == 'list' or sort == 'arr'):
+            file_path = self.pw_convert(file_path)
+        
+        if(isinstance(genre,str) and isinstance(sort,srt)):
+            genre = genre.lower()
+            sort = sort.lower()
+                
+        if(genre == 'files'):
+            spf = self.pw_contain(file_path, rtrn='files')
+        elif(genre == 'folders'):     
+            spf = self.pw_contain(file_path, rtrn='folders') 
+        else:
+            spf = self.pw_contain(file_path)
               
         for i in spf:
             if(fragment in i):
-                grep_list.append(i)
-        return grep_list
-
+                match_list.append(i)
+        return match_list
         
         
     def __fancy_print__(self,col=False):
@@ -850,7 +876,7 @@ class path_parse:
         if(col):
             blue = '\033[38;5;4m'
             black = '\033[38;5;0m'
-            if(self.os == 'Unix' or self.os == 'Linux'):
+            if(self.os == 'unix' or self.os == 'linux'):
                 black = '\033[38;5;2m'
         else:
             blue,black=('','')
@@ -915,26 +941,44 @@ class path_parse:
         -------
         
         Input: 
-        cmd_string : a string, must be formated according to the specifications below.
+
+            cmd_string : a string, must be formated according to the specifications below.
         
         Valid Commands: 
         
         'ls' : returns list of strings containing the contents of the present directory
+
         'dir': returns pathway for file in the current directory
+
         'pwd'  : Returns current directory pathway as string; equivalent to 'self.path'
+
         'cd' : moves into the input directory, note: input directory must be in current directory
                ('..' to move upwards) ('\\' or '/' to specify directory in root directory)
                ('~' moves to home directory)
+
         'chdir' : moves to the directory input, input must be full directory pathway 
-        'mv' : moves file(s) from current directory into subdirectory
+
+        'mv' : moves file(s) from current directory into another directory 
+               which is accessible to the current path
                (format note: 'mv file_path.file Directory_Name') [file extension must be included]
+
         'rm' : remove input file(s) from current directory
+
         'cp' : copies file(s) to destination
+
         'mkdir' : make new director(y)ies with name equalivalent to input string
+
         'rmdir' : delete subdirector(y)ies (equiv. to 'rm -rf Directory_Name')
+
+        'cpdir' : copy directory from current directory
+
         'find' : Searches the current directory for the input file(s) string and returns boolean
-        'grep' : Searches the current directory for the input pattern and returns list of matches
+
+        'match' : Searches the current directory for the input pattern and returns list of matches
+
         'help' : Returns list of valid commands
+
+        'vi'   : Returns a list of strings corrosponding to the contents of a file
         
         '''
 
@@ -963,13 +1007,13 @@ class path_parse:
             return success
             
 
-        def updater(new_path,sort,success,value):
-            utest = self.__update_path__(new_path,sort)                 
+        def updater(new_path, sort, success, value):
+            utest = self.__update_path__(new_path, sort)                 
             success = print_func(utest)
             result = (success,value)
             return result
 
-
+                
         def cmd_pwd(tup):
             success = True
             cmd_inst, file_list, dest_str = tup
@@ -1005,14 +1049,13 @@ class path_parse:
         def cmd_dir(tup):
             success = True            
             cmd_inst, file_list, dest_str = tup
-
-            nlist = len(file_list)
+                   
             new_file_list = []
-
+                                       
             for i in file_list:
-                verify = self.find_file(i,pathopt = True)
+                verify = self.find(i, self.path)
                 if(verify):
-                    new_file_list.append(self.join_node(self.path,i))
+                    new_file_list.append(self.pw_join(self.path,i))
                 else:
                     success = False
                     print("Warning Error: file name, '"+i+"' not found in current (path) directory")
@@ -1041,32 +1084,28 @@ class path_parse:
                     result = (success,value)
                     return result 
                 else:
-                    up_path_list = list(self.path_list)[:-1] 
-                
-                result = updater(up_path_list,list,success,value)
+                    up_path_list = list(self.path_list)[:-1]                 
+                result = updater(up_path_list,'list',success,value)
                 return result
             
             elif(dest_str in self.path_contain):
-                dest_loc = self.join_node(self.path,dest_str)
+                dest_loc = self.pw_join(self.path,dest_str)
                 if(os.path.isdir(dest_loc)): 
                     new_path_list = list(self.path_list)
                     new_path_list.append(dest_str)
-                    utest = self.__update_path__(new_path_list,list)
                 else:
                     success = False 
                     print("Error: '"+dest_loc+"not a valid folder in current (path) directory")
                     print("It appears that '"+dest_loc+"' is a file object or is corrupted")    
                     result = (success,value)
                     return result 
-
-                success = print_func(utest)
-                result = (success,value)
+                result = updater(new_path_list,'list',success,value)
                 return result
             
             elif(dest_str[0] == '/' or dest_str[0] == '\\'):
                 ndir_inst = dest_str[1:]
                 ctest = self.__climb_path__(ndir_inst,'update')
-                success = print_func(ctest)
+                success = print_func(ctest)  
                 result = (success,value)
                 return result
                     
@@ -1090,7 +1129,7 @@ class path_parse:
             cmd_inst, file_list, dest_str = tup 
             
             try: 
-                utest = self.__update_path__(dest_str,str)
+                utest = self.__update_path__(dest_str,'str')
                 success = print_func(utest)              
             except:
                 print('Error: pathway '+dest_str+' could not be reached')
@@ -1100,7 +1139,7 @@ class path_parse:
             return result 
             
                 
-        def cmd_mv(tup,sort='ALL'):
+        def cmd_mv(tup, sort='ALL'):
             
             success = True            
             value = None
@@ -1130,7 +1169,7 @@ class path_parse:
                     result = (success,value)
             
             for i in range(len(mv_file_list)):
-                mv_file_list[i] = self.join_node(self.path,mv_file_list[i])
+                mv_file_list[i] = self.pw_join(self.path,mv_file_list[i])
                          
             # Move File                                     
             if(dest_str == '..'):                  
@@ -1140,80 +1179,80 @@ class path_parse:
                 else:
                     up_path_list = list(self.path_list)[:-1]
 
-                up_path_str = self.convert_node(up_path_list)   
-                up_path_has = self.node_contain(up_path_str)
+                up_path_str = self.pw_convert(up_path_list)   
+                up_path_has = self.pw_contain(up_path_str)
                 for i in mv_file_list: 
                     if(i in up_path_has):
                         print("Warning: '"+i+"' already exists in the namespace of the target directory, no action taken")
                         continue                     
-                    mtest = self.move_util(i,up_path_list,str,list)
+                    mtest = self.move(i,up_path_str)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
 
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result     
             
             elif(dest_str in self.path_contain and dest_str not in self.path_files):                
                 dest_path_list = list(self.path_list)
                 dest_path_list.append(dest_str)  
                      
-                path_str = self.convert_node(dest_path_list)   
-                path_has = self.node_contain(path_str)
+                path_str = self.pw_convert(dest_path_list)   
+                path_has = self.pw_contain(path_str)
                 for i in mv_file_list:           
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue     
-                    mtest = self.move_util(i,dest_path_list,str,list)
+                    mtest = self.move(i,path_str)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result  
             
             elif(dest_str[0] == '/' or dest_str[0] == '\\'):
                 dest_str = dest_str[1:]
                 dest_path_list = self.__climb_path__(dest_str,'list')
 
-                path_str = self.convert_node(dest_path_list)   
-                path_has = self.node_contain(path_str)
+                path_str = self.pw_convert(dest_path_list)   
+                path_has = self.pw_contain(path_str)
                 for i in mv_file_list:   
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue            
-                    mtest = self.move_util(i,dest_path_list,str,list)
+                    mtest = self.move(i,dest_path_list,str,list)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result  
                                       
             elif(dest_str == '~'):                
                 dest_path_list = self.__climb_path__(self.path_head,'list')
 
-                path_str = self.convert_node(dest_path_list)   
-                path_has = self.node_contain(path_str)
+                path_str = self.pw_convert(dest_path_list)   
+                path_has = self.pw_contain(path_str)
                 for i in mv_file_list:       
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue         
-                    mtest = self.move_util(i,dest_path_list,str,list)
+                    mtest = self.move(i,dest_path_list,str,list)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result  
 
             elif(dest_str not in self.path_contain and len(mv_file_list) == 1):  
-                dest_str = self.join_node(self.path,dest_str)           
-                mtest = self.move_util(mv_file_list[0],dest_str,str,str)
+                dest_str = self.pw_join(self.path,dest_str)           
+                mtest = self.move(mv_file_list[0],dest_str,str,str)
                 if(not mtest):
                     success = False 
                     print("Error: contents of this path: '"+i+"' could not be moved")                                 
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result  
             
             else:
@@ -1231,15 +1270,15 @@ class path_parse:
             
             for i in file_list:   
                 if(i in self.path_files):
-                    file_path_str = self.join_node(self.path,i)
-                    dtest = self.del_file(file_path_str,True)
+                    file_path_str = self.pw_join(self.path,i)
+                    dtest = self.del_file(file_path_str, update = True)
                     if(not dtest):
                         success = False 
                         print("Error: contents of the path: '"+i+"' could not be deleted")
                 else: 
                     print("Error: '"+i+"' not found within the current (path) directory")
             
-            result = updater(self.path_list,list,success,value)
+            result = updater(self.path_list,'list',success,value)
             return result
 
 
@@ -1250,23 +1289,23 @@ class path_parse:
                 success = True            
                 value = None
 
-                path_has = self.node_contain(path_str, rtrn = 'files')
+                path_has = self.pw_contain(path_str, rtrn = 'files')
                 for i in file_list:                    
                     inc = 1
                     file_inst_list = i.split(".")
                     if(len(file_inst_list)>2):
                         print("Warning: file '"+str(i)+"' does not match proper naming conventions")
-                    old_inst = self.join_node(self.path,i)
+                    old_inst = self.pw_join(self.path,i)
                     cp_inst = file_inst_list[0]+"_copy_"+str(inc)+"."+file_inst_list[1] 
                     while(cp_inst in path_has):
                         inc+=1
                         cp_inst = file_inst_list[0]+"_copy_"+str(inc)+"."+file_inst_list[1] 
-                    ctest = self.copy_file(cp_inst, old_inst, path_str)
+                    ctest = self.copy_file(old_inst,path_str,cp_inst)
                     if(not ctest):
                         success = False 
                         print("Error: contents of the path: '"+str(i)+"' could not be copied")
                                                                     
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result
                                 
             success = True            
@@ -1286,12 +1325,12 @@ class path_parse:
                 else:
                     up_path_list = list(self.path_list)[:-1]
 
-                up_path_str = self.convert_node(up_path_list)   
+                up_path_str = self.pw_convert(up_path_list)   
                 result = __cp_help_func__(file_list, up_path_str)
                 return result
             
             elif(dest_str in self.path_contain):
-                path_str = self.join_node(self.path,dest_str)  
+                path_str = self.pw_join(self.path,dest_str)  
                 result = __cp_help_func__(file_list, path_str)
                 return result
             
@@ -1309,7 +1348,7 @@ class path_parse:
             elif(dest_str == '~'):           
                 path_str = self.path_head 
                 try:                   
-                    path_has = self.node_contain(path_str, rtrn = 'files')
+                    path_has = self.pw_contain(path_str, rtrn = 'files')
                 except:
                     print("Error: 'home' directory cannot be accessed")
                     return (False,None)
@@ -1331,13 +1370,13 @@ class path_parse:
             cmd_inst, file_list, dest_str = tup      
             
             for i in file_list:
-                file_path_str = self.join_node(self.path,i)
+                file_path_str = self.pw_join(self.path,i)
                 ctest = self.create_dir(file_path_str)  
                 if(not ctest):
                     success = False 
                     print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-            result = updater(self.path_list,list,success,value)
+            result = updater(self.path_list,'list',success,value)
             return result  
 
         
@@ -1349,34 +1388,34 @@ class path_parse:
             
             for i in file_list: 
                 if(i in self.path_contain):
-                    file_path_str = self.join_node(self.path,i)
+                    file_path_str = self.pw_join(self.path,i)
                     output = self.del_dir(file_path_str)
+                    if(output == False):
+                        success = False
 
-            result = updater(self.path_list,list,success,value)
+            result = updater(self.path_list,'list',success,value)
             return result        
 
 
         def cmd_cpdir(tup):                   
 
             def __cpdir_help_func__(file_list, path_str):  
-                path_has = self.node_contain(path_str, rtrn = 'files')
+                path_has = self.pw_contain(path_str, rtrn = 'folders')
                 for i in file_list:                    
                     inc = 1
-                    file_inst_list = i.split(".")
-                    if(len(file_inst_list)>2):
-                        print("Warning: file '"+str(i)+"' does not match proper naming conventions")
-                    cp_inst = file_inst_list[0]+"_copy_"+str(inc)+"."+file_inst_list[1] 
+                    cp_inst = i+"_copy"
                     while(cp_inst in path_has):
                         inc+=1
-                        cp_inst = file_inst_list[0]+"_copy_"+str(inc)+"."+file_inst_list[1] 
-                    ctest = self.copy_dir(cp_inst, self.path, path_str)
+                        cp_inst = cp_inst + '_' + str(inc)
+                    ctest = self.copy_dir(self.path, path_str, new_fold_name = cp_inst)
                     if(not ctest):
                         success = False 
                         print("Error: contents of the path: '"+str(i)+"' could not be copied")
                                                                     
-                result = updater(self.path_list,list,success,value)
+                result = updater(self.path_list,'list',success,value)
                 return result
-                                
+                             
+            # cmd_cpdir MAIN   
             success = True            
             value = None
             cmd_inst, file_list, dest_str = tup 
@@ -1394,12 +1433,12 @@ class path_parse:
                 else:
                     up_path_list = list(self.path_list)[:-1]
 
-                up_path_str = self.convert_node(up_path_list)   
+                up_path_str = self.pw_convert(up_path_list)   
                 result = __cpdir_help_func__(file_list, up_path_str)
                 return result
             
             elif(dest_str in self.path_contain):
-                path_str = self.join_node(self.path,dest_str)  
+                path_str = self.pw_join(self.path,dest_str)  
                 result = __cpdir_help_func__(file_list, path_str)
                 return result
             
@@ -1415,13 +1454,7 @@ class path_parse:
                 return result
                     
             elif(dest_str == '~'):           
-                path_str = self.path_head 
-                try:                   
-                    path_has = self.node_contain(path_str, rtrn = 'files')
-                except:
-                    print("Error: 'home' directory cannot be accessed")
-                    return (False,None)
-                    
+                path_str = self.path_head                     
                 result = __cpdir_help_func__(file_list, path_str)
                 return result
               
@@ -1440,7 +1473,7 @@ class path_parse:
             
             found_list = []
             for i in file_list:            
-                ftest = self.find_file(i,pathopt = True)
+                ftest = self.find(i, self.path)
                 found_list.append(ftest)
 
 #            found_dict = {k: v for k, v in zip(file_list, found_list)}   
@@ -1459,31 +1492,31 @@ class path_parse:
             return result
           
         
-        def cmd_grep(tup):
+        def cmd_match(tup):
 
             success = True            
             value = None
             cmd_inst, file_list, dest_str = tup   
             
-            grep_list = []
+            match_list = []
             for i in file_list:
-                gtest = self.grep_file(i,pathopt = True)
-                grep_list.append(gtest)
+                gtest = self.match(self.path, i)
+                match_list.append(gtest)
 
-#            grep_dict = {k: v for k, v in zip(file_list, grep_list)} 
-            grep_dict = dict(zip(file_list,grep_list))
+#            match_dict = {k: v for k, v in zip(file_list, match_list)} 
+            match_dict = dict(zip(file_list,match_list))
              
             if(self.path_print):
                 for i in file_list:
-                    if(len(grep_dict[i]) == 0):
-                        print("No matches found for the string, '"+i+"' :")
+                    if(len(match_dict[i]) == 0):
+                        print("No matches found for the string, '"+i+"' ")
                     else:
                         print("The following matches were found for the string, '"+i+"' :")
-                        self.__fancy_print_list__(grep_dict[i])
+                        self.__fancy_print_list__(match_dict[i])
                         
-            value = grep_dict
+            value = match_dict
             result = (success,value)                       
-            return result        
+            return result           
 
 
         def cmd_vi(tup):
@@ -1499,7 +1532,7 @@ class path_parse:
                     success = False
                
             file_name = file_list[0] 
-            file_path_str = self.join_node(self.path,str(file_name))            
+            file_path_str = self.pw_join(self.path,str(file_name))            
                    
             if(file_name in self.path_files):
                 try: 
@@ -1532,9 +1565,6 @@ class path_parse:
             success = True            
             value = None
             cmd_inst, file_list, dest_str = tup 
-
-            cd_list = ['ls','dir','pwd','cd','chdir','mv','rm','mkdir',
-                       'rmdir','find','grep','help','vi']
             
             help_dict = self.documentation('help')
                
@@ -1609,8 +1639,8 @@ class path_parse:
         elif(cmd_inst == 'find'):            # find (exact file)
             result  = cmd_find(cmd_tuple)
 
-        elif(cmd_inst == 'grep'):            # grep (file names) 
-            result = cmd_grep(cmd_tuple)
+        elif(cmd_inst == 'match'):           # match (file names) 
+            result = cmd_match(cmd_tuple)
 
         elif(cmd_inst == 'vi'):              # visual interface (read text files)
             result = cmd_vi(cmd_tuple)
