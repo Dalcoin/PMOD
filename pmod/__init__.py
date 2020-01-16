@@ -12,11 +12,11 @@ Welcome to the PMOD package, use the 'pmod_help' function for more info on each 
 
 Class list:
  
-    module  : class
-   
-    cmdline : path_parse
-    mathops : spline
-    zkparse : clock
+    module  | class
+    _______ | ___________  
+    cmdline | path_parse
+    mathops | spline
+    zkparse | clock
 
 '''
 

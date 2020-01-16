@@ -132,6 +132,10 @@ class pot_format:
         par_path = cmv_pars.cmd('dir '+pars_name)
         pot_path = cmv_pars.cmd('dir '+pot_name) 
         jsl_path = cmv_pars.cmd('dir '+jsl_name)
+
+        par_path = par_path[1][0]
+        pot_path = pot_path[1][0]
+        jsl_path = jsl_path[1][0]
         
         cmv_pot = cmv.path_parse(os_form=self.os,path_print=False)
         cmv_pot.cmd('cd pot_files')
@@ -168,9 +172,11 @@ class pot_format:
                     head_match = '\d\d*'
                     head_compile = re.compile(head_match)
                     eff_file_list_text = cmv_pot.cmd('ls')
+                    eff_file_list_text = eff_file_list_text[1]
                     eff_file_list_text.sort(key = lambda y: int(head_compile.findall(y)[0]))    
                 except:
                     eff_file_list_text = cmv_pot.cmd('ls')
+                    eff_file_list_text = eff_file_list_text[1]
             nfile = len(eff_file_list_text)
         else:
             eff_file_list_text = [par_text[2][0].strip(' ').strip('\n').strip('\r')]  
@@ -209,6 +215,7 @@ class pot_format:
             # Read file eff3nfn3lo file(s):
             pot_file_pathway = 'dir '+i
             ftg = cmv_pot.cmd(pot_file_pathway)
+            ftg = ftg[1][0]
             if(self.pyval == '27'):
                 file_text = parse27.list_file_grab(ftg,[],False,False)
             if(self.pyval == '26'):

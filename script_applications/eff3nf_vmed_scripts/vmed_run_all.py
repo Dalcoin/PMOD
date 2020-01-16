@@ -74,7 +74,7 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
 
 def v_group():
 
-    cmv = cl.path_parse('Linux')
+    cmv = cl.path_parse('linux')
     
     # Get path of file storing the contribs
     success, file_path_list = cmv.cmd("dir contribs.txt")
@@ -209,7 +209,7 @@ qf_pair = zip(strl.array_nth_index(qf_vals,2),strl.array_nth_index(qf_vals,2,inv
 # Get V groupings
 numgroup, ngroup = v_group()
 
-cmv = cl.path_parse('Linux')
+cmv = cl.path_parse('linux')
 
 success, in_path_list = cmv.cmd("dir dpot1.d")
 in_path = in_path_list[0]

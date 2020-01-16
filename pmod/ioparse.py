@@ -32,6 +32,10 @@ Below is a list of the functions this class offers (w/ a short description):
                     copied are deterined by 'grab_list' and 'repeat' options. An
                     empty grab_list list results in the entire 'file_in' being copied.
 
+   flat_file_intable : (Input: file_in; header = False)
+                       Reads in values from a text file, attempts to formate the results 
+                       as a 'pinax' table. 
+
 
 Below is a list of the functions this class offers (w/ input):
 
@@ -44,6 +48,8 @@ Below is a list of the functions this class offers (w/ input):
    flat_file_grab(file_in,grab_list,scrub=False,repeat=False,count_offset=True,ptype='r')        
 
    flat_file_copy(file_in,file_out,grab_list,repeat=False,group=0,ptype='w')  
+
+   flat_file_intable(file_in, header = False)
         
 '''
 
@@ -71,7 +77,7 @@ def __dup_check__(array):
     return False        
 
 
-def __attempt_path_print__(filepath,path_name=None,func_name=None):       
+def __attempt_path_print__(filepath, path_name=None, func_name=None):       
     try:
         if(path_name != None):
             if(func_name != None):
@@ -86,7 +92,7 @@ def __attempt_path_print__(filepath,path_name=None,func_name=None):
         return False       
 
 
-def __io_opt_test__(ptype,io,par=False,count_offset=False):
+def __io_opt_test__(ptype, io, par=False, count_offset=False):
     
     success = True
 
@@ -225,34 +231,36 @@ def __list_repeat__(grab_list,file_lines,scrub):
 #################################################################
 
 
-def flat_file_read(file_in,ptype='r'):
+def flat_file_read(file_in, ptype='r'):
     '''
-    flat_file_read(file_in,ptype='r')
+    flat_file_read(file_in, ptype='r')
 
     Description: Writes a list of strings (1 line per string) from an input file, various options for parsing
       
-    (e.g.)
-    flat_file_read('file.in',ptype='rb')   
+    (e.g.) :
+    
+        flat_file_read('file.in', ptype='rb')   
 
     Variables:
     
-    'file_in': file string pathway, if only a single node is given, current (path) directory is assumed
-    'ptype': [*] a string in found in the 'ptype_read list'.         
+        'file_in': file string pathway, if only a single node is given, current (path) directory is assumed
 
-    Output: List of Strings; else Boolean if failure           
+        'ptype': [*] a string in found in the 'ptype_read list'.         
+
+    Output: List of Strings; Output: Success Boolean              
      
     '''    
 
-    test = __io_opt_test__(ptype,'read')
+    test = __io_opt_test__(ptype, 'read')
     if(not test):
         return False            
 
-    test = check.type_test_print(file_in,str,'file_in','flat_file_read') 
+    test = check.type_test_print(file_in, str, 'file_in', 'flat_file_read') 
     if(not test):
         return False
   
     try:
-        with open(file_in,ptype) as file_in:
+        with open(file_in, ptype) as file_in:
             file_lines = file_in.readlines()
         return file_lines 
     except:
@@ -263,45 +271,49 @@ def flat_file_read(file_in,ptype='r'):
 
 def flat_file_write(file_out, add_list = [], par=False, ptype='w+'):
     '''
-    flat_file_write(file_out,add_list,ptype='w',par=False)
+    flat_file_write(file_out, add_list = [], par=False, ptype='w')
 
     Description: Writes a list of strings to an output file, various options for parsing
 
     (e.g.)
-    flat_file_write('file.in',["This is the first line!","This is line #2!"])
+
+        flat_file_write('file.in',["This is the first line!","This is line #2!"])
 
     Variables:
     
-    'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
-    'add_list': list of strings, each string is a separate line, order denoted by the index. 
-    'ptype': [*] a string in found in the ptype_write list.         
-    'par': [*] True if endline character is to be added to each output string, else False. 
+        'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
-    Output: Boolean      
+        'add_list': [*] list of strings, each string is a separate line, order denoted by the index. 
+
+        'ptype': [*] a string in found in the ptype_write list.         
+
+        'par': [*] True if endline character is to be added to each output string, else False. 
+
+    Output: Success Boolean         
 
     ''' 
 
     # Testing proper variable types
-    test = __io_opt_test__(ptype,'write',par=par)
+    test = __io_opt_test__(ptype,'write', par=par)
     if(not test):
         return False         
 
-    test = check.type_test_print(file_out,str,'file_out','flat_file_write') 
+    test = check.type_test_print(file_out, str, 'file_out', 'flat_file_write') 
     if(not test):
         return False
-    test = check.type_test_print(add_list,list,'add_list','flat_file_write') 
+    test = check.type_test_print(add_list, list, 'add_list', 'flat_file_write') 
     if(not test):
         return False
     
     n=len(add_list)
     for i in range(n):
-        test = check.type_test_print(add_list[i],str,'add_list['+str(i)+']','flat_file_write')
+        test = check.type_test_print(add_list[i], str, 'add_list['+str(i)+']', 'flat_file_write')
         if(not test):
             return False           
         
     # Print content to file   
     try: 
-        with open(file_out,ptype) as fout:
+        with open(file_out, ptype) as fout:
             for i in add_list: 
                 if(par):
                     fout.write(i+"\n")
@@ -314,7 +326,29 @@ def flat_file_write(file_out, add_list = [], par=False, ptype='w+'):
         return False
 
 
-def flat_file_append(file_out,add_list,par=False):
+def flat_file_append(file_out, add_list, par=False):
+    '''
+    flat_file_append(file_out, add_list, par=False)
+
+    Description: Appends a list of strings to an output file
+
+    (e.g.)
+
+        flat_file_write('file.in',["\n","This is the second to last line!","This is the last line!"])
+
+    Variables:
+    
+        'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
+
+        'add_list': list of strings, each string is a separate line, order denoted by the index. 
+
+        'ptype': [*] a string in found in the ptype_write list.         
+
+        'par': [*] True if endline character is to be added to each output string, else False. 
+
+    Output: Success Boolean         
+
+    ''' 
 
     ptype = 'a+'
     # Testing proper variable types
@@ -346,26 +380,33 @@ def flat_file_append(file_out,add_list,par=False):
         return False         
      
      
-def flat_file_replace(file_out,grab_list,change_list,count_offset=True,par=True,ptype='w'):
+def flat_file_replace(file_out, grab_list , change_list, count_offset=True, par=False, ptype='w'):
     '''
     Description: In the file 'file_out', the lines in 'grab_list' are replaced with the strings in 'change_list'
 
-        (e.g.) flat_file_replace('file.in',[1,2],["This is the first line!","This is line #2!"])
+   (e.g.) 
+   
+       flat_file_replace('file.in', [1,2], ["This is the first line!","This is line #2!"])
 
     Variables:
     
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
+
         'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+
         'change_list': list of strings, each string is a separate line
+
         'par': [*] True if endline character is to be added to each output string, else False. 
+
         'count_offset': [*] True if values in grab_list corrospond to line numbers, else values corrospond to list index
+
         'ptype': [*] a string in found in the ptype_write list.         
 
-    Output: Boolean   
+    Output: Success Boolean   
     '''
     
     # Testing proper variable types
-    test = __io_opt_test__(ptype,'write',par=par,count_offset=count_offset)
+    test = __io_opt_test__(ptype, 'write', par=par, count_offset=count_offset)
     if(not test):
         return False
     test = check.type_test_print(file_out,str,'file_out','flat_file_replace') 
@@ -400,6 +441,29 @@ def flat_file_replace(file_out,grab_list,change_list,count_offset=True,par=True,
     
     
 def flat_file_grab(file_in, grab_list = [], scrub=False, repeat=False, count_offset=True, ptype='r'):
+    '''
+    Description: Grabs the lines in 'grab_list' as strings from the file 'file_in'
+
+   (e.g.) 
+   
+       flat_file_replace('file.in', [1,2], ["This is the first line!","This is line #2!"])
+
+    Variables:
+    
+        'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
+
+        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+
+        'scrub': [bool] (False), Removes end and return line characters from each grabbed string  
+
+        'repeat': [bool] (False), if True, then 'grouping' formatting is used
+
+        'count_offset': [bool] (True), shifts 'grab_list' values by 1 to align line numbers with python indices
+
+        'ptype': [string] ('r'), reading mode          
+
+    Output: List of Strings; Output: Success Boolean  
+    '''
             
     # Testing proper variable types
     test = __io_opt_test__(ptype,'read',count_offset=count_offset)
@@ -445,7 +509,31 @@ def flat_file_grab(file_in, grab_list = [], scrub=False, repeat=False, count_off
     return out_lines                  
 
 
-def flat_file_copy(file_in,file_out,grab_list,repeat=False,group=0,ptype='w'):
+def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w'):
+    '''
+    Description: Grabs the lines in 'grab_list' as strings from the file 'file_in'
+                 the lines in grab_list are then printed to file_out 
+
+   (e.g.) 
+   
+       flat_file_replace('file.in', [1,2], ["This is the first line!","This is line #2!"])
+
+    Variables:
+    
+        'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
+
+        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+
+        'scrub': [bool] (False), Removes end and return line characters from each grabbed string  
+
+        'repeat': [bool] (False), if True, then 'grouping' formatting is used
+
+        'count_offset': [bool] (True), shifts 'grab_list' values by 1 to align line numbers with python indices
+
+        'ptype': [string] ('r'), reading mode          
+
+    Output: List of Strings; Output: Success Boolean  
+    '''
 
     # basic dummy check of variables 'file_out' and 'group'
     test = check.type_test_print(file_out,str,'file_out','flat_file_copy') 
@@ -485,12 +573,14 @@ def flat_file_copy(file_in,file_out,grab_list,repeat=False,group=0,ptype='w'):
             if(i>0 and (i+1)%group == 0):
                 out_list.append("\n")
      
-    result = flat_file_write(file_out,out_list,ptype=ptype) 
+    result = flat_file_write(file_out, out_list, ptype=ptype) 
     return result
      
      
 def flat_file_intable(file_in, header = False):
-      
+    ''' 
+        
+    '''  
     table_lines = flat_file_grab(file_in, scrub = True)
     table_num = px.table_str_to_numeric(table_lines, header = header)
     return table_num
