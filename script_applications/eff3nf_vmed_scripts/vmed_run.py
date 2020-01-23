@@ -61,10 +61,8 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
 match = '(-?\d\.\d*D.\d{2})'
 v_line = re.compile(match)    
 
-hc = 197.33
-vmhc = 345845.245781
-
-
+hc = 197.33            # hc        - Standard Nuclear Conversion Constant
+vmhc = 290599.9978     # (pi/2) hc - MeV^-2 -> fm Conversion Constant
 
 kf_vals = [i*0.1 for i in xrange(1,21)]
 qf_vals = [hc*float(i) for i in kf_vals]
@@ -96,11 +94,11 @@ for i in range(n):
         ('1',double1,'singlet'),
         ('0',double1,'V++'),
         ('1',double1,'triplet'),
-        ('2',double1,'triplet'),
+        ('2',double1,'V--'),
         ('1',double2,'singlet'),
         ('0',double2,'V++'),
         ('1',double2,'triplet'),
-        ('2',double2,'triplet'),
+        ('2',double2,'V--'),
     ]
       
     iop.flat_file_replace('cpot.f', [58,59], [q1_str,q2_str])

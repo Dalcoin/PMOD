@@ -138,11 +138,11 @@ def p_run_loop(qf_pair):
             ('1',double1,'singlet'),
             ('0',double1,'V++'),
             ('1',double1,'triplet'),
-            ('2',double1,'triplet'),
+            ('2',double1,'V--'),
             ('1',double2,'singlet'),
             ('0',double2,'V++'),
             ('1',double2,'triplet'),
-            ('2',double2,'triplet'),
+            ('2',double2,'V--'),
         ]
           
         iop.flat_file_replace('cpot.f', [58,59], [q1_str,q2_str])
@@ -197,8 +197,8 @@ v_line = re.compile(match)
 
 # Constants  
 
-hc = 197.33            # Standard Nuclear Conversion Constant
-vmhc = 345845.245781   # ??? V MeV^-2 Conversion Constant
+hc = 197.33            # hc        - Standard Nuclear Conversion Constant
+vmhc = 290599.9978     # (pi/2) hc - MeV^-2 -> fm Conversion Constant
 
 # Set-up P values 
 kf_vals = [i*0.1 for i in xrange(1,21)]

@@ -1,18 +1,20 @@
 
-import math as mt 
-from scipy.interpolate import interp1d as spln    
-from scipy.interpolate import splrep as bspln
-from scipy.interpolate import splev as deriv
-from scipy.interpolate import splint as integ
+import numpy as __np__
+import math as __mt__ 
 
-import tcheck as check
+from scipy.interpolate import interp1d as __spln__    
+from scipy.interpolate import splrep as __bspln__
+from scipy.interpolate import splev as __deriv__
+from scipy.interpolate import splint as __integ__
+
+import tcheck as __check__
 
 '''
 functions for rounding numbers
 
 The version of python must be passed for relevent functions:
 
-   For all rounding functions: 
+   * rounding functions: 
 
    | Inputs must be numeric |
 
@@ -24,6 +26,8 @@ The version of python must be passed for relevent functions:
 ''' 
             
 
+# Rounding functions 
+
 def round_decimal(num, deci, str_bool=True):
     
     # round_decimal(30.112,1,True)
@@ -32,13 +36,13 @@ def round_decimal(num, deci, str_bool=True):
     # d: non-zero integer
     # string: boolean, String if True, Float if false
 
-    test = check.type_test_print(num,'num','num','round_decimal')
+    test = __check__.type_test_print(num,'num','num','round_decimal')
     if(not test):
         return test 
-    test = check.type_test_print(deci,int,'deci','round_decimal')
+    test = __check__.type_test_print(deci,int,'deci','round_decimal')
     if(not test):
         return test 
-    test = check.type_test_print(str_bool,bool,'str_bool','round_decimal') 
+    test = __check__.type_test_print(str_bool,bool,'str_bool','round_decimal') 
     if(not test):
         return test 
     
@@ -72,13 +76,13 @@ def round_scientific(num, digi, pyver = '27', str_bool = True):
     # num: input file string
     # d: a non-negative integer signifying the number of significant digits
 
-    test = check.type_test_print(num,'num','num','round_scientific') 
+    test = __check__.type_test_print(num,'num','num','round_scientific') 
     if(not test):
         return test 
-    test = check.type_test_print(digi,int,'digi','round_scientific')
+    test = __check__.type_test_print(digi,int,'digi','round_scientific')
     if(not test):
         return test 
-    test = check.type_test_print(str_bool,bool,'str_bool','round_scientific') 
+    test = __check__.type_test_print(str_bool,bool,'str_bool','round_scientific') 
     if(not test):
         return test 
     
@@ -105,7 +109,7 @@ def round_scientific(num, digi, pyver = '27', str_bool = True):
 
 def round_uniform(num, pyver = '27'):
     
-    test = check.type_test_print(num,'num','num','round_uniform') 
+    test = __check__.type_test_print(num,'num','num','round_uniform') 
     if(not test):
         return test 
 
@@ -114,7 +118,7 @@ def round_uniform(num, pyver = '27'):
     pos_bool = (num > 0.0)
     neg_bool = (num < 0.0)
     nul_bool = (num == 0.0)
-
+     
     if(pos_bool):
         if(num < 10000000):
             output = round_decimal(num,6)
@@ -182,13 +186,14 @@ class spline:
         self.der = None   
 
 
-    def pass_vals(self, x_vec, y_vec, xarray = None):
+    def pass_vecs(self, x_vec, y_vec, xarray = None):
         self.x_vec = x_vec 
         self.y_vec = y_vec 
         self.xarray = xarray  
 
-    def pass_xarr(self,xarray):
+    def pass_newx_vec(self, xarray, der = None):
         self.xarray = xarray       
+        self.der    = der
 
     def pass_int_lim(self,a,b):
         self.a = a 
@@ -197,23 +202,23 @@ class spline:
 
     def spln_obj(self, x_arr, y_arr, type = 'spline', sort = 'cubic'):
 
-        test = check.type_test_print(x_arr,'arr','x_arr','spln_obj')
+        test = __check__.type_test_print(x_arr,'arr','x_arr','spln_obj')
         if(not test):
             return test 
-        test = check.type_test_print(y_arr,'arr','y_arr','spln_obj')
+        test = __check__.type_test_print(y_arr,'arr','y_arr','spln_obj')
         if(not test):
             return test 
-        test = check.type_test_print(type,str,'type','spln_obj')   
+        test = __check__.type_test_print(type,str,'type','spln_obj')   
         if(not test):
             return test 
-        test = check.type_test_print(sort,str,'sort','spln_obj')  
+        test = __check__.type_test_print(sort,str,'sort','spln_obj')  
         if(not test):
             return test 
 
         if(type == 'spline'):
 
             try: 
-                spline = spln(x_arr,y_arr,kind=sort)
+                spline = __spln__(x_arr, y_arr, kind=sort)
                 return spline
             except: 
                 spline = False 
@@ -223,7 +228,7 @@ class spline:
         elif(type == 'bspline'):
 
             try: 
-                bspline = bspln(x,y)
+                bspline = __bspln__(x_arr, y_arr)
                 return bspline
             except: 
                 bspline = False 
@@ -231,7 +236,7 @@ class spline:
                 return bspline
 
         else: 
-            print("[spln_obj] Error: 'type' not recognized")
+            print("[spln_obj] Error: input variable 'type' is not recognized string")
             return False
 
 
@@ -242,19 +247,19 @@ class spline:
         except:
             return False       
 
-    def pass_bspline():
+    def pass_bspline(self, x_arr, y_arr):
         try:
-            self.spline_inst = spln_obj(x_arr, y_arr, type = 'bspline', sort = 'cubic')
+            self.bspline_inst = spln_obj(x_arr, y_arr, type = 'bspline', sort = 'cubic')
             return True
         except:
             return False
 
     def spln_val(self, spline, xvals_arr):
 
-        test = check.type_test_print(spline,spln,'spline','spln_val') 
+        test = __check__.type_test_print(spline,__spln__,'spline','spln_val') 
         if(not test):
             return test 
-        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spln_val') 
+        test = __check__.type_test_print(xvals_arr,'arr','xvals_arr','spln_val') 
         if(not test):
             return test 
 
@@ -267,18 +272,18 @@ class spline:
 
     def spln_der(self, bspline, xvals_arr, der = 1):
 
-        test = check.type_test_print(bspline,bspln,'spline','spln_der') 
+        test = __check__.type_test_print(bspline,__bspln__,'spline','spln_der') 
         if(not test):
             return test 
-        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spln_der') 
+        test = __check__.type_test_print(xvals_arr,'arr','xvals_arr','spln_der') 
         if(not test):
             return test 
-        test = check.type_test_print(der,int,'der','spln_der') 
+        test = __check__.type_test_print(der,int,'der','spln_der') 
         if(not test):
             return test 
 
         try:    
-            der_vals = deriv(xvals_arr,bspline,der)
+            der_vals = __deriv__(xvals_arr, bspline, der)
             return(der_vals) 
         except: 
             return False 
@@ -286,18 +291,18 @@ class spline:
 
     def spln_integ(self, bspline, a, b):
 
-        test = check.type_test_print(bspline,bspln,'spline','spln_integ') 
+        test = __check__.type_test_print(bspline,__bspln__,'spline','spln_integ') 
         if(not test):
             return test 
-        test = check.type_test_print(a,'num','a','spln_integ')
+        test = __check__.type_test_print(a,'num','a','spln_integ')
         if(not test):
             return test 
-        test = check.type_test_print(b,'num','b','spln_integ') 
+        test = __check__.type_test_print(b,'num','b','spln_integ') 
         if(not test):
             return test 
 
         try:    
-            int_vals = integ(a,b,bspline)
+            int_vals = __integ__(a,b,bspline)
             return(der_vals)
         except: 
             return False 
@@ -305,17 +310,28 @@ class spline:
     ### Functions for performing 1-D splines, derivatives and integrals
 
     def get_spline(self):
-        try: 
-            result = self.spln_val(self.spline_inst, self.xarray)
-            self.spln_array = (result, self.xarray) 
-            return result  
+        try:
+            if(self.spline_inst != None): 
+                result = self.spln_val(self.spline_inst, self.xarray)
+                self.spln_array = (self.xarray, result) 
+                return result
+            elif(spline_inst == None):
+                print("Error: No spline instance found, initialize a spline instance and try again") 
+                return False
+            elif(self.x_array == None):
+                print("Error: No xspline vector found, initialize an xspline vector and try again") 
+                return False                 
+            else:
+                print("[get_spline] Error: unknown error occured when trying to create spline") 
+                return False                 
         except:
+            print("[get_spline] Error: unknown error occured when trying to create spline") 
             return False
 
     def get_der(self):
         try: 
             result = self.spln_der(self.bspline_inst, self.xarray, der = self.der)
-            self.der_array = (result, self.der) 
+            self.der_array = (self.xarray, result, self.der) 
             return result  
         except:
             return False
@@ -333,10 +349,10 @@ class spline:
 
     def spline_val_scos(self, xvals_arr, x_arr, y_arr, der = 0 , type = 'cubic'):
 
-        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spline_val_scon')     
+        test = __check__.type_test_print(xvals_arr,'arr','xvals_arr','spline_val_scon')     
         if(not test):
             return test 
-        test = check.type_test_print(der,int,'der','spline_val_scon')    
+        test = __check__.type_test_print(der,int,'der','spline_val_scon')    
         if(not test):
             return test 
         
@@ -346,7 +362,7 @@ class spline:
 
         if(der == 0):    
             try:
-                spline = spln(x_arr,y_arr,kind=type)
+                spline = __spln__(x_arr,y_arr,kind=type)
                 spline_vals = spline(xvals_arr)
                 return(spline_vals)
             except:
@@ -354,38 +370,38 @@ class spline:
                 return False
         if(der > 0):
             try:
-                bspline_obj = bspln(x,y)
-                der_spline_vals = deriv(xvals_arr,bspline_obj,der)
+                bspline_obj = __bspln__(x,y)
+                der_spline_vals = __deriv__(xvals_arr,bspline_obj,der)
                 return(der_spline_vals)
             except:
                 print("[spline_val_scon] Error: bspline function(s) failed")
                 return False
    
  
-    def spline_integ_scos(self, x_arr, y_arr, a, b, tol = 0.000000001, nlim = 1000):
+    def spline_integ_scos(self, x_arr, y_arr, a, b, tol = 0.000001, nlim = 1000):
         
-        test = check.type_test_print(x_arr,'arr','x_arr','spline_integ')
+        test = __check__.type_test_print(x_arr,'arr','x_arr','spline_integ')
         if(not test):
             return test 
-        test = check.type_test_print(y_arr,'arr','y_arr','spline_integ')            
+        test = __check__.type_test_print(y_arr,'arr','y_arr','spline_integ')            
         if(not test):
             return test 
-        test = check.type_test_print(a,'num','a','spline_integ')
+        test = __check__.type_test_print(a,'num','a','spline_integ')
         if(not test):
             return test 
-        test = check.type_test_print(b,'num','b','spline_integ')          
+        test = __check__.type_test_print(b,'num','b','spline_integ')          
         if(not test):
             return test 
-        test = check.type_test_print(tol,float,'tol','spline_integ')
+        test = __check__.type_test_print(tol,float,'tol','spline_integ')
         if(not test):
             return test 
-        test = check.type_test_print(nlim,int,'nlim','spline_integ') 
+        test = __check__.type_test_print(nlim,int,'nlim','spline_integ') 
         if(not test):
             return test         
 
         try: 
-            bspline_obj = bspln(x_arr,y_arr)
-            int_spline_val = integ(a,b,bspline_obj)
+            bspline_obj = __bspln__(x_arr,y_arr)
+            int_spline_val = __integ__(a,b,bspline_obj)
         except:
             int_spline_val = False 
             print("[spline_integ] Error: integral evaluation error")   

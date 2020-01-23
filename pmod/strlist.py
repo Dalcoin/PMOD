@@ -315,7 +315,7 @@ def str_set_spacing(string, space = ' ', print_bool = True):
     ''' 
     Description: spaces non-space substrings by a set amount
         
-    (e.g.) 'Hey,        Hello    World' becomes 'Hey, Hello World'   
+    (e.g.)  'Hey,        Hello    World'  - becomes -  'Hey, Hello World'   
     '''       
     try:
         array = str_to_list(string, filtre = True)
@@ -327,6 +327,97 @@ def str_set_spacing(string, space = ' ', print_bool = True):
         return False           
               
                            
+
+
+### printing functions
+
+def print_fancy(obj, header = None, newln = True, indt = 4, err = True):
+
+    if(newln):
+        nl = '\n'
+    else:
+        nl = ''
+
+    spc = indt*' '
+
+    stylized_list = []
+    
+    if(check.array_test(obj)):
+        print(' ')
+        if(isinstance(header,str)):
+            out_val = header+nl 
+            stylized_list.append(out_val)  
+            print(out_val)
+        for i in obj:
+            out_val = spc+str(i)+nl 
+            stylized_list.append(out_val) 
+            print(out_val)
+        print(' ')
+        return None
+    
+    elif(isinstance(obj,str)):
+        print(' ')
+        if(isinstance(header,str)):
+            out_val = spc+header+nl 
+            stylized_list.append(out_val)
+            print(out_val)
+        out_val = obj+nl 
+        stylized_list.append(out_val)
+        print(out_val)
+    else:
+        print("TypeError: 'obj' input object must be either an 'array' or a 'string'")
+
+
+def print_border(string, style = ('-','|'), newln = True, cushion = 0, indt = 0, comment = None):
+    
+    n = len(string)
+    
+    if(newln):
+        nl = '\n'
+    else:
+        nl = ''
+    
+    spr = 2*cushion+(cushion/1)*2+(cushion/2)*2+(cushion/4)*2     
+#    tnb = 4*style[0]+(n+2*cushion)*style[0] 
+    blnk= style[1]+(2+spr+n)*' '+style[1]  
+    tnb = len(blnk)*style[0]         
+    mid = style[1]+(1+spr/2)*' '+string+(1+spr/2)*' '+style[1] 
+
+    if(isinstance(indt,int) and indt >= 0):
+        blnk = indt*' '+blnk
+        tnb = indt*' '+tnb 
+        mid = indt*' '+mid
+
+    if(isinstance(comment,str)):
+        blnk = comment+blnk
+        tnb = comment+tnb 
+        mid = comment+mid
+    
+    stylized_list = []
+    print(tnb)
+    stylized_list.append(tnb+nl)
+    for i in range(cushion):
+        print(blnk)
+        stylized_list.append(blnk+nl)
+    print(mid)
+    stylized_list.append(mid+nl)
+    for i in range(cushion):
+        print(blnk)
+        stylized_list.append(blnk+nl)
+    print(tnb)
+    stylized_list.append(tnb+nl)
+
+    return stylized_list       
+    
+
+
+
+
+
+
+
+
+
 
 
 

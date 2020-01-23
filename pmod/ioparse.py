@@ -1,40 +1,11 @@
 import tcheck as check
 import pinax as px
+import strlist as strl
 
 
 '''
 
 Description: A class for performing basic IO functions on flat (text) files. 
-
-
-Below is a list of the functions this class offers (w/ a short description):
-
-   flat_file_read : (Input: path string, output: list) Reads the content of a 
-                    flat (text) file line-by-line, line corrosponds to entry in list
-
-   flat_file_write : (Input: path string; list of strs, output: bool) Writes the 
-                     contents of a list of strings to a file line-by-line so that 
-                     the string index (+1) corrosponds to the file line at the 
-                     path string.
-
-   flat_file_replace : (Input: path string; list of ints; list of strs, output: bool) 
-                       Replaces lines at line numbers found in grab_list with entries 
-                       found in change_list.
-
-   flat_file_grab :  (Input: path string; list of ints, output: list of strs) 
-                     Grabs the line numbers as text strings as specified in the grab_list
-                     and returns them as a list of strings. Option 'repeat' for advanced 
-                     selection of repeating group of lines spaced by a constant 
-                     number of lines. 
-
-   flat_file_copy : (Input: path_string; path_string; list of ints, output: bool)
-                    copies lines from 'file_in' to 'file_out'. The lines which are 
-                    copied are deterined by 'grab_list' and 'repeat' options. An
-                    empty grab_list list results in the entire 'file_in' being copied.
-
-   flat_file_intable : (Input: file_in; header = False)
-                       Reads in values from a text file, attempts to formate the results 
-                       as a 'pinax' table. 
 
 
 Below is a list of the functions this class offers (w/ input):
@@ -188,8 +159,8 @@ def __list_repeat__(grab_list,file_lines,scrub):
        instances to be selected from, according to line number: grab_list[1:-1] 
 
     3) The last value of grab_list is 'n' (number): the number of groups to be 
-       generated. Spacing corrosponds to 'bnd', while 
-       the grouped values corrospond to spacings starting from the 'saut' lines 
+       generated. Spacing between groups corrosponds to 'bnd', while 
+       the grouped values start from the 'saut' line values.  
 
     ''' 
     if(len(grab_list)<3):
@@ -586,6 +557,63 @@ def flat_file_intable(file_in, header = False):
     return table_num
      
 
+def iop_help(string):
+    '''
+    
+    '''
+    if(not isinstance(string,str)):
+        print("Error: Input must be a string, to view a list of valid inputs, input 'help'") 
+        return None
 
+    string = string.lower()
+    string = strl.str_filter(string,' ')
+       
+    help_list = ['help',
+                 'flat_file_read',
+                 'flat_file_write',
+                 'flat_file_replace',
+                 'flat_file_grab',
+                 'flat_file_copy',  
+                 'flat_file_intable',
+                 'repeat',
+                ]
 
+    help_action = [None,
+                   "(Input: path string, output: list) Reads the content of a \n"+
+                   "flat (text) file line-by-line, each entry in output list\n"+
+                   " corrosponds to a line in the file",
+                   "(Input: path string; list of strs, output: bool) Writes the\n"+ 
+                   "contents of a list of strings to a file line-by-line so that\n"+
+                   "the string index (+1) corrosponds to the file line at the\n"+    
+                   "path string.\n",  
+                   "(Input: path string; list of ints; list of strs, output: bool)\n" 
+                   "Replaces lines at line numbers found in grab_list with entries\n"
+                   "found in change_list.\n",    
+                   "(Input: path string; list of ints, output: list of strs)\n"+     
+                   "Grabs the line numbers as text strings as specified in the grab_list\n"+
+                   "and returns them as a list of strings. Option 'repeat' for advanced\n"+  
+                   "selection of repeating group of lines spaced by a constant\n"+  
+                   "number of lines.\n"  
+                   "(Input: path_string; path_string; list of ints, output: bool)\n"+
+                   "copies lines from 'file_in' to 'file_out'. The lines which are\n"+ 
+                   "copied are deterined by 'grab_list' and 'repeat' options. An\n"+ 
+                   "empty grab_list list results in the entire 'file_in' being copied.\n",
+                   "(Input: file_in; header = False)\n"+                        
+                   "Reads in values from a text file, attempts to formate the results\n"+
+                   "as a 'pinax' table.\n"
+                   ]         
+    
+    help_dict = dict(zip(help_list, help_action))
 
+    if(string == 'help'):
+        strl.print_fancy(help_list, header = "Valid 'help' strings: ")
+        return None
+    else:
+        try: 
+            strl.print_fancy(help_dict[string], header = string+" documentation:")
+            return None 
+        except:
+            print("Error : input string '"+string+"' could not be evaluated, use 'help' for input suggestions")
+            return None
+            
+        

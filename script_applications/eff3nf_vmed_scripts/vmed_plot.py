@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+from scipy.interpolate import make_interp_spline, BSpline
 
 from pmod import ioparse as iop
 
