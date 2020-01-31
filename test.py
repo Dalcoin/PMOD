@@ -1,13 +1,8 @@
-from pmod import mathops as mops
+from test_dir import mathops as mops
 
-x = [0.1,0.2,0.3,0.4,0.5,0.6]
-y = [1.4,4.2,8.3,13.4,21.5,36.6]
+x = [[0.1,0.2,0.3,0.4,0.5,0.6],[0.3,0.4,0.5,0.6,0.7,0.8]]
+y = [[1.4,4.2,8.3,13.4,21.5,36.6],[1.9,5.7,10.5,17.8,27.3,47.1]]
 
-nx = [0.15,0.2,0.25,0.33]
+mops.new_smooth_plot(x, y)
 
-nspl = mops.spline(x,y)
-
-nspl.pass_spline()
-
-sp = nspl.get_spline(nx)
-print(sp)
+#, label=['X','Y'], lims = [[0,1],[0,50]]
