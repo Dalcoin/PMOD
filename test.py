@@ -1,8 +1,6 @@
-from test_dir import mathops as mops
+from test_pmod import strlist as strl
 
-x = [[0.1,0.2,0.3,0.4,0.5,0.6],[0.3,0.4,0.5,0.6,0.7,0.8]]
-y = [[1.4,4.2,8.3,13.4,21.5,36.6],[1.9,5.7,10.5,17.8,27.3,47.1]]
+lofl = [['1','[2','[3]]'],['5','9',[['2','3'],'3'],'23','0',['3','33','333','3333'],'33'],'11','111']
 
-mops.new_smooth_plot(x, y)
-
-#, label=['X','Y'], lims = [[0,1],[0,50]]
+y = strl.array_flatten(lofl)
+print(y)

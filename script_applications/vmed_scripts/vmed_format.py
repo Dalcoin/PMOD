@@ -3,19 +3,19 @@
 import re 
 import sys 
 
-from pmod import cmdline as cmv
+from pmod import cmdline as cmv  
 from pmod import strlist as strl 
 
 class pot_format:
 
-    def __init__(self,os_val,py_version):
+    def __init__(self, os_val, py_version):
          
         self.os = os_val         
         self.pyval = py_version
         
     # head function: 
     
-    def head_construct(self,eflt,latex,nfile):
+    def head_construct(self, eflt, latex, nfile):
         
         head_match = '\d\d*'
         head_compile = re.compile(head_match)
@@ -295,9 +295,9 @@ class pot_format:
         return print_list
 
 
-def print_potd_format(os_choice,py_version):
+def print_potd_format(os_choice, py_version):
     '''
-    os_choice = 'Windows' or 'Linux'
+    os_choice = 'windows' or 'linux'
     '''
 
     if(py_version != '26' and py_version != '27'):
