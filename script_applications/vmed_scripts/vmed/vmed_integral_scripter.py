@@ -82,7 +82,7 @@ for i in xrange(len(nqftest_list)):
         mx_vals.append(gp_vals)                  
         gp_vals = []                 
     else:
-        clist = [nqftest_txt+str(nqftest_list[i])]
+        clist = [nqftest_txt+str(nqftest_list[i])+'\n']
                                 
         iop.flat_file_replace('eff3nfn3lo1.f', [nlines[1]], clist)
         subp.call("f90 $F90FLAGS -o xl -s -w cpot.f eff3nfn3lo1.f $LINK_FNL", shell=True)
