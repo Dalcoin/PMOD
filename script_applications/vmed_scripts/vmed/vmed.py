@@ -53,6 +53,7 @@ def jsl_entry(j,p1,p2,t):
     entry = (str(j),'('+str(p1)+','+str(p2)+')',str(t))
     return entry
 
+
 def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
     
     def __parse_tfile__(file_text):
@@ -103,6 +104,99 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
      
     return finalvals
 
+
+def v_group():
+
+    cmv = cl.path_parse('linux')
+    
+    # Get path of file storing the contribs
+    success, file_path_list = cmv.cmd("dir contribs.txt")
+    lines_list = iop.flat_file_grab(file_path_list[0], [], scrub = True)
+    
+    # Pair up V line with fun. line 
+    main = strl.array_nth_index(lines_list, 2)
+    comp = strl.array_nth_index(lines_list, 2, True)
+    paired = map(lambda x,y: [x,y], main,comp)
+        
+    ### Group V contribs by number
+    ngroup = []
+    lngroup = []
+    numgroup = []
+    setn = -1
+    for i in paired:
+        get = i[0]
+        vn = strl.str_to_list(get,filtre=True)[1]
+        num = int(vn[1:])
+        if(setn == num):
+            lngroup.append(i)
+        else:
+            numgroup.append(num)
+            ngroup.append(lngroup)
+            lngroup = []
+            lngroup.append(i)
+            setn = num        
+    ngroup = filter(None,ngroup)
+    
+    for i in range(len(ngroup)):
+        ngroup[i] = strl.array_flatten(ngroup[i],safety=False)    
+
+    return numgroup, ngroup
+
+
+def gen_table_12_13(lines):
+
+    list_12, list_13 = [], []
+
+    lines = strl.array_filter_spaces(lines)
+     
+    for i in xrange(len(pf_vals_20)):
+        try:
+            s_vals = grab_jsl(lines, s_jsl(pf_vals_20[i]), round_form = 1)
+            p_vals = grab_jsl(lines, p_jsl(pf_vals_20[i]), round_form = 1)
+        except: 
+            print("[gen_fig_12_13] Error: an error occured while trying to parse jsl values form 'lines' input")
+            return False
+        if(s_vals != []):
+            list_12.append(s_vals)
+        if(p_vals != []):
+            list_13.append(p_vals)
+    
+         
+    val_table_12 = px.table_trans(list_12)
+    val_table_13 = px.table_trans(list_13)
+    if(val_table_12 == False or val_table_13 == False):
+        print("[gen_fig_12_13] Error: an error occured while trying to transpose jsl tables")
+        return False
+         
+    for i in range(len(val_table_12)):
+        val_table_12[i] = [float(j)*vmhc for j in val_table_12[i]]
+    for i in range(len(val_table_13)):
+        val_table_13[i] = [float(j)*vmhc for j in val_table_13[i]]
+    
+    val_table_12.insert(0,kf_vals_20)
+    val_table_12 = px.table_trans(val_table_12)
+    if(val_table_12 == False):
+        print("[gen_fig_12_13] Error: an error occured while trying to transpose table 12 after adding kfs")
+        return False
+    
+    val_table_13.insert(0,kf_vals_20)
+    val_table_13 = px.table_trans(val_table_13)
+    if(val_table_13 == False):
+        print("[gen_fig_12_13] Error: an error occured while trying to transpose table 13 after adding kfs")
+        return False
+    
+    for i in range(len(val_table_12)):
+        try:
+            val_table_12[i] = strl.array_to_str(val_table_12[i], spc = '  ')
+        except:
+            print("[gen_fig_12_13] Error: entries in table 12 could not be converted to strings")
+    for i in range(len(val_table_13)):
+        try:
+            val_table_13[i] = strl.array_to_str(val_table_13[i], spc = '  ')
+        except:
+            print("[gen_fig_12_13] Error: entries in table 13 could not be converted to strings")
+
+    return val_table_12, val_table_13
 
 #################################
 #   functions for vmed_format   #
@@ -158,7 +252,7 @@ def head_construct(self, eflt, latex, nfile):
 
 # Captures the s (first 4) and p (last 4) waves corrosponding to the ones in the reference paper [*}
 
-def holt_jsl_20(p): 
+def sp_jsl(p): 
 
     jsl_out = [
         ('0','('+str(p)+','+str(p)+')','singlet'),
@@ -174,9 +268,33 @@ def holt_jsl_20(p):
     return jsl_out  
 
 
+def s_jsl(p):
+
+    jsl_out = [
+        ('0','('+str(p)+','+str(p)+')','singlet'),
+        ('1','('+str(p)+','+str(p)+')','V--'),
+        ('1','('+str(p)+','+str(p)+')','V++'),
+        ('1','('+str(p)+','+str(p)+')','V-+'),
+    ]
+     
+    return jsl_out  
+
+def p_jsl(p):
+
+    jsl_out = [
+        ('1','('+str(p)+','+str(p)+')','singlet'),
+        ('0','('+str(p)+','+str(p)+')','V++'),
+        ('1','('+str(p)+','+str(p)+')','triplet'),
+        ('2','('+str(p)+','+str(p)+')','V--')
+    ]
+     
+    return jsl_out  
+
+
+
 # Constants
      
-pi = 3.14159265359     # pi - 12 digits 
+pi = 3.141592653589793 # pi - 16 digits 
 hc = 197.327           # hc - Standard Nuclear Conversion Constant
                        
 mnuc = 938.918         # Nucleon Mass-Energy 
@@ -185,8 +303,7 @@ mprt = 938.2720881629  # Proton Mass-Energy
 melc = 0.51099895      # Electron Mass-Energy 
 mmun = 105.658375523   # Muon Mass-Energy    
                        
-vmhc = pi*hc*mnuc/2.0  # (pi/2) hc [MeV^-2] -> fm Conversion Constant     
- 
+vmhc = pi*hc*mnuc/2.0  # (pi/2) hc [MeV^-2] -> fm Conversion Constant      
 
 kf_vals_20 = [i*0.1 for i in xrange(1,21)]  
 qf_vals_20 = [hc*float(i) for i in kf_vals_20]

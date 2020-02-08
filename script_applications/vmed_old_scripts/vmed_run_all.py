@@ -74,7 +74,7 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
 
 def v_group():
 
-    cmv = cl.path_parse('linux')
+    cmv = cl.path_parse('Linux')
     
     # Get path of file storing the contribs
     success, file_path_list = cmv.cmd("dir contribs.txt")
@@ -138,11 +138,11 @@ def p_run_loop(qf_pair):
             ('1',double1,'singlet'),
             ('0',double1,'V++'),
             ('1',double1,'triplet'),
-            ('2',double1,'V--'),
+            ('2',double1,'triplet'),
             ('1',double2,'singlet'),
             ('0',double2,'V++'),
             ('1',double2,'triplet'),
-            ('2',double2,'V--'),
+            ('2',double2,'triplet'),
         ]
           
         iop.flat_file_replace('cpot.f', [58,59], [q1_str,q2_str])
@@ -197,8 +197,8 @@ v_line = re.compile(match)
 
 # Constants  
 
-hc = 197.33            # hc        - Standard Nuclear Conversion Constant
-vmhc = 290599.9978     # (pi/2) hc - MeV^-2 -> fm Conversion Constant
+hc = 197.33            # Standard Nuclear Conversion Constant
+vmhc = 345845.245781   # ??? V MeV^-2 Conversion Constant
 
 # Set-up P values 
 kf_vals = [i*0.1 for i in xrange(1,21)]
@@ -209,7 +209,7 @@ qf_pair = zip(strl.array_nth_index(qf_vals,2),strl.array_nth_index(qf_vals,2,inv
 # Get V groupings
 numgroup, ngroup = v_group()
 
-cmv = cl.path_parse('linux')
+cmv = cl.path_parse('Linux')
 
 success, in_path_list = cmv.cmd("dir dpot1.d")
 in_path = in_path_list[0]
