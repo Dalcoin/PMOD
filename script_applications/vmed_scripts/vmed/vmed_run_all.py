@@ -23,7 +23,7 @@ demark = lines_list[-1]
 lines_list = lines_list[:-1]
 
 cmd = "f90 $F90FLAGS -o xl -s -w cpot.f eff3nfn3lo1.f $LINK_FNL"   
-subprocess.call(cmd, shell=True)    # Comment out if already compiled 
+subp.call(cmd, shell=True)    # Comment out if already compiled 
 
 # Run P loop 
 for i in range(len(ngroup)):
@@ -36,7 +36,7 @@ for i in range(len(ngroup)):
     new_lines.append(demark)   
     iop.flat_file_write(in_path,new_lines) 
 
-    subprocess.call("./xl", shell=True) 
+    subp.call("./xl", shell=True) 
     flines = iop.flat_file_grab('pot.d')
         
     table_12, table_13 = vf.gen_table_12_13(flines)
@@ -47,7 +47,7 @@ for i in range(len(ngroup)):
     iop.flat_file_write(twelve_name, table_12, par = True)
     iop.flat_file_write(thirteen_name, table_13, par = True)
         
-    if('vincp' not in cmv.path_contain):
+    if('vincp' not in cmv.var_path_contain):
         cmv.cmd('mkdir vincp')
     cmv.cmd('mv '+twelve_name+';'+thirteen_name+' vincp')
 

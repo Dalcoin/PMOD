@@ -5,6 +5,7 @@ import strlist as strl
 import ioparse as iop 
 import mathops as mops
 import pinax   as px  
+import cmdline as cl
 
 '''
     --------
