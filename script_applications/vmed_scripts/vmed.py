@@ -136,6 +136,7 @@ def v_group():
             lngroup = []
             lngroup.append(i)
             setn = num        
+    ngroup.append(lngroup)
     ngroup = filter(None,ngroup)
     
     for i in range(len(ngroup)):
