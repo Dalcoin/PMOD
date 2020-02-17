@@ -71,7 +71,7 @@ cmv.cmd('cd vincp')
 p1s0, t1s0 = [], []
 
 for i in xrange(len(numgroup)):
-    success, filename = cmv.cmd('dir '+f12n+str(numgroup[i])+'.txt')  
+    success, filename = cmv.cmd('dir '+f13n+str(numgroup[i])+'.txt')  
     filename = filename[0]
     filetable = iop.flat_file_intable(filename)    
     oneszero = filetable[1]
@@ -84,7 +84,7 @@ for i in xrange(len(numgroup)):
     p1s0 = []
 
 output_list = strl.format_fancy(t1s0, list_return = True)
-iop.flat_file_write('all_1s0.txt',output_list)
+iop.flat_file_write('all_3p0.txt',output_list)
 
 tend = time.time()
 
