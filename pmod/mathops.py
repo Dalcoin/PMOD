@@ -178,7 +178,7 @@ def span_vec(xvec, nspan):
     if(not test):
         print("[span_vec] Error: 'nspan' must be an integer at least equal to 3")
         return False      
-     
+         
     xl = min(xvec)
     xu = max(xvec)
      
