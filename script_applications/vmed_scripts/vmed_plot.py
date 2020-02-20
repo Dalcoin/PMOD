@@ -1,7 +1,5 @@
-from matplotlib import pyplot as plt
-from scipy.interpolate import make_interp_spline, BSpline
-
 from pmod import ioparse as iop
+from pmod import phelp as ph
 
 # fig_num = 12 # 12 or 13
 # nxlo    = 2  # 2 or 3
@@ -61,64 +59,33 @@ def nxdata_4split(nxlo):
 
 
 def nxdata_16split(nxlo,xylo):
-    return [(nxlo[0],nxlo[1],xylo[0],xylo[1]),
-            (nxlo[0],nxlo[2],xylo[0],xylo[2]),
-            (nxlo[0],nxlo[3],xylo[0],xylo[3]),
-            (nxlo[0],nxlo[4],xylo[0],xylo[4])]
+    return [((nxlo[0],nxlo[1]),(xylo[0],xylo[1])),
+            ((nxlo[0],nxlo[2]),(xylo[0],xylo[2])),
+            ((nxlo[0],nxlo[3]),(xylo[0],xylo[3])),
+            ((nxlo[0],nxlo[4]),(xylo[0],xylo[4]))]
 
 
 def one_plotter(kf, pwave, ylim = None, xlim = None, save = False, save_name = 'plot.txt'):
-    plt.plot(kf, pwave)
-    plt.ylabel('V (fm)', fontsize = 20)
-    plt.xlabel('kf (fm)', fontsize = 20)
-    if(ylim != None):
-        plt.ylim(ylim[0],ylim[1])
-    if(xlim != None):
-        plt.xlim(xlim[0],xlim[1])
-    if(save):
-        plt.savefig(save_name)        
-            
+
+    if(ylim != None and xlim != None):
+        limit_tuple = (xlim[0],xlim[1])
+
+    ph.new_plot(kf, pwave, lims = limit_tuple, save = save, save_name = save_name)   
+         
     
 def four_plotter(tl_data, tr_data, bl_data, br_data, fig_num, nxlo='x', save = False):
-
-    fig, axs = plt.subplots(2, 2, sharex=False, sharey=False)
     
     if(fig_num == 12):
-        label = ['1S0','3S1','3D1','3S1 - 3D1']
+        title = ['1S0','3S1','3D1','3S1 - 3D1']
     elif(fig_num == 13):
-        label = ['1P1','3P0','3P1','3P2']
+        title = ['1P1','3P0','3P1','3P2']
     else:
-        label = [' ',' ',' ',' ']
-    
-    axs[0, 0].plot(tl_data[0], tl_data[1])
-    if(nxlo == 'x'):
-        axs[0, 0].plot(tl_data[2], tl_data[3])
-    axs[0, 0].set_title(label[0])
-    
-    axs[0, 1].plot(tr_data[0], tr_data[1])
-    if(nxlo == 'x'):    
-        axs[0, 1].plot(tr_data[2], tr_data[3])
-    axs[0, 1].set_title(label[1])
-    
-    axs[1, 0].plot(bl_data[0], bl_data[1])
-    if(nxlo == 'x'):
-        axs[1, 0].plot(bl_data[2], bl_data[3])
-    axs[1, 0].set_title(label[2])
-    
-    axs[1, 1].plot(br_data[0], br_data[1])
-    if(nxlo == 'x'):
-        axs[1, 1].plot(br_data[2], br_data[3])
-    axs[1, 1].set_title(label[3])
-    
-    for ax in axs.flat:
-        ax.set(xlabel='kf (1/fm)', ylabel='V (fm)')
-        
-    plt.tight_layout()
-    plt.show()
-        
-    if(save):
-#        print(fig_file(nxlo,fig).split('.')[0])
-        fig.savefig(fig_file(nxlo,fig_num).split('.')[0]+'.pdf')
+        title = [' ',' ',' ',' ']
+
+    filename = fig_file(nxlo,fig_num).split('.')[0]+'.pdf'
+
+    ph.new_four_plot(tl_data, tr_data, bl_data, br_data, save=True, save_name=filename)
+
         
         
 ### MAIN()

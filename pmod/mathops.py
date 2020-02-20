@@ -12,18 +12,7 @@ from scipy.integrate import quad as __definteg__
 import tcheck as __check__
 
 '''
-functions for rounding numbers
-
-The version of python must be passed for relevent functions:
-
-   * rounding functions: 
-
-   | Inputs must be numeric |
-
-   pyver : '26' or '27' are supported
-
-   str_bool : True for a string return, else False for a numeric return.
-              Warning: the returned value will be cast to the type of the original input object.
+Functions useful for mathmatical operations and plotting, fills a void found in math and numpy
      
 ''' 
             
