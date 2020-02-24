@@ -548,12 +548,12 @@ def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w
     return result
      
      
-def flat_file_intable(file_in, header = False):
+def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=float):
     ''' 
         
     '''  
     table_lines = flat_file_grab(file_in, scrub = True)
-    table_num = px.table_str_to_numeric(table_lines, header = header)
+    table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
     return table_num
      
 

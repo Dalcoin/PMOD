@@ -1,13 +1,21 @@
 import re 
 
-import strlist as strl 
-
-#import tcheck as check #enable for tcheck functionality 
+import strlist as __strl__ 
+import tcheck as __check__ 
 
 global re_space
  
 
 re_space = re.compile("^\s+$")
+
+
+#######################
+#  General Functions  #
+#######################
+
+
+
+
 
 
 def __func_eprint__(msg):
@@ -17,16 +25,73 @@ def __func_eprint__(msg):
 
 ####################                         #################### 
 #  line functions  ###########################  line functions  #
-####################                         #################### 
+####################                         ####################
 
-def line_nan_check(array):
+###################
+#  NAN functions  #
+###################
+
+
+def __bool_tester__(obj, array_of_arrays):
+    bul = False 
+    for i in array_of_arrays:
+        bul = bul or (obj in i)
+    return bul  
+
+def __nan_func__(check):
     
     nan_list = ['nan','NaN','NAN','-nan','-NaN','-NAN']
+    inf_list = ['inf','Inf','INF','-inf','-Inf','-INF']
+    null_list = ['null', 'Null', 'NULL', '-null', '-Null', '-NULL']
 
+    truth = ('nan','inf','null')
+
+    nil = (nan_list,inf_list,null_list)
+
+    truth_dict = dict(zip(truth,check))
+    match_dict = dict(zip(truth,nil))
+
+    check_type = []
+    
+    for i in truth:
+        if(truth_dict[i]):
+            check_type.append(match_dict[i]) 
+
+    return check_type
+
+def nan_check(string, nan = True, inf = True, null = True):
+
+    if(not isinstance(string,str)):
+        try:
+            string = str(string)
+        except:
+            print("[nan_check] TypeError: 'string' is not castable to a python 'str'")
+            return False  
+
+    check = (nan,inf,null) 
+    check_type = __nan_func__(check)
+
+    if(__bool_tester__(string,check_type)):
+        return True 
+    else:
+        return False
+     
+def line_nan_check(array, nan = True, inf = True, null = True):
+
+    if(not __check__.array_test(array)):
+        print("[line_nan_check] TypeError: 'array' is not a python array")
+        return False  
+
+    check = (nan,inf,null) 
+    check_type = __nan_func__(check)
+            
     index_list = []
     for i in range(len(array)):
-        if(i in nan_list):
+        if(__bool_tester__(array[i],check_type)):
             index_list.append(i)
+        else:
+            pass
+
     if(len(index_list) > 0):
         return index_list
     else:
@@ -49,23 +114,94 @@ def line_nan_check(array):
 # table_trans  ([[1,2,3],[4,5,6]])  =>  [[1,4],[2,5],[3,6]]  
 
 
-def table_trans(n, coerce_rect=False, check_table=False):
+def ismatrix(n, numeric = False):
 
-    if(check_table):
-        shape = get_shape_matrix(n)
-        if(shape == False):
-            err = __func_eprint__("[table_trans] Error: input is not a rectangular matrix")
-            return err                
+    p1 = 'Below is invalid content found in the '
+    p2 = " entry of 'n'" 
+
+    if(not __check__.array_test(n)):
+        return __func_eprint__("[ismatrix] Error: input 'n' is not a python array")
+      
+    index_err = []
+    err = False
+    length_err = False
+    lang = 0
+
+    for i in range(len(n)):
+        if(not __check__.array_test(n[i])):
+            print("[ismatrix] Error: the "+__strl__.print_ordinal(i+1)+" entry in 'n' is not a python array")
+            err = True
+        else:      
+            if(i == 0):
+                lang = len(n[i])
+            if(numeric):
+                err_arr = [j for j in n[i] if not __check__.numeric_test(j)]
+            else:
+                err_arr = [j for j in n[i] if not __check__.numeric_test(j) and not isinstance(j,str)]
+            if(len(err_arr)>0):
+                err = True
+                __strl__.format_fancy(err_arr,header=p1+__strl__.print_ordinal(i+1)+p2)            
+            if(len(n[i]) != lang):
+                err = True
+                length_err = True
+    if(err):
+        if(length_err):
+            print("[ismatrix] Error: lengths of the enteries of 'n' are not all equal")
+        return False 
+    else:
+        return True
+
+
+def coerce_to_matrix(n, fill = '0x0'):
+     
+    if(not __check__.array_test(n)):
+        text = "[coerce_to_matrix] Error: input 'n' is not a python array; could not coerce to matrix"
+        return __func_eprint__(text)             
+        
+    newn = list(n)
+     
+    maxl = 0
+    for i in range(len(newn)):
+        if(not __check__.array_test(newn[i])):
+            text = "[coerce_to_matrix] Error: the "+__strl__.print_ordinal(i+1)+" entry in 'n' is not a python array"
+            return __func_eprint__(text)        
+        if(len(newn[i])>maxl):
+            maxl = len(newn[i])
+         
+    for i in range(len(newn)):
+        if(len(newn[i]) < maxl):
+            while(len(newn[i]) < maxl):
+                newn[i].append(fill)
+    return newn
+                 
+                 
+        
+
+                
+
+def table_trans(n, test_table=True, coerce=False, numeric=False, cleanup = False):
+
+    matrix_value = True
+    if(test_table):
+        matrix_value = ismatrix(n, numeric = numeric)   
+    
+    if(coerce and matrix_value == False):
+        try:
+            n = coerce_to_matrix(n)
+            if(n == False):
+                return __func_eprint__("[table_trans] Error: attempt to coerce 'n' to a matrix failed")
+            contrive = True
+        except:
+            return __func_eprint__("[table_trans] Error: error occured while attempting to coerce 'n' into a matrix")
+            return False
+    elif(matrix_value == False):
+        print("[table_trans] Error: 'n' did not pass the matrix test")
+        return False
+    else:
+        pass
 
     nrow = len(n[0])
     new_matrix, new_row = [],[]
-    
-    if(coerce_rect):
-        try:
-            n = coerce_to_matrix(n)
-        except:
-            err = __func_eprint__("[table_trans] Error: input could not be coerced into a rectangular matrix")
-            return err
     
     try:           
         for k in range(nrow):
@@ -73,15 +209,59 @@ def table_trans(n, coerce_rect=False, check_table=False):
                 new_row.append(i[k])
             new_matrix.append(new_row)
             new_row=[]
-        return new_matrix
     except: 
         err = __func_eprint__("[table_trans] Error: input could not be cast into a translated matrix")
         return err           
 
+    if(cleanup):
+        pass
 
-def table_str_to_numeric(line_list, sep=' ', header=False, safety = False, columns=True, sort=float):
+    return new_matrix
+
+
+def table_str_to_numeric(line_list   , 
+                         header=False, 
+                         entete=True , 
+                         columns=True,
+                         nanopt=False,
+                         nantup=(True,True,True),
+                         sep=' '     , 
+                         genre=float , 
+                         debug=True   ):
+    '''
+    Input Variables:
+
+        line_list : A python array (list or tuple) of strings which form a numeric table (header option allowed)
+        header    : If True, treats the first line in the input array as a header and not with the data
+        entete    : If header, attempts to return the header with the output numeric table
+        columns   : If True, attempts to return each columns of data, rather than input rows found in 'line_list'
+        nanopt    : If True, 'NaN' values do not return error values 
+        nantup    : A tuple in the form (nan,inf,nul), each value is true if it is allowed
+        sep       : string, seperator for numeric values in the input table (',' for CSV, space ' ' is default)
+        genre     : A python object function: attempts to coerce object type to 'genre', float is default (str, int)
+        debug     : If True, checks performs dummy-check on input data, returns printing of point or location of failure
+
+    Purpose:
     
-    new_line_list = strl.array_filter_spaces(list(line_list))
+        Takes a list of strings and attempts to convert into a table of numeric values 
+        Useful if working with formatted data tables
+    '''
+
+    nan,inf,null = nantup
+
+    if(debug):    
+        fail_test = not __check__.array_test(line_list) # True if failed array test
+        if(fail_test):
+            print("[table_str_to_numeric] TypeError: input 'line_list' is not a python array")
+            return False
+	    
+        for i in range(len(line_list)):   # checking if each object in 'line_list' is a string
+            fail_test = not isinstance(line_list[i],str)  # True if failed string test
+            if(fail_test):
+                print("[table_str_to_numeric] TypeError: non-string object at line "+str(i+1)+"of 'line_list'")        
+                return False
+
+    new_line_list = __strl__.array_filter_spaces(list(line_list))
     n = len(new_line_list)
 
     if(header):
@@ -89,35 +269,38 @@ def table_str_to_numeric(line_list, sep=' ', header=False, safety = False, colum
         new_line_list = new_line_list[1:-1]
         n = len(new_line_list)
         try:
-            head = strl.str_to_list(head, split_val = sep, filtre = True)
+            head = __strl__.str_to_list(head, split_val = sep, filtre = True)
             nhead = len(head)
         except:
             print("[table_str_to_numeric] Error: header could not be parsed]")
             return False
     
+    nanopt_test = False
     for i in range(n):
-        new_line_list[i] = strl.str_to_list(new_line_list[i], split_val = sep, filtre = True)
+        new_line_list[i] = __strl__.str_to_list(new_line_list[i], split_val = sep, filtre = True)
         for j in range(len(new_line_list[i])):
             try:
-                if(sort == int or sort == long):
-                    new_line_list[i][j] = sort(float(new_line_list[i][j]))
-                if(sort == float):
-                    new_line_list[i][j] = sort(new_line_list[i][j])
+                if(nanopt):
+                    nanopt_test = nan_check(new_line_list[i][j],nan,inf,null) 
+                if((genre == int or genre == long) and nanopt_test == False):
+                    new_line_list[i][j] = genre(float(new_line_list[i][j]))
+                if((genre == float or genre == str) and nanopt_test == False):
+                    new_line_list[i][j] = genre(new_line_list[i][j])
             except:
-                if(safety):
-                    pass 
-                else:
-                    return False
+                print("[table_str_to_numeric] Error: failed attempting to parsing table as numeric array")
+                return False
 
-    if(header):
+    if(header and entete):
         try:
             new_line_list.insert(0,head)
         except:
+            print("[table_str_to_numeric] Warning: error occured when adding header, returning table without it")
             pass
   
     if(columns):
         output = table_trans(new_line_list)  
         if(output == False):
+            print("[table_str_to_numeric] Warning: could not translate table, returning as is")
             return new_line_list
         else:
             return output 

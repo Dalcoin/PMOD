@@ -431,9 +431,28 @@ def print_border(string, style = ('-','|'), newln = True, cushion = 0, indt = 0,
     return stylized_list       
     
 
+def print_ordinal(n):
+    chg = ['1','2','3']
+    dictn = {'1':'st','2':'nd','3':'rd'}
+    
+    if(check.numeric_test(n)):
+        if(not isinstance(n,int)):
+            n = int(n)
+    elif(isinstance(n,str)):
+        try:
+            n = int(float(n))
+        except:
+            print("[print_ordinal] Error: input '"+n+"' could not be cast to an integer")
+            return False
+    else:
+        print("[print_ordinal] Error: input 'n' could not be cast to an integer")
+        return False        
 
-
-
+    if(str(n) in chg):
+        return str(n)+dictn[str(n)]
+    else:
+        return str(n)+'th'    
+    
 
 
 
