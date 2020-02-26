@@ -14,10 +14,6 @@ re_space = re.compile("^\s+$")
 #######################
 
 
-
-
-
-
 def __func_eprint__(msg):
     if(True):
         print(msg)
@@ -152,7 +148,7 @@ def ismatrix(n, numeric = False):
         return True
 
 
-def coerce_to_matrix(n, fill = '0x0'):
+def coerce_to_matrix(n, fill = 'NULL'):
      
     if(not __check__.array_test(n)):
         text = "[coerce_to_matrix] Error: input 'n' is not a python array; could not coerce to matrix"
@@ -175,11 +171,9 @@ def coerce_to_matrix(n, fill = '0x0'):
     return newn
                  
                  
-        
-
                 
 
-def table_trans(n, test_table=True, coerce=False, numeric=False, cleanup = False):
+def table_trans(n, test_table=True, coerce=False, numeric=False, fill = 'NULL', cleanup = False):
 
     matrix_value = True
     if(test_table):
@@ -187,7 +181,7 @@ def table_trans(n, test_table=True, coerce=False, numeric=False, cleanup = False
     
     if(coerce and matrix_value == False):
         try:
-            n = coerce_to_matrix(n)
+            n = coerce_to_matrix(n, fill = fill)
             if(n == False):
                 return __func_eprint__("[table_trans] Error: attempt to coerce 'n' to a matrix failed")
             contrive = True
@@ -221,14 +215,15 @@ def table_trans(n, test_table=True, coerce=False, numeric=False, cleanup = False
 
 def table_str_to_numeric(line_list   , 
                          header=False, 
-                         entete=True , 
+                         entete=False , 
                          columns=True,
-                         nanopt=False,
+                         nanopt=True,
                          nantup=(True,True,True),
                          sep=' '     , 
                          genre=float , 
                          debug=True   ):
     '''
+
     Input Variables:
 
         line_list : A python array (list or tuple) of strings which form a numeric table (header option allowed)
@@ -236,7 +231,7 @@ def table_str_to_numeric(line_list   ,
         entete    : If header, attempts to return the header with the output numeric table
         columns   : If True, attempts to return each columns of data, rather than input rows found in 'line_list'
         nanopt    : If True, 'NaN' values do not return error values 
-        nantup    : A tuple in the form (nan,inf,nul), each value is true if it is allowed
+        nantup    : A tuple in the form (nan,inf,null), each value is true if it is allowed
         sep       : string, seperator for numeric values in the input table (',' for CSV, space ' ' is default)
         genre     : A python object function: attempts to coerce object type to 'genre', float is default (str, int)
         debug     : If True, checks performs dummy-check on input data, returns printing of point or location of failure
@@ -248,6 +243,7 @@ def table_str_to_numeric(line_list   ,
     '''
 
     nan,inf,null = nantup
+    
 
     if(debug):    
         fail_test = not __check__.array_test(line_list) # True if failed array test
@@ -308,6 +304,125 @@ def table_str_to_numeric(line_list   ,
         return new_line_list
 
 
+def table_str_to_fill_numeric(line_list     , 
+                              space = '    ',
+                              fill  = 'NULL',
+                              nval  = False ,
+                              header=False  , 
+                              entete=True   , 
+                              columns=True  ,
+                              nanopt=True  , 
+                              nantup=(True,True,True),
+                              spc=' '       , 
+                              genre=float   , 
+                              debug=True   ):
+
+    '''
+
+    Input Variables:
+
+        line_list : A array (list or tuple) of strings which form a numeric table (header option allowed)
+
+        space     : A string of spaces, corrosponds to the number of spaces required for an empty entry
+
+        fill      : A string, corrosponds to the value which will be added in the place of an empty entry 
+
+        nval      : An integer, corrosponds to the number of values in a row, to which the table will be coerced
+                    If False, the table is read according to parsed spaces
+
+        header    : If True, treats the first line in the input array as a header and not with the data
+
+        entete    : If header is True, attempts to return the header with the output numeric table
+
+        columns   : If True, attempts to return lists of each columns of data, rather than each rows as found in 'line_list'
+
+        nanopt    : If True, NaN style strings values do not return error values as specified in nantup 
+
+        nantup    : A tuple in the form (nan,inf,null), each value is true if it is allowed
+
+        sep       : A string, seperator for numeric values in the input table (',' for CSV, space ' ' is default)
+
+        genre     : A python object function: attempts to coerce object type to 'genre', float is default 
+
+        debug     : If True, checks performs dummy-check on input data, returns printing of point or location of failure
+
+
+    Purpose:
+    
+        Takes a list of strings and attempts to convert into a table of numeric values 
+        Useful if working with formatted data tables
+
+    '''
+
+    nan,inf,null = nantup
+    null = True
+
+    if(debug):    
+        fail_test = not __check__.array_test(line_list) # True if failed array test
+        if(fail_test):
+            print("[table_str_to_numeric] TypeError: input 'line_list' is not a python array")
+            return False
+	    
+        for i in range(len(line_list)):   # checking if each object in 'line_list' is a string
+            fail_test = not isinstance(line_list[i],str)  # True if failed string test
+            if(fail_test):
+                print("[table_str_to_numeric] TypeError: non-string object at line "+str(i+1)+"of 'line_list'")        
+                return False    
+
+    if(header):
+        head = line_list[0]
+        op_list = line_list[1:-1]
+        n = len(op_list)
+        try:
+            head = __strl__.str_to_list(head, spc = spc, filtre = True)
+            nhead = len(head)
+        except:
+            print("[table_str_to_fill_numeric] Warning: header could not be parsed")
+            header = False
+    else:
+        op_list = list(line_list)
+    
+    # Parsing list of lines 
+    for i in range(len(op_list)):
+        string = op_list[i]        
+        temp = __strl__.str_to_fill_list(string, lngspc = space, fill = fill, nval = nval, spc = spc, numeric = False)
+          
+        # Parsing numeric values found in each list
+        if(nanopt): 
+            nan_list = line_nan_check(temp,nan=nan,inf=inf,null=null)
+            if(nan_list > 0):
+                for j in range(len(temp)):
+                    if(temp[j] not in nan_list and temp[j] != fill):
+                        try:
+                            temp[j] = genre(temp[j])    
+                        except:
+                            temp[j] = float(temp[j])
+        else:
+            nan_list = line_nan_check(temp,False,False,True)
+            if(nan_list > 0):
+                for j in range(len(temp)):
+                    if(temp[j] not in nan_list and temp[j] != fill):
+                        try:
+                            temp[j] = genre(temp[j])    
+                        except:
+                            temp[j] = float(temp[j])
+
+        op_list[i] = temp 
+
+    if(header and entete):
+        op_list.insert(0,head)
+         
+    if(columns):
+        output = table_trans(op_list, coerce=True, fill = fill)
+        if(output == False):
+            print("[table_str_to_numeric] Warning: could not transpose table; returning as is")
+            return op_list
+        else:
+            return output 
+    else:
+        return op_list      
+
+
 
 def table_array_str(list_lines, split_str = '  ', row=True):
  
@@ -346,12 +461,4 @@ def skew_str_table_to_matrix(array, header = False, split_str = '  '):
             if(new_list[i][j] == ''):
                 new_list[i][j] = None
  
-    
-    
-    
-    
-    
-    
-    
-
-
+        

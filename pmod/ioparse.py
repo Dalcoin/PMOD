@@ -550,10 +550,62 @@ def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w
      
 def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=float):
     ''' 
+
+    Purpose: To read in a well constrained table from a text file. 
+
+
+    Inputs:
+
+        file_in : python string, corrosponding to a file pathway
         
+        header  : If True, the first string in the file is treated as a header string 
+          
+        entete  : If True and header is True, then the header values are included in the output 
+        
+        columns : If True, lists of the data value are returned by column, else data values are returned by row
+     
     '''  
     table_lines = flat_file_grab(file_in, scrub = True)
     table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
+    return table_num
+
+
+def flat_file_skewtable(file_in, 
+                        space = '    ', 
+                        fill='NULL', 
+                        nval = False,
+                        numeric = True,
+                        header = False, 
+                        entete = False, 
+                        columns = True, 
+                        nanopt = True, 
+                        nantup = (True,True,True),
+                        spc = ' ',
+                        genre = float,
+                        debug = True):
+    '''
+    Purpose: To read in a skewed table from a text file. 
+
+    Inputs:
+
+        file_in : python string, corrosponding to a file pathway
+
+        see 'table_str_to_fill_numeric' in the pinax.py file for details on the options
+    '''
+
+    table_lines = flat_file_grab(file_in, scrub = True)
+    table_num = px.table_str_to_fill_numeric(table_lines, 
+                                             space = space,
+                                             fill = fill, 
+                                             nval = nval,
+                                             header = header, 
+                                             entete = entete, 
+                                             columns = columns, 
+                                             nanopt = nanopt, 
+                                             nantup = nantup,
+                                             spc = spc, 
+                                             genre = genre,
+                                             debug = True)
     return table_num
      
 
@@ -575,6 +627,7 @@ def iop_help(string):
                  'flat_file_grab',
                  'flat_file_copy',  
                  'flat_file_intable',
+                 'flat_file_skewtable',
                  'repeat',
                 ]
 
@@ -582,22 +635,27 @@ def iop_help(string):
                    "(Input: path string, output: list) Reads the content of a \n"+
                    "flat (text) file line-by-line, each entry in output list\n"+
                    " corrosponds to a line in the file",
+
                    "(Input: path string; list of strs, output: bool) Writes the\n"+ 
                    "contents of a list of strings to a file line-by-line so that\n"+
                    "the string index (+1) corrosponds to the file line at the\n"+    
                    "path string.\n",  
+
                    "(Input: path string; list of ints; list of strs, output: bool)\n" 
                    "Replaces lines at line numbers found in grab_list with entries\n"
                    "found in change_list.\n",    
+
                    "(Input: path string; list of ints, output: list of strs)\n"+     
                    "Grabs the line numbers as text strings as specified in the grab_list\n"+
                    "and returns them as a list of strings. Option 'repeat' for advanced\n"+  
                    "selection of repeating group of lines spaced by a constant\n"+  
-                   "number of lines.\n"  
+                   "number of lines.\n",
+  
                    "(Input: path_string; path_string; list of ints, output: bool)\n"+
                    "copies lines from 'file_in' to 'file_out'. The lines which are\n"+ 
                    "copied are deterined by 'grab_list' and 'repeat' options. An\n"+ 
                    "empty grab_list list results in the entire 'file_in' being copied.\n",
+
                    "(Input: file_in; header = False)\n"+                        
                    "Reads in values from a text file, attempts to formate the results\n"+
                    "as a 'pinax' table.\n"

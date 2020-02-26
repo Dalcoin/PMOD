@@ -1,6 +1,6 @@
 import itertools
 
-import tcheck as check
+import tcheck as __check__
 
 '''
 A python module which faciliates working with list, lists of strings and strings
@@ -42,7 +42,7 @@ def array_duplicate_check(array):
                  If duplicates are found, True is returned 
                  Else False is returned
     '''    
-    test = check.type_test_print(array, 'arr', var_name='array', func_name='array_duplicate_check')  
+    test = __check__.type_test_print(array, 'arr', var_name='array', func_name='array_duplicate_check')  
     if(not test):
         return False
     s = set()
@@ -60,7 +60,7 @@ def array_duplicate_return(array, inverse = False):
                  If duplicates are found, a list of the duplicate values is returned 
                  Else an empty list is returned
     '''   
-    test = check.type_test_print(array, 'arr', var_name='array', func_name='array_duplicate_check')  
+    test = __check__.type_test_print(array, 'arr', var_name='array', func_name='array_duplicate_check')  
     if(not test):
         return False  
     s = set()                        
@@ -84,7 +84,7 @@ def array_filter_yield(array, match, inverse = False):
     '''
     if(inverse):
         for i in array:
-            if(check.test_array(match)):
+            if(__check__.test_array(match)):
                 if(i not in match):
                     continue
                 else:
@@ -96,7 +96,7 @@ def array_filter_yield(array, match, inverse = False):
                     yield i
     else:
         for i in array:
-            if(check.test_array(match)):
+            if(__check__.test_array(match)):
                 if(i in match):
                     continue
                 else:
@@ -251,27 +251,117 @@ def str_space_check(string, none_bool = False, print_bool = True):
         if(print_bool):
             print("[str_space_check] Error: internal error, input may not be a string")      
         
-         
       
-def str_to_list(string, split_val = ' ', filtre = False, cut = None, print_bool = True):
+def str_to_list(string, spc = ' ', filtre = False, cut = None):
     '''
     Description: parses input string into a list, default demarkation is by single spacing
     '''
     mod_string = str(string)
     try:
         if(filtre):
-            return filter(cut,mod_string.split(split_val))
+            return filter(cut,mod_string.split(spc))
         else:
-            return mod_string.split(split_val)
+            return mod_string.split(spc)
     except:
         print("[str_to_list] Error: input could not be split")
         return False
 
 
+def str_to_fill_list(string, lngspc = '    ', fill = 'NaN', nval = False, spc = ' ', numeric = True):
+    '''
+    Purpose : To turn python string, 'string', into a list of numeric characters, with support 
+              for blank entries, input options determine allow for compatability with multiple 
+              formatting situations and scenarios  
+
+    Inputs: 
+
+        string : a python 'str' object 
+        lngspc : a python 'str' object, intended to be the number of blank spaces denoting a blank entry
+                 default : '    ', 4 blank spaces
+
+        fill   : a python 'str' object, intended to be the filler value for blank spaces 
+                 default : 'NaN', Not a Number string 
+         
+        nval   : either python bool False, or a python 'int' object greater than zero, intended to be 
+                 the number of numeric or NaN entries in 'string' also the length of the array that 
+                 the function should attempt to coerce the string into 
+                 default : False, boolean False 
+
+        spc    : a python 'str' object, intended to be the value for which the seperated entries within  
+                 'string' are determined, possibly a delimiter character, note that empty spaces are 
+                 deleted upon the splitting of the 'string' string 
+                 default : ' ', a single space character 
+
+        numeric: a python 'bool' or python 'str' object, determines 
+    '''
+
+    def __cut__(arr, n, fill):
+
+        cut = True 
+        while(cut):
+            if(arr[-1] == fill and len(arr) > n):
+                del arr[-1]
+            else:
+                cut = False 
+        if(len(arr)>n):
+            cut = True 
+            while(cut):
+                if(arr[0] == fill and len(arr) > n):
+                    del arr[0]
+                else:
+                    cut = False                 
+        if(len(arr) == n):
+            return arr 
+        else:
+            print("Warning, output array could not be coerced into 'nval' number of entries")
+            return arr
+ 
+    # Function start
+    spc1 = ' ' 
+
+    if(not isinstance(string,str)):
+        print("[str_to_spc_fill_array] Error: input 'string' is not a python 'str' type")
+        return False
+
+    # Where all the machinery is
+    newline = string.replace(lngspc,spc1+fill+spc1)  
+    newarr = filter(None,newline.split(spc))         
+    flatarr = array_flatten(newarr)
+
+    if(not isinstance(flatarr,list)):
+        print("[str_to_spc_fill_array] Error: error occured when flattening output array")
+        return flatarr
+
+    if(isinstance(nval,int)):
+        if(nval > 0 and len(flatarr) > nval):
+            flatarr = __cut__(flatarr,nval,fill) 
+
+    # conditions bound by the numeric formatter
+    if(numeric):
+        try:
+            flatarr = map(lambda x: float(x) if x != fill else x, flatarr)
+        except:
+            print("Warning: Could not coerce output array into a numeric array")
+    elif(isinstance(numeric,str)):
+        if(numeric.lower() == 'float'):
+            try:
+                flatarr = map(lambda x: float(x), flatarr)
+            except:
+                print("Warning: Could not coerce output array into a numeric array")
+        elif(numeric.lower() == 'int'):
+            try:
+                flatarr = map(lambda x: int(x), flatarr)
+            except:
+                print("Warning: Could not coerce output array into a numeric array")
+
+    return flatarr
+
+
 def str_filter(string, filtre, inverse = False, print_bool = True):
     '''
-    Description: Filters 'filtre' string out of 'string' object, if 
+    Description: Filters 'filtre' string out of 'string' string, if 
                  'inverse' then the instances of 'filtre' are returned
+                 else the entries not equivalent to 'filtre' are returned
     '''
     if(not isinstance(string,str)):
         try:
@@ -283,7 +373,7 @@ def str_filter(string, filtre, inverse = False, print_bool = True):
     out_list = []
     if(inverse):
         for i in string:
-            if(check.array_test(filtre)):
+            if(__check__.array_test(filtre)):
                 if(i in filtre):
                     out_list.append(i)
             else:
@@ -291,7 +381,7 @@ def str_filter(string, filtre, inverse = False, print_bool = True):
                     out_list.append(i)       
     else:
         for i in string:
-            if(check.array_test(filtre)):
+            if(__check__.array_test(filtre)):
                 if(i not in filtre):
                     out_list.append(i)
             else:
@@ -342,7 +432,7 @@ def format_fancy(obj, header = None, newln = True, indt = 4, err = True, list_re
 
     stylized_list = []
     
-    if(check.array_test(obj)):
+    if(__check__.array_test(obj)):
         if(list_return):
             stylized_list.append(' \n')       
         else:
@@ -435,7 +525,7 @@ def print_ordinal(n):
     chg = ['1','2','3']
     dictn = {'1':'st','2':'nd','3':'rd'}
     
-    if(check.numeric_test(n)):
+    if(__check__.numeric_test(n)):
         if(not isinstance(n,int)):
             n = int(n)
     elif(isinstance(n,str)):
