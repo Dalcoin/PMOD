@@ -170,6 +170,20 @@ def span_vec(xvec, nspan):
          
     xl = min(xvec)
     xu = max(xvec)
+
+    if(xl < 0):
+        xl = xl-0.0000000001
+    elif(xl > 0):
+        xl = xl+0.0000000001
+    else:
+        pass
+
+    if(xu < 0):
+        xu = xu+0.0000000001
+    elif(xl > 0):
+        xu = xu-0.0000000001
+    else:
+        pass
      
     test = __check__.numeric_test(xl) and __check__.numeric_test(xu)
     if(not test or xl == xu): 

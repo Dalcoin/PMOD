@@ -240,7 +240,7 @@ def new_smooth_plot(x, y, label = None, lims = None, smoothness = 300,
 
     elif(ysep):
         for i in y:
-            xsmooth = span_vec(x, smoothness)  
+            xsmooth = __mops__.span_vec(x, smoothness)  
             spln_inst.pass_vecs(x, i, xsmooth)
                   
             spln_inst.pass_spline()
@@ -250,7 +250,7 @@ def new_smooth_plot(x, y, label = None, lims = None, smoothness = 300,
 
     elif(xysep):
         for i in xrange(len(x)):
-            xsmooth = span_vec(x[i], smoothness)  
+            xsmooth = __mops__.span_vec(x[i], smoothness)  
             spln_inst.pass_vecs(x[i], y[i], xsmooth)
                   
             spln_inst.pass_spline()
