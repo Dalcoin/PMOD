@@ -16,7 +16,7 @@ function list:
 
 '''
 
-### Helper functions:
+### Tester functions: test input against a given object type or object format
     
 def numeric_test(obj):
     '''
@@ -64,7 +64,7 @@ def flat_array_test(obj):
     else:
         return False
 
-         
+# Printing Functions: Help with printing          
                
 def __fail_print__(success, var_name=None, correct_type="valid type", func_name='', print_bool = True):
     '''
@@ -97,7 +97,7 @@ def __fail_print__(success, var_name=None, correct_type="valid type", func_name=
 
 ### Main functions 
 
-def type_test(var,sort):
+def type_test(var, sort):
     '''
     Description: This function returns a boolean, 'var' is tested for equivalence to 
                  'sort', 'sort' may a 'type' object.  
@@ -141,3 +141,15 @@ def type_test_print(var, sort, var_name=None, func_name='', print_bool=True):
     type_bool = type_test(var,sort)
     test = __fail_print__(type_bool, var_name, correct_type=sort, func_name=func_name, print_bool = print_bool)
     return test
+
+
+
+
+
+
+
+
+
+
+
+

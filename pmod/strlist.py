@@ -7,7 +7,7 @@ A python module which faciliates working with list, lists of strings and strings
 
 function list:
 
-    array functions--------------------------- 
+    |---array functions--------------------------- 
 
     array_duplicate_check(array)
     array_duplicate_return(array, inverse = False)
@@ -22,7 +22,7 @@ function list:
     array_nth_index(array, n, inverse_filter = False,list_form = True)
     array_flatten(array, safety = True, out_type = list)
 
-    string functions--------------------------- 
+    |---string functions--------------------------- 
 
     str_space_check(string, none_bool = False)
     str_to_list(string, split_val = ' ', filt = False, cut = None)
@@ -219,11 +219,15 @@ def array_flatten(array, safety = True, out_type = list):
             out_list = [i for j in array for i in j]
     except:          
         return False 
-    if(out_type == list):
+
+    if(isinstance(out_type,str)):
+        out_type = out_type.lower()
+
+    if(out_type == list or out_type == 'list'):
         return out_list 
-    elif(out_type == tuple):
+    elif(out_type == tuple or out_type == 'tuple'):
         return tuple(out_list)
-    elif(out_type == set):
+    elif(out_type == set or out_type == 'set'):
         return set(out_list)
     else:
         try:
@@ -267,32 +271,36 @@ def str_to_list(string, spc = ' ', filtre = False, cut = None):
         return False
 
 
-def str_to_fill_list(string, lngspc = '    ', fill = 'NaN', nval = False, spc = ' ', numeric = True):
+def str_to_fill_list(string, lngspc = '    ', fill = 'NaN', nval = False, spc = ' ', numeric = False):
     '''
     Purpose : To turn python string, 'string', into a list of numeric characters, with support 
-              for blank entries, input options determine allow for compatability with multiple 
+              for blank entries, input options allow for compatability with multiple 
               formatting situations and scenarios  
 
     Inputs: 
 
         string : a python 'str' object 
+
         lngspc : a python 'str' object, intended to be the number of blank spaces denoting a blank entry
                  default : '    ', 4 blank spaces
 
-        fill   : a python 'str' object, intended to be the filler value for blank spaces 
+        fill   : a python 'str' object, intended to be the filler value for blank entries 
                  default : 'NaN', Not a Number string 
          
-        nval   : either python bool False, or a python 'int' object greater than zero, intended to be 
-                 the number of numeric or NaN entries in 'string' also the length of the array that 
-                 the function should attempt to coerce the string into 
+        nval   : either boolean False, or an integer greater than zero, intended to be 
+                 the number of numeric and blank entries in 'string', also the length of the 
+                 array into which the function will attempt to coerce the string
                  default : False, boolean False 
 
-        spc    : a python 'str' object, intended to be the value for which the seperated entries within  
-                 'string' are determined, possibly a delimiter character, note that empty spaces are 
-                 deleted upon the splitting of the 'string' string 
+        spc    : a python string object, intended to be the value for which the seperated entries within  
+                 'string' are determined, possibly a delimiter character, note that non-entry empty spaces 
+                 are deleted upon splitting 'string'
                  default : ' ', a single space character 
 
-        numeric: a python 'bool' or python 'str' object, determines 
+        numeric: a python 'bool' or python 'str' object, If True then non-filled spaces are mapped to floats 
+                 If 'numeric' is a string, it must corrospond to the type to which non-filled entries are 
+                 coerced into, valid options are 'str', 'int' and 'float'
+                 default : False 
     '''
 
     def __cut__(arr, n, fill):
@@ -394,7 +402,7 @@ def str_filter(string, filtre, inverse = False, print_bool = True):
        
 def str_space_clean(string):
     '''
-    removes all spaces, endline characters and newline characters from string 
+    Description : Removes all spaces, endline characters and newline characters from string 
     '''
     array = str_to_list(string, filtre = True)
     out_string = array_to_str(array, spc = '')
