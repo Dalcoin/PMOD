@@ -70,15 +70,20 @@ plist = [0.1,0.5,1.0,1.3]
 cmv.cmd('cd vincp')
 p1s0, t1s0 = [], []
 
+t1s0.append("p       0.1        0.5        1.0        1.3        1.5        2.0  ")
+t1s0.append(" ")
+
 for i in xrange(len(numgroup)):
     success, filename = cmv.cmd('dir '+f13n+str(numgroup[i])+'.txt')  
     filename = filename[0]
     filetable = iop.flat_file_intable(filename)    
     oneszero = filetable[1]
-    p1s0.append(str(mops.round_uniform(float(oneszero[0]), pyver='26'))) 
-    p1s0.append(str(mops.round_uniform(float(oneszero[4]), pyver='26'))) 
-    p1s0.append(str(mops.round_uniform(float(oneszero[9]), pyver='26'))) 
-    p1s0.append(str(mops.round_uniform(float(oneszero[12]), pyver='26')))
+    p1s0.append(str(mops.round_uniform(float(oneszero[0]), pyver='26')))   # 0.1
+    p1s0.append(str(mops.round_uniform(float(oneszero[4]), pyver='26')))   # 0.5
+    p1s0.append(str(mops.round_uniform(float(oneszero[9]), pyver='26')))   # 1.0
+    p1s0.append(str(mops.round_uniform(float(oneszero[12]), pyver='26')))  # 1.3 
+    p1s0.append(str(mops.round_uniform(float(oneszero[14]), pyver='26')))  # 1.5
+    p1s0.append(str(mops.round_uniform(float(oneszero[19]), pyver='26')))  # 2.0   
     p1s0.append('v'+str(numgroup[i]))
     t1s0.append(strl.array_to_str(p1s0, spc = '   ')) 
     p1s0 = []
