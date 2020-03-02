@@ -6,6 +6,7 @@ import ioparse as iop
 import mathops as mops
 import pinax   as px  
 import cmdline as cl
+import tcheck as __check__
 
 '''
     --------
@@ -291,6 +292,56 @@ def p_jsl(p):
     ]
      
     return jsl_out  
+
+
+################################
+#   functions for nnsum_vmed   #
+################################
+
+def partial_eos(file_name = None, lines = None):
+
+    ptline = '\de/a\(mev\)\s*-*\d*\.*\d*\s*-*\d*\.*\d*\s*'
+    
+    start = '\de/a\(mev\)'
+    space = '\s*'
+    digit = '-*\d*\.*\d*'
+    cgl   = space+digit
+    
+    line = start+7*cgl
+    v_line = re.compile(line)
+  
+    fail = False
+
+    if(isinstance(file_name,str)):      
+        try:
+            lines = iop.flat_file_grab(file_name)
+        except:
+            fail = True 
+            print("[partial_eos] Error: could not open file: "+file_name)
+    elif(__check__.array_test(lines)):
+        for i in range(len(lines)):
+            if(not isinstance(lines[i],str)):
+                fail = True 
+                print("[partial_eos] Error: line number "+str(i)+" is not a string")
+    else:
+        fail = True 
+
+    if(fail):
+        try:
+            lines = iop.flat_file_grab('test1.txt')
+        except:
+            print("[partial_eos] Error: could not parse input or input files") 
+            return False
+                       
+         
+    match_lines = []
+    for i in lines:
+        bg = v_line.findall(i)
+        if(len(bg) != 0 ):
+            match_lines.append(bg)
+    
+    return match_lines
+
 
 
 
