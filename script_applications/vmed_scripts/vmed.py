@@ -338,7 +338,7 @@ def partial_eos(file_name = None, lines = None):
     for i in lines:
         bg = v_line.findall(i)
         if(len(bg) != 0 ):
-            match_lines.append(bg)
+            match_lines.append(bg[0])
     
     return match_lines
 

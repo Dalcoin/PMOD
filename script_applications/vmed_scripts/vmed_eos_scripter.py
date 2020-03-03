@@ -49,6 +49,10 @@ n = len(ngroup)
 
 output_lines = []
 
+output_lines.append("\n")
+output_lines.append("     Basic  Part   Tot     Final e   V\n")
+output_lines.append("\n")
+
 for i in range(n):
 
     # Generate new input 
@@ -70,11 +74,11 @@ for i in range(n):
 
     try:
 
-        v1 = values[-1] 
-        v2 = values[-2] 
-        v3 = values[-3] 
-        v5 = values[-5]
-        v8 = values[-8]
+        v1 = values[-1][-1] 
+        v2 = values[-2][-1] 
+        v3 = values[-3][-1] 
+        v5 = values[-5][-1]
+        v8 = values[-8][-1]
          
         v12 = abs(float(v1)-float(v2)) 
         v13 = abs(float(v2)-float(v3)) 
@@ -101,13 +105,13 @@ for i in range(n):
                          str(partconv),
                          str(totconv),
                          str(v1),
-                         "v"+str(numgroup[i])]
+                         "v"+str(numgroup[i])+'\n']
 
     except:
         sum_failure = True
-        test_line_seq = ["   ","Failed","Failed","Failed","Failed","v"+str(numgroup[i])]      
+        test_line_seq = ["   ","Failed","Failed","Failed","Failed","v"+str(numgroup[i])+'\n']      
 
-    output_lines.append(strl.array_to_str(test_line_seq))   
+    output_lines.append(strl.array_to_str(test_line_seq, spc = '   '))   
 
 
     # Consolidating Files
