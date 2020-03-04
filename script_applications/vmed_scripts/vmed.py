@@ -17,6 +17,26 @@ import tcheck as __check__
           vmed scripts to function. 'vmed.py' is not a 
           standard pmod module
 
+    Usage: Aids in scripting nuclear matter potential and EoS 
+           programs given by the following fortran functions:
+
+               Nuclear potential: 
+
+                   effn3lo3nf.f 
+                   cpot.f 
+                     
+               Nuclear Matter EoS:
+
+                   n2lo450new.f                
+                   n2lo500new.f 
+                   n3lo450new.f                
+                   n3lo500new.f 
+                   n4lo450new.f                
+                   n4lo500new.f 
+                   matter.f 
+                   nnsum_2015.f
+               
+
     A list of relevent functions and constants to optimize working with 
     the effective 3NF nuclear potential pipeline. Optimized for working 
     at the third order of the chiral expansion.
