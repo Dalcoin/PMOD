@@ -43,8 +43,18 @@ import tcheck as __check__
 
     list of functions:
 
+        jsl_entry : creates a tuple corrosponding to an internally formatted jsl entry
+
         grab_jsl : allows array of texts to be searched for jsl patterns,
                    corrosponding to an input potential matrix in jsl form.
+
+        get_contribs : gets vmed contribs from a 'contribs.txt' file 
+        
+        v_lines : returns a list of individual vmed contributions
+
+        v_group : returns a list of vmed contributions grouped by v number 
+
+        gen_table_12_13 :   
 
     available constants:
 
@@ -56,7 +66,15 @@ import tcheck as __check__
         mprt : proton mass energy (MeV) [13-digits]
         melc : electron mass energy (MeV) [9-digits]
         mmun : muon mass energy (MeV) [12 -digits]           
-        
+
+        Five lists are also available corrosponding to common density-momenta convensions:
+
+        kf_vals_20 : simply a list starting at 0.1 and incrementing by 0.1 : [0.1, 0.2, 0.3 ... 1.9, 2.0]
+        qf_vals_20 : kf_vals_20 in MeV instead of fm^{-1}
+        pf_vals_20 : integer roundings of qf_vals_20, required for vmed parsing of jsl codes  
+
+        sm_vals_20 : symmetric matter densities (MeV/fm^{3}) corrosponding to fermi momenta in kf_vals_20  
+        nm_vals_20 : neutron matter densities (MeV/fm^{3}) corrosponding to fermi momenta in kf_vals_20      
 '''
 
 
@@ -127,13 +145,66 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
     return finalvals
 
 
-def v_group():
+def get_contribs():
 
     cmv = cl.path_parse('linux')
     
     # Get path of file storing the contribs
     success, file_path_list = cmv.cmd("dir contribs.txt")
-    lines_list = iop.flat_file_grab(file_path_list[0], [], scrub = True)
+
+    if(success == False):
+        print("[vmed][get_contribs] Error: could not find 'contribs.txt'")
+        return False
+
+    file_path_list = file_path_list[0]
+
+    lines_list = iop.flat_file_grab(file_path_list, [], scrub = True)
+    return lines_list
+
+
+def v_lines():
+
+    vnline = '\D+\s+v\d+\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
+    vnlinec = re.compile(vnline)
+
+    lines = get_contribs()
+    if(lines == False):
+        return False
+    
+    vinst = []
+    vlineslist = []
+    n = len(lines)
+    i = 0
+    group = False 
+    
+    while(i<n):    
+        if(len(vnlinec.findall(lines[i])) != 0):
+            group = True
+            if(len(vinst) > 0):
+                vlineslist.append(vinst)
+                vinst = []
+            vinst.append(vnlinec.findall(lines[i])[0])        
+        if(len(vnlinec.findall(lines[i])) == 0):               
+            group = False
+            vinst.append(lines[i])
+        i+=1
+        if(i==n):
+            vlineslist.append(vinst)    
+    
+    if(len(vlineslist) <= 0):
+        print("[vmed][v_lines] Warning: no V lines could be parsed from 'contribs.txt'")  
+    return vlineslist
+
+
+
+
+def v_group():
+
+    # Get contrib lines 
+
+    lines_list = get_contribs()
+    if(lines_list == False):
+        return False
     
     # Pair up V line with fun. line 
     main = strl.array_nth_index(lines_list, 2)
@@ -364,11 +435,11 @@ def partial_eos(file_name = None, lines = None):
 
 
 
-
 # Constants
      
 pi = 3.141592653589793 # pi - 16 digits 
 hc = 197.327           # hc - Standard Nuclear Conversion Constant
+pi2 = pi*pi            # pi squared
                        
 mnuc = 938.918         # Nucleon Mass-Energy 
 mneu = 939.5656328     # Neutron Mass-Energy   
@@ -381,4 +452,6 @@ vmhc = pi*hc*mnuc/2.0  # (pi/2) hc [MeV^-2] -> fm Conversion Constant
 kf_vals_20 = [i*0.1 for i in xrange(1,21)]  
 qf_vals_20 = [hc*float(i) for i in kf_vals_20]
 pf_vals_20 = [int(i) for i in qf_vals_20]
-  
+
+sm_vals_20 = [2.0*i*i*i/(3.0*pi2) for i in kf_vals_20]    
+nm_vals_20 = [i*i*i/(3.0*pi2) for i in kf_vals_20]   
