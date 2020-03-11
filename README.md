@@ -5,7 +5,7 @@ Scripting Modules
 
 # 1.) PMOD Package
 
-**Description**: PMOD python module contains functions for faciliating research work (File I/O, formatting, and automation) 
+**Description**: PMOD python module contains functions for facilitating research work (File I/O, formatting, and automation) 
 
 ### Raw Code: Version 3.0
 
@@ -15,3 +15,7 @@ The PMOD Package contains 7 Modules
 
 Each Modules contains related functions and classes which are designed to optimize performance for a specific task
 
+
+# 2.) script_applications 
+
+**Description**: scripts using PMOD module functionality 
