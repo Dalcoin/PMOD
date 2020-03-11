@@ -162,6 +162,37 @@ def get_contribs():
     return lines_list
 
 
+def ventry(dictval, vlist):
+    fkey = ['number','values']
+    vkey = ['force','v','factor','zero','pion','tensor','prop']     
+    vval = strl.str_to_list(vlist[0], filtre=True)
+                     
+    funs = vlist[1:] 
+    funlist = []       
+    for i in funs:
+        funlist.append(strl.str_to_list(i,filtre=True)[-1])
+   
+    nfuns = len(funs)
+    fval = [nfuns, funlist]
+
+    vdict = dict(zip(vkey,vval))
+    fdict = dict(zip(fkey,fval))
+
+    if(dictval in vkey):
+        return vdict[dictval]  
+    elif(dictval in fkey):
+        return fdict[dictval]
+    elif(dictval == 'entry'):
+        return vlist[0]
+    elif(dictval == 'funs'):
+        return vlist[1:]
+    else:
+        print("[vmed][ventry] Error: "+str(dictval)+" is not a valid entry")
+        return False
+      
+      
+
+
 def v_lines():
 
     vnline = '\D+\s+v\d+\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
