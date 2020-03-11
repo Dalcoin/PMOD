@@ -64,7 +64,7 @@ n = len(vlist)
 output_lines = []
 
 output_lines.append("\n")
-output_lines.append("         Basic  Part   Tot     Final e   V\n")
+output_lines.append("         Basic   Part    Tot      Final e   vspread  f    V     t    n\n")
 output_lines.append("\n")
 
 for i in range(n):
@@ -75,6 +75,14 @@ for i in range(n):
         val = j+'\n'
         new_lines.append(val)
     new_lines.append(demark)
+
+    force = vf.ventry("force",vlist[i])
+    if(len(force) == 1):
+        force=force+' '
+    vnum  = vf.ventry("v",vlist[i])
+    if(len(vnum)==2):
+        vnum = vnum+' '
+    tensor= vf.ventry("tensor",vlist[i])
 
     # Write the new output and run the program
     iop.flat_file_write(in_path,new_lines)
@@ -97,34 +105,40 @@ for i in range(n):
         v12 = abs(float(v1)-float(v2)) 
         v13 = abs(float(v2)-float(v3)) 
         v15 = abs(float(v3)-float(v5))  
-        v18 = abs(float(v5)-float(v8))  
+        v18 = abs(float(v5)-float(v8)) 
+
+        vspread = round((v12+v13+v15)/3.0,4) 
               
         if(v18 >= v15 and v15 >= v13 and v13 >= v12):
-            totconv = True
+            totconv = 'True '
         else: 
-            totconv = False
+            totconv = 'False'
 	    
         if(v18 >= v15 and v15 >= v12):
-            partconv = True
+            partconv = 'True '
         else:
-            partconv = False
+            partconv = 'False'
 	    
         if(v18 >= v12):
-            basconv = True
+            basconv = 'True '
         else:
-            basconv = False   
+            basconv = 'False'   
 
         test_line_seq = ["   ",
                          str(basconv),
                          str(partconv),
                          str(totconv),
                          str(v1),
+                         str(vspread),
+                         force,
+                         vnum,
+                         tensor,
                          str(i)+'\n']
 
     except:
         sum_failure = True
         print("[vmed_con_eos_scripter] Error: error occured when attempting to perform convergence tests")
-        test_line_seq = ["   ","Failed","Failed","Failed","Failed",str(i)+"\n"]      
+        test_line_seq = ["   ","Failed","Failed","Failed","Failed","Failed",str(i)+"\n"]      
 
     output_lines.append(strl.array_to_str(test_line_seq, spc = '   '))   
 
