@@ -84,7 +84,7 @@ def array_filter_yield(array, match, inverse = False):
     '''
     if(inverse):
         for i in array:
-            if(__check__.test_array(match)):
+            if(__check__.array_test(match)):
                 if(i not in match):
                     continue
                 else:
@@ -96,7 +96,7 @@ def array_filter_yield(array, match, inverse = False):
                     yield i
     else:
         for i in array:
-            if(__check__.test_array(match)):
+            if(__check__.array_test(match)):
                 if(i in match):
                     continue
                 else:
@@ -136,7 +136,7 @@ def array_filter_spaces(array, filter_none = True):
 # array to string         
        
 
-def array_to_str(array, spc = ' ', print_bool = True):
+def array_to_str(array, spc = ' ', endline = False, print_bool = True):
     ''' 
     Input: 
         array   : A 1-D Python array (list or tuple) object  
@@ -147,8 +147,11 @@ def array_to_str(array, spc = ' ', print_bool = True):
     '''
     out_str = ''                          
     for i in array:                        
-        try:                            
-            out_str = out_str+str(spc)+str(i)
+        try:
+            if(endline):                             
+                out_str = out_str+str(spc)+str(i)+'\n'
+            else:
+                out_str = out_str+str(spc)+str(i)
         except:
             if(print_bool):
                 print("[array_to_str] TypeError: element of 'array', or 'spc', not castable to a string")
@@ -400,11 +403,11 @@ def str_filter(string, filtre, inverse = False, print_bool = True):
     return out_str
        
        
-def str_space_clean(string):
+def str_clean(string):
     '''
     Description : Removes all spaces, endline characters and newline characters from string 
     '''
-    array = str_to_list(string, filtre = True)
+    array = str_to_list(string.rstrip(), filtre = True)
     out_string = array_to_str(array, spc = '')
     return out_string
      
