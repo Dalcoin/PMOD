@@ -265,7 +265,7 @@ def table_str_to_numeric(line_list   ,
         new_line_list = new_line_list[1:-1]
         n = len(new_line_list)
         try:
-            head = __strl__.str_to_list(head, split_val = sep, filtre = True)
+            head = __strl__.str_to_list(head, spc = sep, filtre = True)
             nhead = len(head)
         except:
             print("[table_str_to_numeric] Error: header could not be parsed]")
@@ -273,7 +273,7 @@ def table_str_to_numeric(line_list   ,
     
     nanopt_test = False
     for i in range(n):
-        new_line_list[i] = __strl__.str_to_list(new_line_list[i], split_val = sep, filtre = True)
+        new_line_list[i] = __strl__.str_to_list(new_line_list[i], spc = sep, filtre = True)
         for j in range(len(new_line_list[i])):
             try:
                 if(nanopt):
