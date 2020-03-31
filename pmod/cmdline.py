@@ -1079,6 +1079,8 @@ class path_parse:
             success = True
             cmd_inst, file_list, dest_str = tup 
 
+            result = updater(self.var_path_list,'list',True,'')
+
             try:
                 value = self.var_path_contain
             except:
