@@ -184,16 +184,16 @@ def __list_repeat__(grab_list,file_lines,scrub):
     for i in saut:
         if(i<0):
             print("[__list_repeat__] Error: 'saut' (grab_list[1:-1]) value should not be negative")
-    if(lim < max(saut)+bnd*n):
+    if(lim < max(saut)+bnd*(n-1)):
         print("[__list_repeat__] IndexError: grab_list evaluation exceeds length of file_lines") 
         return False
 
     for i in range(n):
         for j in range(len(saut)):
             line_tag = saut[j]+bnd*i
-            raw_lines.append(file_lines[line_tag])
             if(scrub):
-                raw_lines[j] = raw_input[i].strip("\n").strip("\r")         
+                file_lines[line_tag] = file_lines[line_tag].strip("\n").strip("\r")  
+            raw_lines.append(file_lines[line_tag])    
     return raw_lines
 
 
