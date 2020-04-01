@@ -42,11 +42,13 @@ class benv:
         self.INCLOOP = re.compile("\s*INCloop\s*:\s*([T,F]\D+)") 
         self.AZPAIRS = re.compile("\s*AZpairs\s*:\s*([T,F]\D+)")
         self.MIRRORS = re.compile("\s*Mirrors\s*:\s*([T,F]\D+)")
-        self.NEWPARS = re.compile("\s*Newpars\s*:\s*([T,F]\D+)") 
+        self.EOSPARS = re.compile("\s*EOSpars\s*:\s*([T,F]\D+)") 
+
            
         self.PAIRS = re.compile("\s*(\d+),(\d+)")
         self.LOOPS = re.compile("\s*(\d+)\s+(\d+)\s+(\d+)\s*")
-        self.PARGP = re.compile("\s*"+9*DIGITSPC+FLOATER+DIGIT)     
+#        self.PARGP = re.compile("\s*"+9*DIGITSPC+FLOATER+DIGIT)     
+        self.PARGP = re.compile("\s*"+5*DIGITSPC+FLOATER+DIGIT)    
  
         # debug 
         self.SUBPROCESS_PATH_CHECK = False
@@ -79,7 +81,7 @@ class benv:
         self.incloop = False  
         self.azpairs = False
         self.mirrors = False 
-        self.newpars = False         
+        self.eospars = False         
 
         success, self.CURRENT_PATH = self.cmv.cmd('pwd') 
             
@@ -110,7 +112,7 @@ class benv:
          
           
     def exit_function(self, action_msg):
-        print("Exit: failed "+action_msg)
+        print("ExitError: failed "+action_msg)
         print("Failure occured on run number: "+str(self.run_time))
         sys.exit()
         
@@ -179,14 +181,25 @@ class benv:
         val = lines[1:4]
         return (par, val)
 
+    def parline_style_convert(self, parline):
     
-    def format_pars_line(self, eos, 
-                         density = 2
+        if(isinstance(parline,str)):
+            outpar = filter(None,[i.rstrip() for i in strl.str_to_list(parline)])
+        elif(isinstance(parline,(list,tuple))):
+            outpar = strl.array_to_str(filter(None,parline))
+        else:
+            print("[parline_style_convert] Error: input 'parline' must be either an array or string")
+            outpar = False 
+        return outpar  
+
+    
+    def create_pars_line(self, eos, 
+                         density = 2,
                          microscopic = True, 
                          e0_rho0 = True,
                          phenom_esym = False,
                          k0 = 220, 
-                         rho0 = 0.16
+                         rho0 = 0.16,
                          fff = 65,
                          *lengths):
 
@@ -259,31 +272,31 @@ class benv:
         n = len(lens) 
         
         if(n == 0 and mic == 1):
-            print("[format_pars_line] Error: if a microscopic eos is chosen, file length(s) must be defined")
+            print("[create_pars_line] Error: if a microscopic eos is chosen, file length(s) must be defined")
             return False  
         if(mic == 1 and pos_3 == 0 and n < 1):
-            print("[format_pars_line] Error: if a combined eos is chosen, the file length must be defined")
+            print("[create_pars_line] Error: if a combined eos is chosen, the file length must be defined")
             return False         
         elif(mic == 1 and pos_3 == 1 and n < 2):
-            print("[format_pars_line] Error: if a seperate eos is chosen, file lengths must be defined (e0 first then e1)")
+            print("[create_pars_line] Error: if a seperate eos is chosen, file lengths must be defined (e0 first then e1)")
             return False                  
         elif(mic == 1 and pos_3 == 2 and n < 1):
-            print("[format_pars_line] Error: if a symmetric eos is chosen, the file length must be defined")
+            print("[create_pars_line] Error: if a symmetric eos is chosen, the file length must be defined")
             return False     
         else:         
          
-        if(mic == 1 and (pos_3 == 0 or pos_3 == 2)):
-            pos_1 = lens[0]
-            pos_4 = 0
-            pos_5 = 0
-        elif(mic == 1 and pos_3 == 1):
-            pos_1 = 0
-            pos_4 = lens[0]
-            pos_5 = lens[0]
-        else: 
-            pos_1 = 0
-            pos_4 = 0
-            pos_5 = 0            
+            if(mic == 1 and (pos_3 == 0 or pos_3 == 2)):
+                pos_1 = lens[0]
+                pos_4 = 0
+                pos_5 = 0
+            elif(mic == 1 and pos_3 == 1):
+                pos_1 = 0
+                pos_4 = lens[0]
+                pos_5 = lens[0]
+            else: 
+                pos_1 = 0
+                pos_4 = 0
+                pos_5 = 0            
             
         outlist = [pos_1,pos_2,pos_3,pos_4,pos_5,pos_6,pos_7,pos_8,pos_9,pos_10,pos_11]
         outline = strl.array_to_str(outlist)
@@ -314,8 +327,11 @@ class benv:
         return [parline, divs, lims, az] 
 
     def data_to_pars(self, dataline):        
-        iop.flat_file_write(self.parspath, dataline)
-        return None
+        success = iop.flat_file_write(self.parspath, dataline)
+        if(not success):
+            print("[data_to_pars] Errors: failure to write 'dataline' to the following path:")
+            print("                       "+str(self.parspath))
+        return success
 
     def get_inital_pars(self):
         return self.initial_pars
@@ -391,10 +407,10 @@ class benv:
        
          
     def format_skval_data(self, lines):
-
+          
         skval_lines = list(lines)          
-
-        incloop, azpairs, mirrors, newpars = False, False, False, False
+          
+        incloop, azpairs, mirrors, eospars = False, False, False, False
           
         n = len(skval_lines)
         incb, azpb, mirb, newb = True, True, True, True  
@@ -417,9 +433,9 @@ class benv:
                     self.mirrors = (mirrors[0].lower() == 'true')
                     mirb = False 
             if(newb):
-                newpars = self.NEWPARS.findall(skval_lines[i])  
-                if(newpars != []):
-                    self.newpars = (newpars[0].lower() == 'true')
+                eospars = self.EOSPARS.findall(skval_lines[i])  
+                if(eospars != []):
+                    self.eospars = (eospars[0].lower() == 'true')
                     newb = False 
                  
             if(i+1 == n and not all([not incb, not azpb, not mirb, not newb])):
@@ -430,13 +446,13 @@ class benv:
                 if(mirb):
                     print("[format_skval_data] Warning: could not find parameter 'Mirrors' in 'skval_lines'")  
                 if(newb):
-                    print("[format_skval_data] Warning: could not find parameter 'Newpars' in 'skval_lines'")  
+                    print("[format_skval_data] Warning: could not find parameter 'EOSpars' in 'skval_lines'")  
             elif(all([not incb, not azpb, not mirb, not newb])):
                 npreamble = i    
                 break    
             else:
                 pass
-
+         
         if(n > npreamble >= 0):
             skval_lines = skval_lines[npreamble:] 
 
@@ -447,7 +463,7 @@ class benv:
 
         if(self.incloop and self.azpairs):
             print("[format_skval_data] Warning: both skval looping and nuclei pairs detected")
-            print("    skval looping takes precedent over paring")
+            print("                             skval looping takes precedent over paring")
             self.SKVAL_CONTROL_ERROR = True
          
         if(self.incloop):
@@ -455,65 +471,53 @@ class benv:
                 looplist = self.LOOPS.findall(i)
                 if(len(looplist) > 0):
                     loop.append(looplist[0])
-                if(self.newpars):
-                    pgp = self.PARGP.findall(i)
-                    if(len(pgp)>0): 
-                        pars.append(pgp[0])  
-
+                if(self.eospars):
+                    looplist = self.EOSPARS.findall(i)
+                    if(len(looplist)>0):
+                        pars.append(looplist[0])
+                        
             if(len(loop) > 0):
-                if(len(pars) > 0):
-                    if(len(loop) != len(pars)):
-                        print("[format_skval_data] Warning: parameters detected with formatting error")
-                        print("    Parameter will be ignored for this run group")
-                        self.PAR_FORMAT_ERROR = True
-                        output = (loop[0],"loop",False)
-                        return output
-                    else:
-                        output = (map(lambda x,y: (x,y), loop,pars),"loop",True)
-                        return output
-                else:
-                    if(len(loop) > 1):
-                        print("[format_skval_data] Warning: skval loop detected with formatting error")
-                        print("    Only the first skval loop will be executed for this run group")
-                        self.SKVAL_FORMAT_ERROR = True
-                    output = (loop[0],"loop",False)  
-                    return output
+                if(len(loop) > 1):
+                    print("[format_skval_data] Warning: Multiple loop options detected, only the first one will be exectued")
+                loop_data = loop[0]                     
+                loop_type = "loop"
+                self.azpairs = False 
             else:                    
-                self.SKVAL_FORMAT_ERROR = True
+                print("[format_skval_data] Warning: Loop option selected but no loops detected, defaulting to a pair-wise search")
+                self.SKVAL_FORMAT_ERROR = True   
+                self.azpairs = True 
+                self.incloop = False             
               
-        elif(self.azpairs):
-
+        if(self.azpairs and self.incloop == False):
             for i in skval_lines:
                 double = self.PAIRS.findall(i)
-                if(len(double)>0): 
+                if(len(double)>0):
+                    if(len(double)>1): 
+                        print("[format_skval_data] Warning: More than one 'pair' value found in the string: ")
+                        print("                    '"+i+"'")
+                        print("            Only the first pair will be appended to the stack")
                     var = double[0]
                     var = map(lambda x: float(strl.str_clean(x)), var)
                     doubles.append(var)
-                if(self.newpars):
-                    pgp = self.PARGP.findall(i)
-                    if(len(pgp)>0): 
-                        pars.append(pgp[0])
+                if(self.eospars):
+                    looplist = self.EOSPARS.findall(i)
+                    if(len(looplist)>0):
+                        pars.append(looplist[0])
 
             if(len(doubles) > 0):
-                if(len(pars) > 0):
-                    if(len(doubles) != len(pars)):
-                        print("[format_skval_data] Warning: parameters detected with formatting errors")
-                        print("    Parameter will be ignored for this run group")
-                        self.PAR_FORMAT_ERROR = True
-                        output = (doubles,"pair",False)
-                        return output
-                    else:
-                        output = (map(lambda x,y: (x,y), doubles,pars),"pair",True) 
-                        return output 
-                else:
-                    output = (doubles,"pair",False)
-                    return output
+                loop_data = doubles
+                loop_type = "pair"
             else:                    
                 self.SKVAL_FORMAT_ERROR = True
+                print("[format_skval_data] Error: No 'pair' values could be found")
+             
         else:
-            output = [[],"",False] 
-
-        print("No skval functionality detected...")                            
+            print("[format_skval_data] Error: No skval functionality detected...") 
+            loop_data = []
+            loop_type = ''
+        
+        output = (loop_data,loop_type,pars) 
+                           
         return output  
 
 
@@ -579,13 +583,13 @@ class benv:
             
         for i in exfiles:
             file_path = self.cmv.pw_join(eos_dir_path,i)  
-            file_inst = iop.flat_file_intable(i) 
-            if(file_inst != False):
-                if(len(file_inst) != 3):
+            ex = iop.flat_file_intable(file_path) 
+            if(ex != False):
+                if(len(ex) != 3):
                     print("[collect_eos] Error: the file '"+str(i)+"' did not have three equal data columns")
                     self.EOS_FILE_FORMAT_ERROR = True
                     continue 
-                eoslist.append(file_inst)
+                eoslist.append((ex,i))
             else:
                 print("[collect_eos] Error: could not read the file '"+str(i)+"' as a table")
                 continue                                     
@@ -606,12 +610,13 @@ class benv:
             
             if(baselist[0] == ''):
                 e1name = e1add+baselist[1] 
+                idbaseline = baselist[1]
             else:
-                e1name = baselist[0]+e1add+baselist[1]                                   
+                e1name = baselist[0]+e1add+baselist[1]   
+                idbaseline = baselist[0]+baselist[1]                               
              
             e0_file_path = self.cmv.pw_join(eos_dir_path,i)  
-    
-            if(e1name in e1_files):
+            if(e1name in e1files):
                 e1pack = True
                 e1_file_path = self.cmv.pw_join(eos_dir_path,e1name)     
 
@@ -628,7 +633,7 @@ class benv:
                 self.EOS_SPLIT_PARSE_ERROR = True 
                 continue
 
-            if(e1pack)
+            if(e1pack):
                 e10 = []
                 try:
                     e10 = [e0data[0],e0data[1],e1data[0],e1data[1]]
@@ -636,7 +641,7 @@ class benv:
                     print("[collect_eos] Error: could not parse '"+str(e0_file_path)+"' and '"+str(e1_file_path)+"' content into data")
                     self.EOS_SPLIT_PARSE_ERROR = True 
                     continue                                     
-                eoslist.append(e10) 
+                eoslist.append((e10,idbaseline)) 
             else:
                 e0 = []
                 try:
@@ -645,14 +650,16 @@ class benv:
                     print("[collect_eos] Error: could not parse '"+str(e0_file_path)+"' content into data")
                     self.EOS_SPLIT_PARSE_ERROR = True 
                     continue                                     
-                eoslist.append(e0)
+                eoslist.append((e0,idbaseline))
               
         return eoslist         
                     
          
             
-    def format_eos_data(self, eoslist_entry, columns = True):
+    def format_eos_data(self, eos_obj, pl=[], set_pars = True):
     
+        eoslist_entry, eosid = eos_obj
+
         output = ()
         exgp = [] 
         e0gp = [] 
@@ -663,33 +670,64 @@ class benv:
             kf = eoslist_entry[0]
             e0 = eoslist_entry[1] 
             e1 = eoslist_entry[2]
-            for i in xrange(len(eoslist_entry)):
-                exgp.append(map(lambda x,y,z: strl.array_to_str([x,y,z],spc='  '),kf,e0,e1))
-            output = (type, exgp)        
+            exgp = map(lambda x,y,z: strl.array_to_str([x,y,z],spc='  ',endline=True),kf,e0,e1)
+            if(len(kf) == len(e0) and len(e0) == len(e1)):
+                n = len(kf)
+            else: 
+                print("[format_eos_data] Warning: It appears that the input eos entry is improperly formatted")
+                print("                           Further errors will likely occur down the pipeline")
+                n = len(kf)
+            if(set_pars and len(pl) == 7):
+                pars = strl.array_to_str((n,pl[0],type,0,0,pl[1],pl[2],pl[3],pl[4],pl[5],pl[6]))     
+                output = (((type, exgp),pars),eosid)
+            else:          
+                output = ((type, exgp),eosid)     
+   
         elif(len(eoslist_entry) == 4):
             type = 1
             kf0 = eoslist_entry[0]
             e0  = eoslist_entry[1]
             kf1 = eoslist_entry[2]
             e1  = eoslist_entry[3]
-            for i in xrange(len(eoslist_entry[0])):
-                e0gp.append(map(lambda x,y,z: strl.array_to_str([x,y],spc='  '),kf0,e0))
-            for i in xrange(len(eoslist_entry[0])):
-                e1gp.append(map(lambda x,y,z: strl.array_to_str([x,y],spc='  '),kf0,e0))
-            output = (type, e0gp, e1gp)                
+            e0gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True),kf0,e0)
+            e1gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True),kf1,e1)
+
+            if(len(kf0) == len(e0) and len(kf1) == len(e1)):
+                n0 = len(kf0)
+                n1 = len(kf1)
+            else: 
+                print("[format_eos_data] Warning: It appears that the input eos entry is improperly formatted")
+                print("                            Further errors will likely occur down the pipeline")
+                n0 = len(kf0)
+                n1 = len(kf1)
+            if(set_pars and len(pl) == 7):
+                pars = strl.array_to_str((0,pl[0],type,n0,n1,pl[1],pl[2],pl[3],pl[4],pl[5],pl[6]))     
+                output = (((type, e0gp, e1gp),pars),'e10'+eosid)
+            else:          
+                output = ((type, e0gp, e1gp),'e10'+eosid) 
+               
         elif(len(eoslist_entry) == 2): 
             type = 2
             kf = eoslist_entry[0]
-            e0 = eoslist_entry[1] 
-            for i in xrange(len(eoslist_entry)):
-                e0gp.append(map(lambda x,y: strl.array_to_str([x,y],spc='  '),kf,e0))
-            output = (type, e0gp)   
+            e0 = eoslist_entry[1]             
+            e0gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True),kf,e0)
+
+            if(len(kf) == len(e0)):
+                n = len(kf)
+            else: 
+                print("[format_eos_data] Warning: It appears that the input eos entry is improperly formatted")
+                print("                           Further errors will likely occur down the pipeline")
+                n = len(kf)
+            if(set_pars and len(pl) == 7):
+                pars = strl.array_to_str((n,pl[0],type,0,0,pl[1],pl[2],pl[3],pl[4],pl[5],pl[6]))     
+                output = (((type, e0gp),pars),'e0'+eosid)
+            else:          
+                output = ((type, e0gp),'e0'+eosid)   
         else:
-            print("[format_eos_data] Error: 'eoslist_entry' must be either 3 or 4 numeric lists")
-            output = False
-                    
+            print("[format_eos_data] Error: 'eoslist_entry' must be either 2, 3 or 4 numeric lists long")
+            output = False          
         return output         
-           
+        
          
     def pass_eos(self, formatted_eos):
 
@@ -699,18 +737,25 @@ class benv:
             return False 
          
         type = formatted_eos[0]  
-         
         if(type == 0):
             eos_path = self.cmv.pw_join(self.binpath,'ex_nxlo.don') 
-            iop.flat_file_write(eos_path, formatted_eos[1])            
+            success = iop.flat_file_write(eos_path, formatted_eos[1])  
+            if(not success): 
+                print("[pass_eos] Error: when writing to 'ex_nxlo.don'")          
         elif(type == 1):
             e0_path = self.cmv.pw_join(self.binpath,'e0_nxlo.don') 
-            iop.flat_file_write(e0_path, formatted_eos[1])
+            success = iop.flat_file_write(e0_path, formatted_eos[1])
+            if(not success): 
+                print("[pass_eos] Error: when writing to 'e0_nxlo.don'")   
             e1_path = self.cmv.pw_join(self.binpath,'e1_nxlo.don') 
-            iop.flat_file_write(e1_path, formatted_eos[2])      
+            success = iop.flat_file_write(e1_path, formatted_eos[2])      
+            if(not success): 
+                print("[pass_eos] Error: when writing to 'e1_nxlo.don'")   
         elif(type == 2):
             e0_path = self.cmv.pw_join(self.binpath,'e0_nxlo.don') 
-            iop.flat_file_write(e0_path, formatted_eos[1])                  
+            success = iop.flat_file_write(e0_path, formatted_eos[1])  
+            if(not success): 
+                print("[pass_eos] Error: when writing to 'e0_nxlo.don'")                   
         else:
             print("[pass_eos] Error: 'formatted_eos' is not properly formatted")
             return False
@@ -745,23 +790,6 @@ class benv:
           
         subprocess.call("./run.sh", shell=True)                   
                     
-          
-    def run_once(self):
-           
-        pars, vals = self.data_from_pars() 
-        self.pass_pars(pars)
-        self.pass_vals(vals)
-        self.run_benv()
-        
-        optpars  = self.data_from_bin(self.OPTPARS,True)
-        skinvals = self.data_from_bin(self.SKINVAL,True)
-        
-        subprocess.call("rm "+self.OPTPARS,shell = True)
-        subprocess.call("rm "+self.SKINVAL,shell = True)
-
-        self.run_time+=1
-        return ((optpars,skinvals))
-         
 
     def format_skval_benv_vals(self, benvals, split = False):
          
@@ -804,105 +832,108 @@ class benv:
 
         subprocess.call("rm CONSOLE.txt",shell = True)         
         return None
+
+
+    def run_once(self, clean_run = True):
+           
+        pars, vals = self.data_from_pars() 
+        self.pass_pars(pars)
+        self.pass_vals(vals)
+        self.run_benv()
+        
+        optpars  = self.data_from_bin(self.OPTPARS,True)
+        skinvals = self.data_from_bin(self.SKINVAL,True)
+        
+        if(clean_run):
+            subprocess.call("rm "+self.OPTPARS, shell = True)
+            subprocess.call("rm "+self.SKINVAL, shell = True)
+
+        self.run_time+=1
+        return ((optpars,skinvals))
         
       
-def benv_skval_loop(benv_instance, skval = True, reset = True):
-    ''' 
-    Notes: 
+    def skval_loop(self, parline, skval_data, skval_type):
+        ''' 
+        Notes: 
 
-    'benv_instance' must be an initialized instance of the 'benv' class 
-
-    It is strongly recommmended that your instance of the 'benv' class 
-    keep the default 'initialize' option upon initialization 
-
-    '''
-
-    benvals = []
-
-    initial_pars = benv_instance.get_inital_pars()
-     
-     
-    if(skval):
+        '''
+    
+        benvals = []    
+         
         # Parsing data from the skval data file, default : 'skval.don' 
-        skval_lines = benv_instance.get_skval_data()
-        data, type, parincl = benv_instance.format_skval_data(skval_lines)
+        if(not isinstance(skval_data,(list,tuple)) or not isinstance(skval_type,str)):
+            print("[skval_loop] TypeError: check input variables")
+            self.exit_function("while attempting to run a skval loop")  
+        else:
+            data = list(skval_data)            
+            type = skval_type              
         
         # 'type' determines if BENV values are computed by a skval loop or individual nuclei   
-        if(type == 'loop'):       
-            if(parincl):
-                for i in data:
-                    skev, pars = i
-                    skval_list = benv_instance.skval_loop_line_parse(skev)
-                    if(skval_list[3]):
-                        inv = -1 
-                    else:
-                        inv = 1                     
-                    for i in xrange(skval_list[0]):
-                        ax = self.initial_a+inv*skval_list[2]*(j+1)
-                        for j in xrange(skval_list[1]): 
-                            zx = self.initial_z+inv*(skval_list[2])*(j+1)                                    
-                            parlines = benv_instance.format_pars_data(pars, ax, zx)       
-                            benv_instance.data_to_pars(parlines)
-                            results = benv_instance.run_once()
-                            benvals.append(results,(ax,zx))                          
+        if(type == 'loop'):        
+            skval_list = self.skval_loop_line_parse(data)
+            if(skval_list[3]):
+                inv = -1 
             else:
-                skval_list = benv_instance.skval_loop_line_parse(data)   
-                if(skval_list[3]):
-                    inv = -1 
-                else:
-                    inv = 1
-                for i in xrange(skval_list[0]):
-                    ax = self.initial_a+inv*skval_list[2]*(j+1)
-                    for j in xrange(skval_list[1]): 
-                        zx = self.initial_z+inv*(skval_list[2])*(j+1)                                    
-                        parlines = benv_instance.format_pars_data(initial_pars, ax, zx)
-                        benv_instance.data_to_pars(parlines)
-                        results = benv_instance.run_once()
-                        benvals.append(results,(ax,zx))                         
+                inv = 1                     
+            for i in xrange(skval_list[0]):
+                ax = self.initial_a+inv*skval_list[2]*(j+1)
+                for j in xrange(skval_list[1]): 
+                    zx = self.initial_z+inv*(skval_list[2])*(j+1)                                    
+                    parlines = self.format_pars_data(parline, ax, zx)       
+                    self.data_to_pars(parlines)
+                    results = self.run_once()
+                    benvals.append((results,(ax,zx)))                                               
                         
-        elif(type == 'pair'): 
-            if(parincl):   
-                for i in data: 
-                    pair, pars = i
-                    parlines = benv_instance.format_pars_data(pars, pair[0], pairs[1])
-                    benv_instance.data_to_pars(parlines)
-                    results = benv_instance.run_once()
-                    benvals.append((results,pair))                
-            else:
-                for i in data: 
-                    parlines = benv_instance.format_pars_data(initial_pars, i[0], i[1])
-                    benv_instance.data_to_pars(parlines)
-                    results = benv_instance.run_once()
-                    benvals.append((results,i))                
+        elif(type == 'pair'):   
+            for i in data: 
+                parlines = self.format_pars_data(parline, i[0], i[1])
+                self.data_to_pars(parlines)
+                results = self.run_once()
+                benvals.append((results,i))                
         else:
-            print("Error: 'type' not reconignized")
-            benv_instance.exit_function("when executing skval looping") 
-         
-        if(reset):
-            benv_instance.data_to_pars(initial_pars)    
-
-    else:
-        results = benv_instance.run_once()
-        benvals.append(results)
-            
-    return benvals
+            print("[benv_skval_loop] Error: 'type' not reconignized")
+            self.exit_function("when executing skval looping") 
+                
+        return benvals
              
 
-def benv_eos_loop(benv_instance):
+    def benv_eos_loop(self, reset = True):
+    
+        benvals_group = []
+        benvals_cohort= [] 
 
-    benvals_group = []
+        initial_pars = self.get_inital_pars()
+        pl = self.parline_style_convert(initial_pars) 
+        plst = [pl[1],pl[5],pl[6],pl[7],pl[8],pl[9],pl[10]]   
+    
+        skval_lines = self.get_skval_data()
+        data, type, pars = self.format_skval_data(skval_lines)    
+        eoslist = self.collect_eos()  
+        for entry in eoslist:
+            eos_obj,eosid = self.format_eos_data(entry, pl=plst)
+            eos_instance, parline = eos_obj
+            self.pass_eos(eos_instance)
+            benvals = self.skval_loop(parline, data, type)
+            formatted_benvals = self.format_skval_benv_vals(benvals)
+            benvals_group.append((formatted_benvals,eosid))
+        if(len(pars)>0):
+            benvals_cohort.append(benvals_group)
+            benvals_group = []
+            for i,par in enumerate(pars):
+                for entry in enumerate(eoslist):
+                    eos_obj,eosid = self.format_eos_data(entry,pl=par)
+                    eos_instance, parline = eos_obj
+                    self.pass_eos(eos_instance)
+                    benvals = self.skval_loop(parline, data, type)
+                    formatted_benvals = self.format_skval_benv_vals(benvals)
+                    benvals_group.append((formatted_benvals,"par_var_"+str(i)+"_"+eosid))
+                benvals_cohort.append(benvals_group)
+                benvals_group = []
 
-    initial_pars = benv_instance.get_inital_pars()
-
-    eoslist = benv_instance.collect_eos()
-    for entry in eoslist:
-        eos_instance = benv_instance.format_eos_data(entry)
-        benv_instance.pass_eos(eos_instance)
-        benvals = benv_skval_loop(benv_instance)
-        formatted_benvals = benv_instance.format_skval_benv_vals(benvals)
-        benvals_group.append(formatted_benvals)
-
-    return benvals_group 
+        if(reset):
+            self.data_to_pars(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
+    
+        return benvals_group 
 
 
  
