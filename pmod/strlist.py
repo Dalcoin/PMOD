@@ -148,14 +148,13 @@ def array_to_str(array, spc = ' ', endline = False, print_bool = True):
     out_str = ''                          
     for i in array:                        
         try:
-            if(endline):                             
-                out_str = out_str+str(spc)+str(i)+'\n'
-            else:
-                out_str = out_str+str(spc)+str(i)
+            out_str = out_str+str(spc)+str(i)
         except:
             if(print_bool):
                 print("[array_to_str] TypeError: element of 'array', or 'spc', not castable to a string")
-            return False        
+            return False
+    if(endline):
+        out_str = out_str+"\n"     
     return out_str
              
 
