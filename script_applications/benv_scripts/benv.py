@@ -13,8 +13,14 @@ class benv:
 
     def __init__(self, initialize = True, kernel = 'linux'):
 
+        # Constants
+        self.s4 = "    "
 
-        # File and folder names    
+        # File and folder names  
+
+        self.INITIAL_DIR = 'BENV'
+        self.INITIAL_PATH = ''
+  
         self.PAR_FILE_NAME = 'par.don'
         self.VAL_FILE_NAME = 'nucleus.don'
              
@@ -39,6 +45,7 @@ class benv:
         DIGITSPC = DIGIT+"\s+"
         FLOATER  = "(\d+.+\d*)\s*"
 
+        # Compiling regex code
         self.INCLOOP = re.compile("\s*INCloop\s*:\s*([T,F]\D+)") 
         self.AZPAIRS = re.compile("\s*AZpairs\s*:\s*([T,F]\D+)")
         self.MIRRORS = re.compile("\s*Mirrors\s*:\s*([T,F]\D+)")
@@ -47,29 +54,31 @@ class benv:
            
         self.PAIRS = re.compile("\s*(\d+),(\d+)")
         self.LOOPS = re.compile("\s*(\d+)\s+(\d+)\s+(\d+)\s*")
-#        self.PARGP = re.compile("\s*"+9*DIGITSPC+FLOATER+DIGIT)     
+        self.PARCM = re.compile("\s*"+9*DIGITSPC+FLOATER+DIGIT)      
         self.PARGP = re.compile("\s*"+5*DIGITSPC+FLOATER+DIGIT)    
  
-        # debug 
-        self.SUBPROCESS_PATH_CHECK = False
+        # debug
+
+        # Initial Pathway Errors
+        self.PAR_PATH_ERROR = False
         self.SKVLFILE_PATH_ERROR = False
         self.EOSDIR_PATH_ERROR = False
+        self.BINDIR_PATH_ERROR = False
 
+        # Other intial task errors
+        self.INTERNAL_CMD_ERROR = False
+        self.SUBPROCESS_PATH_ERROR = False
         self.PAR_FORMAT_ERROR = False
+
+        # Skval errors
         self.SKVAL_FORMAT_ERROR = False 
         self.SKVAL_CONTROL_ERROR = False
 
+        # EoS errors 
         self.EOS_SPLIT_FILE_ERROR = False
         self.EOS_FILE_FORMAT_ERROR = False 
         self.EOS_SPLIT_PARSE_ERROR = False
         self.EOS_PASS_ERROR = False
-
-#        self.eos_table = []
-
-        # internal shell command line
-        self.cmv = cml.path_parse(kernel) 
-        self.INITIAL_PATH = self.cmv.var_path
-        self.run_time = 1 
 
         # initial data 
         self.initial_pars = ''
@@ -77,44 +86,119 @@ class benv:
         self.initial_z = 0           
 
         # skval functionality
-
         self.incloop = False  
         self.azpairs = False
         self.mirrors = False 
-        self.eospars = False         
+        self.eospars = False        
 
-        success, self.CURRENT_PATH = self.cmv.cmd('pwd') 
-            
+        # internal shell command line
+        self.cmv = object()   
+           
+        # variables
+        self.run_time = 1  
+
+        #initialization (optional)            
         if(initialize):
-          
-            self.set_par_path()
-            self.set_skvl_path() 
-            self.set_eos_path()
+             
+            print(" ")
+            print("Initialization option detected")
+            print("Error messages and test results shown below")
+            print("Initialization sequence will now begin...\n")
 
+            try:
+                self.cmv = cml.path_parse(kernel) 
+                self.INITIAL_PATH = self.cmv.var_path
+            except:
+                print("[benv] Error: internal shell command object 'cmv' could not be created")
+                self.INTERNAL_CMD_ERROR = True
+          
+            self.set_par_path()          
+            self.set_skvl_path()   
+            self.set_eos_path()
             self.set_bin_dir()
          
-            try:
+            if(self.PAR_PATH_ERROR):
+                print("[benv] Error: no path found for the 'PARSFILE' file")
+                print("No attempt will be made to get values from 'PARSFILE'\n")
+            else: 
                 self.initial_pars, self.initial_vals = self.data_from_pars() 
-                self.initial_pars = self.initial_pars[0]
-            except:
-                print("[benv] Error: failure to get data from 'parameters.don' file ")
-                self.exit_function("while initializing 'benv' class instance")
+                if((self.initial_pars, self.initial_vals) == ('','')):
+                    print("[benv] Error: 'PARSFILE' file contains invalid formatting\n")
+                    self.PAR_FORMAT_ERROR = True
+                else:
+                    self.initial_pars = self.initial_pars[0]
                 
             try: 
                 self.initial_a, self.initial_z = strl.str_to_list(self.initial_vals[-1], filtre=True) 
                 self.initial_a = int(float(strl.str_clean(self.initial_a)))
                 self.initial_z = int(float(strl.str_clean(self.initial_z)))                
             except:
-                print("[benv] Error: failure to parse isotope values A and Z to integers (the last parameter line)")
-                self.exit_function("while initializing 'benv' class instance")
-
-            self.set_eos_path()
+                print("[benv] Error: failure to parse isotope values A and Z to integers (the last parameter line)\n")
+                self.PAR_FORMAT_ERROR = True
+         
+            self.assess_initialization() 
+            print("Initialization sequence complete.\n")
          
           
     def exit_function(self, action_msg):
         print("ExitError: failed "+action_msg)
         print("Failure occured on run number: "+str(self.run_time))
         sys.exit()
+
+    def assess_initialization(self):
+
+        e0 = self.INTERNAL_CMD_ERROR
+        e1 = self.PAR_PATH_ERROR 
+        e2 = self.SKVLFILE_PATH_ERROR
+        e3 = self.EOSDIR_PATH_ERROR
+        e4 = self.BINDIR_PATH_ERROR 
+        e5 = self.SUBPROCESS_PATH_ERROR 
+        e6 = self.PAR_FORMAT_ERROR
+
+        if(e0):
+            print(self.s4+"E0 Internal Command Line Test :          Failed")
+        else:
+            print(self.s4+"E0 Internal Command Line Test :          Succeeded") 
+           
+        if(e1):
+            print(self.s4+"E1 Parameter File Path Test :            Failed")
+        else:
+            print(self.s4+"E1 Parameter File Path Test :            Succeeded") 
+
+        if(e2):
+            print(self.s4+"E2 SKVAL File Path Test :                Failed")
+        else:
+            print(self.s4+"E2 SKVAL File Path Test :                Succeeded") 
+
+        if(e3):
+            print(self.s4+"E3 EoS Directory Pathway Test :          Failed")
+        else:
+            print(self.s4+"E3 Eos Directory Pathway Test :          Succeeded") 
+
+        if(e4):
+            print(self.s4+"E4 Binary Directory Path Test :          Failed")
+        else:
+            print(self.s4+"E4 Binary Directory Path Test :          Succeeded") 
+
+        if(e5):
+            print(self.s4+"E5 Setting Binary Directory as default : Failed")
+        else:
+            print(self.s4+"E5 Setting Binary Directory as default : Succeeded") 
+
+        if(not e1):
+            if(e6):
+                print(self.s4+"E6 Parsing inital parameter values :     Failed")
+            else:
+                print(self.s4+"E6 Parsing inital parameter values :     Succeeded") 
+
+        print(" ")
+        if(e0 or e1 or e4):
+            print(self.s4+"Fatal Error Test: Failed")
+        else:
+            print(self.s4+"Fatal Error Test: Succeeded")
+        print(" ")
+        
+        return True
         
     ##############################################################
     # functions to set the internal pathway strings used in BENV #
@@ -123,63 +207,97 @@ class benv:
     def set_par_path(self):
         success, data = self.cmv.cmd("dir "+self.PARSFILE)
         if(not success):
-            print("Error: failure to get path for file named '"+self.PARSFILE+"'")
-            self.exit_function('when setting the parameter file path')
+            print(self.s4+"[set_par_path] Error: failure to get path for file named: " )
+            print(self.s4+"'"+self.PARSFILE+"'\n")
+            self.PAR_PATH_ERROR = True 
+            return False         
         self.parspath = data[0]
-        return None       
-
+        return True       
+     
     def set_skvl_path(self):
         success, data = self.cmv.cmd("dir "+self.SKVLFILE)
         if(not success):
-            print("[set_eos_path] Warning: failure to get path for file named '"+self.SKVLFILE+"'")
+            print(self.s4+"[set_skvl_path] Warning: failure to get path for file named: ")
+            print(self.s4+"'"+self.SKVLFILE+"'\n")
             self.SKVLFILE_PATH_ERROR = True
+            return False
         self.skvlpath = data[0]
-        return None       
+        return True       
 
     def set_eos_path(self):
         success, data = self.cmv.cmd("dir "+self.EOSDIR)
         if(not success):
-            print("[set_eos_path] Warning: failure to get path for file named '"+self.EOSDIR+"'")
+            print(self.s4+"[set_eos_path] Warning: failure to get path for file named: ")
+            print(self.s4+"'"+self.SKVLFILE+"'\n")
             self.EOSDIR_PATH_ERROR = True
-        else:    
-            self.eospath = data[0]             
-        return None
+            return False
+        self.eospath = data[0]             
+        return True
 
     def set_bin_dir(self):
 
         success, output = self.cmv.cmd("cd "+self.BINFILE)
         if(not success):
-            print("[set_bin_dir] ExitError: failure to access "+self.BINFILE)
-            self.exit_function("when entering the 'bin' directory")
+            print(self.s4+"[set_bin_dir] Error: failure to access "+self.BINFILE+"\n")
+            self.BINDIR_PATH_ERROR = True
+            return False
         
         success, output = self.cmv.cmd("pwd")
         if(not success):
-            print("[set_bin_dir] ExitError: failure to access "+self.BINFILE+" pathway")
-            self.exit_function("when accessing 'bin' pathway")
+            print(self.s4+"[set_bin_dir] Error: failure to access "+self.BINFILE+" pathway\n")
+            self.BINDIR_PATH_ERROR = True
+            return False
         else:
             binpath = output 
 
-        self.binpath = binpath  # the pathway for the bin directory is loaded      
-        os.chdir(binpath)       # commands executed with subprocess will run in the bin directory
-              
+        self.binpath = binpath  # the pathway for the bin directory is loaded    
+        try:  
+            os.chdir(binpath)       # commands executed with subprocess will run in the bin directory
+        except:
+            print(self.s4+"[set_bin_dir] Error: could not change script directory to '"+str(binpath)+"'\n")
+            self.SUBPROCESS_PATH_ERROR = True
+            return False            
+  
         success, output = self.cmv.cmd("cd ..")   
         if(not success):
-            print("[set_bin_dir] ExitError: failure to access "+self.BINFILE)
-            self.exit_function("when returning to initial directory")
+            print(self.s4+"[set_bin_dir] ExitError: failure to reaccess "+self.BINFILE+"\n")
+            self.BINDIR_PATH_ERROR = True
+            return False
 
-        self.SUBPROCESS_PATH_CHECK = True
-        return None
+        return True
 
 
     ##################################################################################################
     # functions dealing with the 'parameters.don', 'par.don' and 'nucleus.don' (or equivalent) files #
     ##################################################################################################      
     
-    def data_from_pars(self):        
-        lines = iop.flat_file_grab(self.parspath)
-        par = [lines[0]]
-        val = lines[1:4]
-        return (par, val)
+    def data_from_pars(self, raw = False):        
+        try:
+            lines = iop.flat_file_grab(self.parspath)
+        except:
+            print(self.s4+"[data_from_pars] Error: could not get parameters from 'parspath'")
+            print(self.s4+"A fatal error occured in the ioparse function [flat_file_grab]")
+            print(self.s4+"attempted to access pathway: '"+str(self.parspath)+"'\n")
+            return ('','')
+
+        if(lines == False):
+            print(self.s4+"[data_from_pars] Error: could not get parameters from 'parspath'")
+            print(self.s4+"attempted to access pathway: '"+str(self.parspath)+"'\n")
+            return ('','')
+
+        try:
+            par = [lines[0]]
+            val = lines[1:4]
+        except:
+            print(self.s4+"[data_from_pars] Error: check formatted of the file found at 'parspath'")
+            print(self.s4+"attempted to format lines in the file found at: '"+str(self.parspath)+"'\n")
+            return ('','') 
+             
+        if(raw):
+            return lines
+        else:
+            return (par, val)
+
 
     def parline_style_convert(self, parline):
     
@@ -785,8 +903,8 @@ class benv:
   
     def run_benv(self, collect = True):
 
-        if(not self.SUBPROCESS_PATH_CHECK):
-            exit_function("because 'SUBPROCESS_PATH_CHECK' needs to be set before runing 'run_benv'")
+        if(self.SUBPROCESS_PATH_ERROR):
+            exit_function("because 'SUBPROCESS_PATH_ERROR' needs to be set before runing 'run_benv'")
           
         subprocess.call("./run.sh", shell=True)                   
                     
@@ -833,6 +951,7 @@ class benv:
         subprocess.call("rm CONSOLE.txt",shell = True)         
         return None
 
+    # Running and Looping functions
 
     def run_once(self, clean_run = True):
            
