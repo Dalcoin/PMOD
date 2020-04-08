@@ -465,7 +465,176 @@ def partial_eos(file_name = None, lines = None):
     return match_lines
 
 
+def mat_parline_dict(auto_Load = None, **Pars):
+    '''
+    Valid Parameters 'Pars':
 
+        mat : 0, 1 --- 1 for neutron matter, 0 for symmetric matter 
+        kfs : List of tuples of either one or three floats 
+        sel : 0, 1 --- 1 for using previously calculated effective mass and potential energy 
+        cis : A list of six floats  - c1, c2, c3, c4, css, ctt
+        cde : A list of two floats  - cd, ce 
+
+    '''
+
+    valid_Pars = {
+                  'mat':0,                                            # Int or bool 
+                  'kfs':[(1.4,-75.2129,727.406)],                     # List of tuples containing 1 or 3 floats
+                  'sel':0,                                            # Int or bool   
+                  'cis':[-1.20,0.00,-4.43,2.67,-0.011828,-0.000010],  # List of six floats 
+                  'cde':[0.67,0.41],                                  # List of two floats
+                  }
+
+    if(auto_Load != None):
+        valid_Pars = auto_Load
+     
+    for arg,val in Pars.iteritems():
+        if(valid_Pars.get(arg) != None):
+            valid_Pars[arg] = val
+             
+    return valid_Pars
+
+
+def mat_parline_dict_to_lines(parline_Dict, numline_Dict):
+     
+    pars = ('mat', 'kfs', 'sel', 'cis', 'cde')
+       
+    nums = []   
+     
+    nums.append(numline_Dict['mat']) 
+    numkf_list = numline_Dict['kfs']
+    for numkf in numkf_list:
+        nums.append(numkf)
+    nums.append(numline_Dict['sel'])
+    nums.append(numline_Dict['cis'])
+    nums.append(numline_Dict['cde'])
+    
+    
+    mat = parline_Dict.get('mat')  
+    matline = "mat         "+str(mat)+ " \n"
+    
+    kfs = parline_Dict.get('kfs')
+    kflines = []
+    for kf in kfs:
+        if(len(kf) == 1):
+            kfline = "          "+str(kf[0])+" \n"
+            kflines.append(kfline)
+        elif(len(kf) == 3):
+            kfline = "          "+str(kf[0])+"       "+str(kf[1])+"   "+str(kf[2])+" \n"  
+            kflines.append(kfline)
+        else:
+            pass           
+     
+    sel = parline_Dict.get('sel') 
+    selline = "isel,ibnd   "+str(sel)+"  1\n"
+     
+    cis = parline_Dict.get('cis')
+    if(cis[0] < 0):
+        cisline =  "c_i,cs,ct  "+str(cis[0]) 
+    else:
+        cisline =  "c_i,cs,ct   "+str(cis[0]) 
+    cisline = cisline+"    "+str(cis[1])+"      "+str(cis[2])+"     "
+    cisline = cisline+str(cis[3])+"      "+str(cis[4])+" "+str('{:.7f}'.format(cis[5]))+" \n"
+     
+    cde = parline_Dict.get('cde')
+    cdeline = "cd,ce;Lam  "
+    if(cde[0] < 0):
+        cdeline = cdeline+str(cde[0])
+    else:
+        cdeline = cdeline+" "+str(cde[0])
+     
+    cdeline = cdeline+"     "+str(cde[1])+"     700 \n"
+     
+    lines = []   
+    lines.append(matline) 
+    for kfline in kflines:
+        lines.append(kfline)
+    lines.append(selline)
+    lines.append(cisline)
+    lines.append(cdeline)
+     
+    return lines, nums
+
+def mat_parline_parse(par_Lines):                
+             
+    Space = "\s+"
+    get_Digit = "(-*\d+\.\d*)"
+    get_Pos_Digit = "(\d+\.\d+)"
+    get_Integer = "(-*\d+)"
+
+    mat_Found = False 
+    kfs_Found = False 
+    cis_Found = False 
+    cde_Found = False 
+    sel_Found = False 
+    
+    mat_Line = re.compile('mat\s*(\d)')
+    kfs_Line = re.compile('^\s+(\d+\.\d+)\s*(-*\d+\.\d*)?\s*(-*\d+\.\d*)?\s*$')
+    sel_Line = re.compile('isel,ibnd\s+'+get_Integer+Space+'\d+')    
+    cis_Line = re.compile('c_i,cs,ct\s+'+6*(get_Digit+'\s+'))
+    cde_Line = re.compile('cd,ce;Lam\s+'+2*(get_Digit+'\s+')+get_Integer+'\s*')     
+     
+    kfs_Finds = []
+    kfs_lns = []
+    for i,line in enumerate(par_Lines):
+        if(len(mat_Line.findall(line)) > 0 and mat_Found == False):
+            mat_Find = mat_Line.findall(line)[0]
+            mat_ln = i+1
+            mat_Found = True
+        if(len(kfs_Line.findall(line)) > 0):
+            kfs_Find = filter(None,kfs_Line.findall(line)[0]) 
+            kfs_Finds.append(kfs_Find)
+            kfs_lns.append(i+1)
+            kfs_Found = True
+        if(len(sel_Line.findall(line)) > 0  and sel_Found == False):
+            sel_Find = sel_Line.findall(line)[0]         
+            sel_ln = i+1  
+            sel_Found = True
+        if(len(cis_Line.findall(line)) > 0  and cis_Found == False):
+            cis_Find = cis_Line.findall(line)[0] 
+            cis_ln = i+1
+            cis_Found = True
+        if(len(cde_Line.findall(line)) > 0  and cde_Found == False):
+            cde_Find = cde_Line.findall(line)[0]
+            cde_ln = i+1
+            cde_Found = True
+         
+    if(not mat_Found):
+        print("[mat_parline_parse] Error: 'mat' not found") 
+    if(not kfs_Found):
+        print("[mat_parline_parse] Error: 'kfs' not found") 
+    if(not sel_Found):
+        print("[mat_parline_parse] Error: 'sel' not found") 
+    if(not cis_Found):
+        print("[mat_parline_parse] Error: 'cis' not found") 
+    if(not cde_Found):
+        print("[mat_parline_parse] Error: 'cde' not found") 
+
+     
+    mat_obj = int(mat_Find)
+    kfs_obj = [tuple([float(j) for j in i]) for i in kfs_Finds] 
+    sel_obj = int(sel_Find)
+    cis_obj = [float(i) for i in cis_Find] 
+    cde_obj = [float(i) for i in cde_Find] 
+
+    parline_Dict = {
+                  'mat':mat_obj,
+                  'kfs':kfs_obj,
+                  'sel':sel_obj,
+                  'cis':cis_obj,
+                  'cde':cde_obj
+                   }
+
+    numline_Dict = {
+                  'mat':mat_ln,
+                  'kfs':kfs_lns,
+                  'sel':sel_ln,
+                  'cis':cis_ln,
+                  'cde':cde_ln
+                   }
+                     
+    return (parline_Dict, numline_Dict)  
+      
 # Constants
      
 pi = 3.141592653589793 # pi - 16 digits 
