@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import re
+import time
 
 import ioparse as iop 
 import strlist as strl 
@@ -46,10 +47,11 @@ class benv:
         FLOATER  = "(\d+.+\d*)\s*"
 
         # Compiling regex code
-        self.INCLOOP = re.compile("\s*INCloop\s*:\s*([T,F]\D+)") 
-        self.AZPAIRS = re.compile("\s*AZpairs\s*:\s*([T,F]\D+)")
-        self.MIRRORS = re.compile("\s*Mirrors\s*:\s*([T,F]\D+)")
-        self.EOSPARS = re.compile("\s*EOSpars\s*:\s*([T,F]\D+)") 
+        self.INCLOOP = re.compile("\s*INCloop\s*:\s*([T,F,t,f]\D+)") 
+        self.AZPAIRS = re.compile("\s*AZpairs\s*:\s*([T,F,t,f]\D+)")
+        self.MIRRORS = re.compile("\s*Mirrors\s*:\s*([T,F,t,f]\D+)")
+        self.EOSPARS = re.compile("\s*EOSpars\s*:\s*([T,F,t,f]\D+)") 
+        self.INITPAR = re.compile("\s*Initpar\s*:\s*([T,F,t,f]\D+)")
 
            
         self.PAIRS = re.compile("\s*(\d+),(\d+)")
@@ -57,7 +59,8 @@ class benv:
         self.PARCM = re.compile("\s*"+9*DIGITSPC+FLOATER+DIGIT)      
         self.PARGP = re.compile("\s*"+5*DIGITSPC+FLOATER+DIGIT)    
  
-        # debug
+        # debug-----------------
+        time_Start = time.time()
          
         # Initialization
         self.INITIALIZATION = False
@@ -92,6 +95,11 @@ class benv:
         self.EOS_FILE_FORMAT_ERROR = False 
         self.EOS_SPLIT_PARSE_ERROR = False
         self.EOS_PASS_ERROR = False
+
+        # Execution Errors
+        self.EXIT_ERROR = False
+
+        # BENV objects and variables---------------|
           
         # initial data 
         self.initial_pars = ''
@@ -108,7 +116,7 @@ class benv:
         self.cmv = object()   
            
         # variables
-        self.run_time = 1  
+        self.run_time = 0  
 
         #initialization (optional)            
         if(initialize):
@@ -154,11 +162,18 @@ class benv:
          
             self.assess_initialization() 
             print("Initialization sequence complete.\n")
-         
+            if(self.EXIT_ERROR):
+                print("A fatal error was detected in the initialization sequence...the script will now terminate\n")
+                self.exit_function("during initalization...see E-level error checks for details")         
+            else: 
+                print("Runtime warnings and errors printed below: \n")
           
-    def exit_function(self, action_msg):
-        print("ExitError: failed "+action_msg)
-        print("Failure occured on run number: "+str(self.run_time))
+    def exit_function(self, action_msg, failure=True):
+        if(failure):
+            print("ExitError: 'BENV' failed "+action_msg)
+        print("Run Number upon exit:  "+str(self.run_time))
+        print("Script run-time :  "+str(time.time()-self.time_Start))
+        print("   ")
         sys.exit()
 
     def assess_initialization(self):
@@ -240,6 +255,7 @@ class benv:
         print(" ")
         if(err0 or err1 or err4):
             print(self.s4+"Fatal Error Test: Failed")
+            self.EXIT_ERROR = True
         else:
             print(self.s4+"Fatal Error Test: Succeeded")
         print(" ")
@@ -334,13 +350,13 @@ class benv:
             lines = iop.flat_file_grab(self.parspath)
         except:
             print(self.s4+"[data_from_pars] Error: could not get parameters from 'parspath'")
-            print(self.s4+"A fatal error occured in the ioparse function [flat_file_grab]")
-            print(self.s4+"attempted to access pathway: '"+str(self.parspath)+"'\n")
+            print(self.s4+"Error occured in the ioparse function [flat_file_grab]")
+            print(self.s4+"Pathway: '"+str(self.parspath)+"'\n")
             return ('','')
 
         if(lines == False):
             print(self.s4+"[data_from_pars] Error: could not get parameters from 'parspath'")
-            print(self.s4+"attempted to access pathway: '"+str(self.parspath)+"'\n")
+            print(self.s4+"Pathway: '"+str(self.parspath)+"'\n")
             return ('','')
 
         try:
@@ -598,13 +614,15 @@ class benv:
     def format_skval_data(self, lines):
           
         skval_lines = list(lines)          
-          
-        incloop, azpairs, mirrors, eospars = False, False, False, False
+        
+        # variables   
+        incloop, azpairs, mirrors, eospars, initpar = False, False, False, False, False
+        incb, azpb, mirb, newb, intp = True, True, True, True, True  
           
         n = len(skval_lines)
-        incb, azpb, mirb, newb = True, True, True, True  
         npreamble = -1
-         
+
+        # Parsing Options from SKVAL             
         for i in xrange(n):
             if(incb):
                 incloop = self.INCLOOP.findall(skval_lines[i])
@@ -626,17 +644,25 @@ class benv:
                 if(eospars != []):
                     self.eospars = (eospars[0].lower() == 'true')
                     newb = False 
+            if(intp):
+                initpar = self.INITPAR.findall(skval_lines[i])  
+                if(initpar != []):
+                    self.initpar = (initpar[0].lower() == 'true')
+                    intp = False 
+
                  
             if(i+1 == n and not all([not incb, not azpb, not mirb, not newb])):
                 if(incb):
-                    print("[format_skval_data] Warning: could not find parameter 'INCloop' in 'skval_lines'")  
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'INCloop' in 'skval_lines'")  
                 if(azpb):
-                    print("[format_skval_data] Warning: could not find parameter 'AZpairs' in 'skval_lines'")
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'AZpairs' in 'skval_lines'")
                 if(mirb):
-                    print("[format_skval_data] Warning: could not find parameter 'Mirrors' in 'skval_lines'")  
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Mirrors' in 'skval_lines'")  
                 if(newb):
-                    print("[format_skval_data] Warning: could not find parameter 'EOSpars' in 'skval_lines'")  
-            elif(all([not incb, not azpb, not mirb, not newb])):
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'EOSpars' in 'skval_lines'")  
+                if(intp):
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Initpar' in 'skval_lines'")   
+            elif(all([not incb, not azpb, not mirb, not newb, not intp])):
                 npreamble = i    
                 break    
             else:
@@ -644,15 +670,15 @@ class benv:
          
         if(n > npreamble >= 0):
             skval_lines = skval_lines[npreamble:] 
-
+          
         pars = []
         doubles = []
         loop = []
-        output = []
-
+        output = ()
+           
         if(self.incloop and self.azpairs):
             print("[format_skval_data] Warning: both skval looping and nuclei pairs detected")
-            print("                             skval looping takes precedent over paring")
+            print("                             skval looping takes precedent over paring\n")
             self.SKVAL_CONTROL_ERROR = True
          
         if(self.incloop):
@@ -672,7 +698,7 @@ class benv:
                 loop_type = "loop"
                 self.azpairs = False 
             else:                    
-                print("[format_skval_data] Warning: Loop option selected but no loops detected, defaulting to a pair-wise search")
+                print("[format_skval_data] Warning: Loop option selected; no loops detected, defaulting to a pair-wise search")
                 self.SKVAL_FORMAT_ERROR = True   
                 self.azpairs = True 
                 self.incloop = False             
@@ -699,7 +725,7 @@ class benv:
             else:                    
                 self.SKVAL_FORMAT_ERROR = True
                 print("[format_skval_data] Error: No 'pair' values could be found")
-             
+                 
         else:
             print("[format_skval_data] Error: No skval functionality detected...") 
             loop_data = []
@@ -786,6 +812,7 @@ class benv:
         for i in e0files:
              
             e1pack = False
+            e1data = False
             
             if(len(i.split('e0')) == 2):
                 e1add = 'e1'
@@ -953,20 +980,33 @@ class benv:
 
 
     #######################################
-    # functions dealing with benv looping #
+    # functions dealing with benv looping #------------------------------------------------------------|
     #######################################
 
 
-    def data_from_bin(self, file_name, firstline):
+    def data_from_bin(self, file_Name, first_Line, number_Lines = 1):
+
+        '''
+        Function to get data from files found in the 'binpath' directory 
+
+        '''
                       
-        filepath = self.cmv.pw_join(self.binpath,file_name)
+        filepath = self.cmv.pw_join(self.binpath,file_Name)
         lines = iop.flat_file_grab(filepath)
-        if(lines == False):
-            print("[data_from_bin] Error: Failure to get data from file: '"+str(file_name)+"'")
-            print("    Attempted pathway: '"+str(filepath)+"'")
+
+        if(lines == False or not isinstance(lines,list)):
+            print(self.s4+"[data_from_bin] Error: Failure to get data from file: '"+str(file_Name)+"'")
+            print(self.s4+"Pathway: '"+str(filepath))
+            print(self.s4+"Run number: "+str(self.run_time)+"'\n")
             return False
+
+        if(len(lines) < number_Lines):
+            print(self.s4+"[data_from_bin] Error: the number of lines found in file less than: "+str(number_Lines))
+            print(self.s4+"File name: '"+str(file_Name)+"'")
+            print(self.s4+"Run number: "+str(self.run_time)+"'\n")
+            return False 
                     
-        if(firstline):
+        if(first_Line):
             return lines[0] 
         else: 
             return lines   
@@ -1026,7 +1066,7 @@ class benv:
 
     # Running and Looping functions
 
-    def run_once(self, clean_run = True):
+    def run_once(self, clean_Run = True):
            
         pars, vals = self.data_from_pars() 
         self.pass_pars(pars)
@@ -1034,9 +1074,14 @@ class benv:
         self.run_benv()
         
         optpars  = self.data_from_bin(self.OPTPARS,True)
+        if(optpars == False):
+            self.OPTPARS_ERROR = True                   
+         
         skinvals = self.data_from_bin(self.SKINVAL,True)
-        
-        if(clean_run):
+        if(skinvals == False):
+            self.SKINVAL_ERROR = True 
+         
+        if(clean_Run):
             subprocess.call("rm "+self.OPTPARS, shell = True)
             subprocess.call("rm "+self.SKINVAL, shell = True)
 
@@ -1054,8 +1099,8 @@ class benv:
          
         # Parsing data from the skval data file, default : 'skval.don' 
         if(not isinstance(skval_data,(list,tuple)) or not isinstance(skval_type,str)):
-            print("[skval_loop] TypeError: check input variables")
-            self.exit_function("while attempting to run a skval loop")  
+            print("[skval_loop] TypeError: check function input variables")
+            self.exit_function("while attempting to execute skval looping")  
         else:
             data = list(skval_data)            
             type = skval_type              
@@ -1074,8 +1119,7 @@ class benv:
                     parlines = self.format_pars_data(parline, ax, zx)       
                     self.data_to_pars(parlines)
                     results = self.run_once()
-                    benvals.append((results,(ax,zx)))                                               
-                        
+                    benvals.append((results,(ax,zx)))                                                                       
         elif(type == 'pair'):   
             for i in data: 
                 parlines = self.format_pars_data(parline, i[0], i[1])
@@ -1083,8 +1127,8 @@ class benv:
                 results = self.run_once()
                 benvals.append((results,i))                
         else:
-            print("[benv_skval_loop] Error: 'type' not reconignized")
-            self.exit_function("when executing skval looping") 
+            print("[skval_loop] ValueError: 'type' value not reconignized")
+            self.exit_function("while attempting to execute skval looping") 
                 
         return benvals
              
@@ -1094,20 +1138,42 @@ class benv:
         benvals_group = []
         benvals_cohort= [] 
 
+        # Get parameters par 'Parameter.don' file
         initial_pars = self.get_inital_pars()
+        # Convert parameters from string to list of floats, assign list to plst 
         pl = self.parline_style_convert(initial_pars) 
         plst = [pl[1],pl[5],pl[6],pl[7],pl[8],pl[9],pl[10]]   
     
+        # Get line strings from 'skval.don' file 
         skval_lines = self.get_skval_data()
+
+        # Format skval lines into data list, type string and pars list
         data, type, pars = self.format_skval_data(skval_lines)    
+        #Get EoS from 'eos' folder 
         eoslist = self.collect_eos()  
+
+        # cycle through each EoS
         for entry in eoslist:
-            eos_obj,eosid = self.format_eos_data(entry, pl=plst)
+            # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
+            eos_obj,eosid = self.format_eos_data(entry, pl=plst)            
+            # Set eos data (eos_instance) and 'par.don' line (parline) 
             eos_instance, parline = eos_obj
-            self.pass_eos(eos_instance)
+
+            # Pass the eos data to the appropriate file  
+            success = self.pass_eos(eos_instance)
+            if(success == False): 
+                print(self.s4+"[benv_eos_loop] RuntimeError: error occured when passing EoS to the bin folder")
+                print(self.s4+"This occured on run number: "+str(self.run_time))
+                print(self.s4+"This exectution will be terminated, cycling to the next eos...\n"
+                continue 
+
+            # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
             benvals = self.skval_loop(parline, data, type)
+
+            # Format data returned by skavl loop routine 
             formatted_benvals = self.format_skval_benv_vals(benvals)
             benvals_group.append((formatted_benvals,eosid))
+
         if(len(pars)>0):
             benvals_cohort.append(benvals_group)
             benvals_group = []
@@ -1121,7 +1187,7 @@ class benv:
                     benvals_group.append((formatted_benvals,"par_var_"+str(i)+"_"+eosid))
                 benvals_cohort.append(benvals_group)
                 benvals_group = []
-
+         
         if(reset):
             self.data_to_pars(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
     
