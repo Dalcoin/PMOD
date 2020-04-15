@@ -481,7 +481,7 @@ def mat_parline_dict(auto_Load = None, **Pars):
                   'mat':0,                                            # Int or bool 
                   'kfs':[(1.4,-75.2129,727.406)],                     # List of tuples containing 1 or 3 floats
                   'sel':0,                                            # Int or bool   
-                  'cis':[-1.20,0.00,-4.43,2.67,-0.011828,-0.000010],  # List of six floats 
+                  'cis':[-1.20,0.00,-4.43,2.67],  # List of six floats 
                   'cde':[0.67,0.41],                                  # List of two floats
                   }
 
@@ -498,7 +498,7 @@ def mat_parline_dict(auto_Load = None, **Pars):
 def mat_parline_dict_to_lines(parline_Dict, numline_Dict):
      
     pars = ('mat', 'kfs', 'sel', 'cis', 'cde')
-       
+    spc = ' '   
     nums = []   
      
     nums.append(numline_Dict['mat']) 
@@ -517,10 +517,10 @@ def mat_parline_dict_to_lines(parline_Dict, numline_Dict):
     kflines = []
     for kf in kfs:
         if(len(kf) == 1):
-            kfline = "          "+str(kf[0])+" \n"
+            kfline = "          "+str(round(kf[0],2))+" \n"
             kflines.append(kfline)
         elif(len(kf) == 3):
-            kfline = "          "+str(kf[0])+"       "+str(kf[1])+"   "+str(kf[2])+" \n"  
+            kfline = "          "+str(round(kf[0],2))+"       "+str(round(kf[1],2))+"   "+str(round(kf[2],2))+" \n"  
             kflines.append(kfline)
         else:
             pass           
@@ -530,20 +530,26 @@ def mat_parline_dict_to_lines(parline_Dict, numline_Dict):
      
     cis = parline_Dict.get('cis')
     if(cis[0] < 0):
-        cisline =  "c_i,cs,ct  "+str(cis[0]) 
+        cisline =  "c_i        "+str(round(cis[0],2)) 
     else:
-        cisline =  "c_i,cs,ct   "+str(cis[0]) 
-    cisline = cisline+"    "+str(cis[1])+"      "+str(cis[2])+"     "
-    cisline = cisline+str(cis[3])+"      "+str(cis[4])+" "+str('{:.7f}'.format(cis[5]))+" \n"
+        cisline =  "c_i         "+str(round(cis[0],2))
+    spaces = 20 - len(cisline) 
+    cisline = cisline+spaces*spc+str(round(cis[1],2))
+    spaces = 30 - len(cisline)    
+    cisline = cisline+spaces*spc+str(round(cis[2],2))
+    spaces = 40 - len(cisline)
+    cisline = cisline+spaces*spc+str(round(cis[3],2))+" \n"
      
     cde = parline_Dict.get('cde')
     cdeline = "cd,ce;Lam  "
     if(cde[0] < 0):
-        cdeline = cdeline+str(cde[0])
+        cdeline = cdeline+str(round(cde[0],2))
     else:
-        cdeline = cdeline+" "+str(cde[0])
-     
-    cdeline = cdeline+"     "+str(cde[1])+"     700 \n"
+        cdeline = cdeline+" "+str(round(cde[0],2))
+    spaces = 21-len(cdeline) 
+    cdeline = cdeline+spaces*spc+str(round(cde[1],2))
+    spaces = 30 - len(cdeline)
+    cdeline = cdeline+spaces*spc+"700 \n"
      
     lines = []   
     lines.append(matline) 
@@ -571,11 +577,13 @@ def mat_parline_parse(par_Lines):
     mat_Line = re.compile('mat\s*(\d)')
     kfs_Line = re.compile('^\s+(\d+\.\d+)\s*(-*\d+\.\d*)?\s*(-*\d+\.\d*)?\s*$')
     sel_Line = re.compile('isel,ibnd\s+'+get_Integer+Space+'\d+')    
-    cis_Line = re.compile('c_i,cs,ct\s+'+6*(get_Digit+'\s+'))
+    cis_Line = re.compile('c_i\s+'+3*(get_Digit+'\s+')+get_Digit+'\s*')
     cde_Line = re.compile('cd,ce;Lam\s+'+2*(get_Digit+'\s+')+get_Integer+'\s*')     
      
     kfs_Finds = []
     kfs_lns = []
+     
+      
     for i,line in enumerate(par_Lines):
         if(len(mat_Line.findall(line)) > 0 and mat_Found == False):
             mat_Find = mat_Line.findall(line)[0]
