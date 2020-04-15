@@ -1,7 +1,4 @@
 
-import numpy as __np__
-import math as __mt__ 
-
 from scipy.interpolate import interp1d as __spln__    
 from scipy.interpolate import splrep as __bspln__
 from scipy.interpolate import splev as __deriv__
@@ -13,7 +10,6 @@ import tcheck as __check__
 
 '''
 Functions useful for mathmatical operations and plotting, fills a void found in math and numpy
-     
 ''' 
             
 
@@ -61,7 +57,7 @@ def round_decimal(num, deci, str_bool=True):
             return output                  
 
 
-def round_scientific(num, digi, pyver = '27', str_bool = True):
+def round_scientific(num, digi, pyver = '2.7', str_bool = True):
     
     # round_scientific(30.112,1,True)    
     # num: input file string
@@ -82,10 +78,10 @@ def round_scientific(num, digi, pyver = '27', str_bool = True):
         return False
 
     num = float(num)
-    if(pyver == '27'):        
+    if(pyver == '2.7'):        
         fm = "{:." + str(int(digi)-1) + "e}"
         rnum = fm.format(num)
-    elif(pyver == '26'):
+    elif(pyver == '2.6'):
         fm = "{0:." + str(int(digi)-1) + "e}"
         rnum = fm.format(num)             
     else:
@@ -98,7 +94,7 @@ def round_scientific(num, digi, pyver = '27', str_bool = True):
         return float(rnum)    
 
 
-def round_uniform(num, pyver = '27'):
+def round_uniform(num, pyver = '2.7'):
     
     test = __check__.type_test_print(num,'num','num','round_uniform') 
     if(not test):
@@ -137,9 +133,95 @@ def round_uniform(num, pyver = '27'):
     else:
         output = '0.000000'
     return output
+     
+      
+def round_format(num, dec, pyver = '2.7'):     
+    ''' 
+         
+    '''  
+
+    if(not isinstance(dec,int)):
+        return False 
+    else:
+        if(dec < 0):
+            return False 
+        else:
+            pass
+           
+    if(__check__.numeric_test(num)):
+        pass
+    else:
+        try:
+            if(isinstance(num,str)):
+                try:
+                    if('.' in num):                    
+                        num = float(num)
+                    else:
+                        num = int(num)
+                except:
+                    return False
+        except:
+            return False
+
+    f = "0:."+str(dec)+"f"
+
+    out_String = f.format(num) 
+    return out_String    
 
 
+def space_format(num, spc, adjust = 'left'):
 
+    def __extra_spaces__(string, extra_Spaces, adjust):
+        out_Str = ''
+        adj = adjust.lower()
+        print(adj)
+        if(adj == 'left'): 
+            print(extra_Spaces)
+            out_Str = extra_Spaces*' '+string
+            return out_Str
+        if(adj == 'right'):
+            out_Str = string+extra_Spaces*' ' 
+            return out_Str
+        if(adj == 'split'):
+            extra_Spaces_Right = extra_Spaces/2    
+            extra_Spaces_Left = extra_Spaces - extra_Spaces_Right
+            out_Str = extra_Spaces_Left*' '+string+extra_Spaces_Right*' '
+            return out_Str
+        return False 
+
+    sci_Notation = False  
+    output_String = ''
+    required_String = ''
+     
+    if(not isinstance(num,str)):
+        print("[space_format] Error: 'num' must be a string")
+        return False 
+
+    n = len(num)
+
+    if('e' in num or 'd' in num or 'D' in num or 'E' in num):
+        sci_Notation = True 
+      
+
+    if(len(num) > spc and sci_Notation == False):
+        num_List = [i for i in num]
+        if('.' in num):
+            i = 0
+            while(i <= spc-1 and i<n-1):   
+                output_String+=num_List[i]
+                i+=1              
+            if('.' in output_String):                
+                output_String = __extra_spaces__(output_String, (spc-len(output_String)), adjust)
+                return output_String 
+            else:
+                print("[space_format] Error: the input 'num' has more characters than spaces")
+                return False 
+    if(n <= spc and sci_Notation):
+        output_String = __extra_spaces__(num, (spc-n), adjust) 
+        return output_String
+     
+     
+    
 def span_vec(xvec, nspan):
     '''
     Description: generates a list which spans the range of numerical 
@@ -213,6 +295,10 @@ class spline:
                          f(X) = Y. This module is not meant to be used when 
                          accuracy is important, nor is it meant to be scalable and 
                          used for a large number of operations. 
+
+        Warning: Interpolation using fuctions called upon splines generated with 
+                 scipy must be within the range of the function, scipy functions 
+                 in general do no interpolate beyond the range of the input data
     '''
 
     def __init__(self, x_vec = None, y_vec = None, xarray = None):
