@@ -19,7 +19,7 @@ class minimize:
 
     def __init__(self, server = None):
         
-        self.run_Style = ''
+        self.exe_Style = './'
         self.server_Set = False
         self.run_Count = 0
  
@@ -33,7 +33,7 @@ class minimize:
         # Minimization parameters
         
         if(server != None and isinstance(server,str)):
-            self.Server = subp.Popen('./'+server, stdin = subp.PIPE, stdout = subp.PIPE, stderr = subp.STDOUT)
+            self.Server = subp.Popen(self.exe_Style+server, stdin = subp.PIPE, stdout = subp.PIPE, stderr = subp.STDOUT)
         else:
             self.Server = None
            
@@ -45,6 +45,19 @@ class minimize:
             print("[optimize] Error: 'server' input not a valid pipe type and has not been set")
         
     # Properties          
+
+    @property
+    def exe_Style(self):
+        return self.exe_Style
+   
+    @exe_Style.setter 
+    def exe_Style(self, style, space = False):
+        if(isinstance(sytle,str)):
+            self.exe_Style = style 
+            if(space):
+                self.exe_Style = self.exe_Style+str(" ")
+        else: 
+            self.exe_Style = './'      
          
     @property
     def Server(self):
@@ -52,9 +65,8 @@ class minimize:
 
     @Server.setter
     def Server(self, exec_Cmd):         
-        self.Server = subp.Popen('./'+exec_Cmd, stdin = subp.PIPE, stdout = subp.PIPE, stderr = subp.STDOUT)    
+        self.Server = subp.Popen(self.exe_Style+exec_Cmd, stdin = subp.PIPE, stdout = subp.PIPE, stderr = subp.STDOUT)    
      
-
     @property
     def new_Line(self):
         return self.new_Line
