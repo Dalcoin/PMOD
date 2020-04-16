@@ -27,6 +27,7 @@ class benv:
              
         self.BINFILE = 'bin' 
         self.SRCFILE = 'src' 
+        self.DATFILE = 'dat'
         self.binpath = ''
               
         self.PARSFILE = 'parameters.don'
@@ -269,6 +270,46 @@ class benv:
            print("Initialization tests: \n")
            self.assess_initialization()
         
+     
+    def clear_data_folder(self):
+        if(not self.INTERNAL_CML_SET):
+            print(self.s4+"[clear_data_folder] Error: internal CMD line has not yet been initialized\n")
+            return False 
+         
+        success, value = self.cmv.cmd("cd "+self.DATFILE)
+        if(not success):
+            print(self.s4+"[clear_data_folder] Error: Could not access data folder\n")
+            return False 
+          
+        if(self.cmv.var_path_list[-1] == self.DATFILE):
+            while(len(self.cmv.var_path_contain) > 0):
+                self.cmv.cmd("rm "+self.cmv.var_path_contain[0])
+
+        success, value = self.cmv.cmd("cd ..")
+        return success
+
+   
+    def move_results_to_data_folder(self, move_List = ['results.srt']):
+        if(not self.INTERNAL_CML_SET):
+            print(self.s4+"[clear_data_folder] Error: internal CMD line has not yet been initialized\n")
+            return False          
+
+        n = len(move_List)
+        
+        move_String = '' 
+        if(self.DATFILE in self.cmv.var_path_contain):
+            for i,file in enumerate(move_List):
+                if(i == n-1):
+                    move_String = move_String+file
+                else:
+                    move_String = move_String+file+';'
+            self.cmv.cmd("mv "+move_String+" "+self.DATFILE)
+        else:
+            print(self.s4+"[clear_data_folder] Error: data folder could not be accessed\n")
+            return False                 
+        
+        return True
+    
         
     ##############################################################
     # functions to set the internal pathway strings used in BENV #
@@ -376,11 +417,20 @@ class benv:
     def parline_style_convert(self, parline):
     
         if(isinstance(parline,str)):
-            outpar = filter(None,[i.rstrip() for i in strl.str_to_list(parline)])
+            try:
+                outpar = filter(None,[i.rstrip() for i in strl.str_to_list(parline)])
+            except:
+                print(self.s4+"[parline_style_convert] Error: could not convert 'parline' string to list\n")
+                outpar = False
         elif(isinstance(parline,(list,tuple))):
-            outpar = strl.array_to_str(filter(None,parline))
+            try:
+                outpar = strl.array_to_str(filter(None,parline))
+            except: 
+                print(self.s4+"[parline_style_convert] Error: could not format 'parline' array to list\n")
+                outpar = False
         else:
-            print("[parline_style_convert] Error: input 'parline' must be either an array or string")
+            print(self.s4+"[parline_style_convert] Error: input 'parline' must be either an array or string")
+            print(self.s4+"Attempt to convert 'par' parameter line has failed\n")
             outpar = False 
         return outpar  
 
@@ -518,7 +568,7 @@ class benv:
                 else:
                     parline = parline + '\n'
             else:
-                print("Error: 'parline' must either be a string or list of strings, set parform to 'list' in the latter case")
+                print(self.s4+"[format_pars_data] TypeError: 'parline' type does not match 'parform' \n")
                 return False
          
         divs = "64 64 64\n"
@@ -529,12 +579,9 @@ class benv:
     def data_to_pars(self, dataline):        
         success = iop.flat_file_write(self.parspath, dataline)
         if(not success):
-            print(self.s4+"[data_to_pars] Errors: failure to write 'dataline' to the following path:")
-            print(self.s4+"                       "+str(self.parspath))
+            print(self.s4+"[data_to_pars] Errors: failure to write 'dataline'")
+            print(self.s4+"Pathway: '"+str(self.parspath)+"'\n")
         return success
-
-    def get_inital_pars(self):
-        return self.initial_pars
 
     def pass_pars(self, pars):
         '''
@@ -599,21 +646,29 @@ class benv:
         
         Do not call this function unless the skval data file will be available in your script   
         '''     
-        if(not self.SKVLFILE_PATH_SET):
-            print(self.s4+"[get_skval_data] Error: skval file pathway has not yet been set")
-            print(self.s4+"                 Set the pathway with the 'set_skval_path' function\n")
+        if(self.SKVLFILE_PATH_SET == False):
+            print(self.s4+"[get_skval_data] Error: skval file pathway not set\n")
             return False
               
-        lines = iop.flat_file_grab(self.skvlpath, scrub = True)
-        if(not lines):
-            print(self.s4+"[get_skval_data] IOPError: failure to access the file '"+str(self.skvlpath)+"'") 
-            return False
+        try:
+            lines = iop.flat_file_grab(self.skvlpath, scrub = True)
+        except:
+            lines = False 
+        if(lines == False):
+            print(self.s4+"[get_skval_data] IOPError: failure to access file")
+            print(self.s4+"Pathway:  '"+str(self.skvlpath)+"'" 
+         
         return lines 
        
          
     def format_skval_data(self, lines):
           
-        skval_lines = list(lines)          
+        try:
+            skval_lines = list(lines)          
+        except: 
+            print(self.s4+"[format_skval_data] Error: input 'lines' should be a python array")
+            return False
+         
         
         # variables   
         incloop, azpairs, mirrors, eospars, initpar = False, False, False, False, False
@@ -624,6 +679,10 @@ class benv:
 
         # Parsing Options from SKVAL             
         for i in xrange(n):
+            if(not isinstance(skval_lines[i],str)):
+                print_Text = " entry of 'skval_lines' is not a string\n"
+                print(self.s4+"[format_skval_data] Warning: the "+strl.print_ordinal(str(i+1))+print_Text)             
+                continue 
             if(incb):
                 incloop = self.INCLOOP.findall(skval_lines[i])
                 if(incloop != []):
@@ -653,15 +712,15 @@ class benv:
                  
             if(i+1 == n and not all([not incb, not azpb, not mirb, not newb])):
                 if(incb):
-                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'INCloop' in 'skval_lines'")  
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'INCloop' in 'skval_lines'\n")  
                 if(azpb):
-                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'AZpairs' in 'skval_lines'")
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'AZpairs' in 'skval_lines'\n")
                 if(mirb):
-                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Mirrors' in 'skval_lines'")  
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Mirrors' in 'skval_lines'\n")  
                 if(newb):
-                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'EOSpars' in 'skval_lines'")  
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'EOSpars' in 'skval_lines'\n")  
                 if(intp):
-                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Initpar' in 'skval_lines'")   
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Initpar' in 'skval_lines'\n")   
             elif(all([not incb, not azpb, not mirb, not newb, not intp])):
                 npreamble = i    
                 break    
@@ -675,47 +734,61 @@ class benv:
         doubles = []
         loop = []
         output = ()
+                  
            
         if(self.incloop and self.azpairs):
-            print("[format_skval_data] Warning: both skval looping and nuclei pairs detected")
-            print("                             skval looping takes precedent over paring\n")
+            print(self.s4+"[format_skval_data] Warning: both skval looping and nuclei pairs detected")
+            print(self.s4+"                             skval looping takes precedent over paring\n")
             self.SKVAL_CONTROL_ERROR = True
          
         if(self.incloop):
-            for i in skval_lines:
-                looplist = self.LOOPS.findall(i)
+            for i in xrange(len(skval_lines)):
+
+                if(not isinstance(skval_lines[i],str)):
+                    print_Text = " entry of 'skval_lines' is not a string\n"
+                    print(self.s4+"[format_skval_data] Warning: the "+strl.print_ordinal(str(i+1))+print_Text)             
+                    continue                     
+                   
+                looplist = self.LOOPS.findall(skval_lines[i])
                 if(len(looplist) > 0):
                     loop.append(looplist[0])
                 if(self.eospars):
-                    looplist = self.EOSPARS.findall(i)
+                    looplist = self.EOSPARS.findall(skval_lines[i])
                     if(len(looplist)>0):
                         pars.append(looplist[0])
                         
             if(len(loop) > 0):
                 if(len(loop) > 1):
-                    print("[format_skval_data] Warning: Multiple loop options detected, only the first one will be exectued")
+                    print(self.s4+"[format_skval_data] Warning: Multiple loop options detected, only the first one will be exectued\n")
                 loop_data = loop[0]                     
                 loop_type = "loop"
                 self.azpairs = False 
             else:                    
-                print("[format_skval_data] Warning: Loop option selected; no loops detected, defaulting to a pair-wise search")
+                print(self.s4+"[format_skval_data] Warning: Loop option selected; no loops detected, defaulting to a pair-wise search\n")
                 self.SKVAL_FORMAT_ERROR = True   
                 self.azpairs = True 
                 self.incloop = False             
               
         if(self.azpairs and self.incloop == False):
-            for i in skval_lines:
-                double = self.PAIRS.findall(i)
+            for i in xrange(len(skval_lines)):
+
+                if(not isinstance(skval_lines[i],str)):
+                    print_Text = " entry of 'skval_lines' is not a string\n"
+                    print(self.s4+"[format_skval_data] Warning: the "+strl.print_ordinal(str(i+1))+print_Text)             
+                    continue    
+                    
+                double = self.PAIRS.findall(skval_lines[i])
                 if(len(double)>0):
                     if(len(double)>1): 
-                        print("[format_skval_data] Warning: More than one 'pair' value found in the string: ")
-                        print("                    '"+i+"'")
-                        print("            Only the first pair will be appended to the stack")
+                        print(self.s4+"[format_skval_data] Warning: More than one 'pair' value found in the string: ")
+                        print(self.s4+"'"+str(skval_lines[i])+"'")
+                        print(self.s4+"Only the first pair will be appended to the stack\n")
                     var = double[0]
                     var = map(lambda x: float(strl.str_clean(x)), var)
                     doubles.append(var)
+
                 if(self.eospars):
-                    looplist = self.EOSPARS.findall(i)
+                    looplist = self.EOSPARS.findall(skval_lines[i])
                     if(len(looplist)>0):
                         pars.append(looplist[0])
 
@@ -724,34 +797,33 @@ class benv:
                 loop_type = "pair"
             else:                    
                 self.SKVAL_FORMAT_ERROR = True
-                print("[format_skval_data] Error: No 'pair' values could be found")
+                print(self.s4+"[format_skval_data] Error: No 'pair' values could be found\n")
+                return False
                  
         else:
-            print("[format_skval_data] Error: No skval functionality detected...") 
-            loop_data = []
-            loop_type = ''
+            print(self.s4+"[format_skval_data] Error: No skval functionality detected...\n") 
+            return False
         
-        output = (loop_data,loop_type,pars) 
-                           
+        output = (loop_data,loop_type,pars)                           
         return output  
 
 
     def skval_loop_line_parse(self, line):
         if(not isinstance(line,str)):      
-            print("Error: input 'line' must be a string")                  
-            self.exit_function("when parsing a skval loop instance")
+            print(self.s4+"Error: input 'line' must be a string\n")                  
+            return False
           
         loop = strl.str_to_list(line, filtre=True)
         if(len(loop) != 6):
-            print("[skval_loop_line_parse] Error: there should be exactly 6 entries in 'line'")
-            self.exit_function("when parsing a skval loop instance")
-            
+            print(self.s4+"[skval_loop_line_parse] Error: there should be exactly 6 entries in 'line'\n")
+            return False
+             
         try:
             output_list = [int(loop[0]), int(loop[1]), int(loop[2]), bool(int(loop[3])), bool(int(loop[4])), bool(int(loop[5]))]
         except:
-            print("[skval_loop_line_parse] Error: could not coerce 'loop' list into a skval-loop list")
-            self.exit_function("when parsing a skval loop instance")
-
+            print(self.s4+"[skval_loop_line_parse] Error: could not coerce 'loop' list into a skval-loop list\n")
+            return False
+             
         return output_list
 
 
@@ -761,10 +833,11 @@ class benv:
 
     def collect_eos(self):
         '''
-        Collects EoS from 'eos' directory 
-        This function should only be called once per BENV run 
+        Notes: 
         
- 
+            Collects EoS from 'eos' directory 
+            This function should only be called once per BENV run 
+        
         ''' 
 
         eos_dir_path = self.cmv.pw_join(self.INITIAL_PATH,self.EOSDIR)
@@ -793,20 +866,20 @@ class benv:
                 egshock.append(i) 
 
         if(len(egshock) > 0):
-            head = "The following files are not valid 'eos' files:"
-            strl.format_fancy(egshock,header=head)                 
+            head_Text = "The following files are not valid 'eos' files:"
+            strl.format_fancy(egshock,header=head_Text)                 
             
         for i in exfiles:
             file_path = self.cmv.pw_join(eos_dir_path,i)  
             ex = iop.flat_file_intable(file_path) 
             if(ex != False):
                 if(len(ex) != 3):
-                    print("[collect_eos] Error: the file '"+str(i)+"' did not have three equal data columns")
+                    print("[collect_eos] Error: the file '"+str(i)+"' does not have three equal data columns")
                     self.EOS_FILE_FORMAT_ERROR = True
                     continue 
                 eoslist.append((ex,i))
             else:
-                print("[collect_eos] Error: could not read the file '"+str(i)+"' as a table")
+                print("[collect_eos] Error: could not read table from '"+str(i)+"'")
                 continue                                     
               
         for i in e0files:
@@ -1099,8 +1172,8 @@ class benv:
          
         # Parsing data from the skval data file, default : 'skval.don' 
         if(not isinstance(skval_data,(list,tuple)) or not isinstance(skval_type,str)):
-            print("[skval_loop] TypeError: check function input variables")
-            self.exit_function("while attempting to execute skval looping")  
+            print(self.s4+"[skval_loop] TypeError: check function input variables\n")
+            return False
         else:
             data = list(skval_data)            
             type = skval_type              
@@ -1108,6 +1181,11 @@ class benv:
         # 'type' determines if BENV values are computed by a skval loop or individual nuclei   
         if(type == 'loop'):        
             skval_list = self.skval_loop_line_parse(data)
+            if(skval_list == False):
+                return skval_list
+            if(not isinstance(skval_list[0],int) or not isinstance(skval_list[1],int) or not isinstance(skval_list[2],int)):
+                return False
+
             if(skval_list[3]):
                 inv = -1 
             else:
@@ -1116,20 +1194,43 @@ class benv:
                 ax = self.initial_a+inv*skval_list[2]*(j+1)
                 for j in xrange(skval_list[1]): 
                     zx = self.initial_z+inv*(skval_list[2])*(j+1)                                    
-                    parlines = self.format_pars_data(parline, ax, zx)       
-                    self.data_to_pars(parlines)
-                    results = self.run_once()
-                    benvals.append((results,(ax,zx)))                                                                       
+                    parlines = self.format_pars_data(parline, ax, zx)     
+                    if(parlines == False):
+                        print(self.s4+"[skval_loop] Error: failure when formatting 'parameters', current run skipped\n")
+                        results = ('False','False')
+                        benvals.append((results,(ax,zx))) 
+                        continue 
+
+                    success = self.data_to_pars(parlines)
+                    if(not success): 
+                        print(self.s4+"[skval_loop] Error: failure when passing 'parameters', current run skipped\n")
+                        results = ('False','False')
+                    else:
+                        results = self.run_once()
+                    benvals.append((results,(ax,zx))) 
+
         elif(type == 'pair'):   
             for i in data: 
-                parlines = self.format_pars_data(parline, i[0], i[1])
-                self.data_to_pars(parlines)
-                results = self.run_once()
-                benvals.append((results,i))                
+                ax = i[0]
+                zx = i[1]
+                parlines = self.format_pars_data(parline, ax, zx)
+                if(parlines == False):
+                    print(self.s4+"[skval_loop] Error: failure when formatting 'parameters', current run skipped\n")
+                    results = ('False','False')
+                    benvals.append((results,(ax,zx))) 
+                    continue 
+                 
+                success = self.data_to_pars(parlines)
+                if(not success): 
+                    print(self.s4+"[skval_loop] Error: failure when passing 'parameters', current run skipped\n")
+                    results = ('False','False')
+                else:
+                    results = self.run_once()
+                benvals.append((results,(ax,zx)))                
         else:
-            print("[skval_loop] ValueError: 'type' value not reconignized")
-            self.exit_function("while attempting to execute skval looping") 
-                
+            print(self.s4+"[skval_loop] ValueError: 'type' value not reconignized")
+            benvals = False     
+          
         return benvals
              
 
@@ -1138,60 +1239,151 @@ class benv:
         benvals_group = []
         benvals_cohort= [] 
 
-        # Get parameters par 'Parameter.don' file
-        initial_pars = self.get_inital_pars()
-        # Convert parameters from string to list of floats, assign list to plst 
-        pl = self.parline_style_convert(initial_pars) 
-        plst = [pl[1],pl[5],pl[6],pl[7],pl[8],pl[9],pl[10]]   
-    
+        #Get EoS from 'eos' folder 
+        eoslist = self.collect_eos()
+        if(eoslist == False):
+            print(self.s4+"[benv_eos_loop] Error: could not format skval lines from skval file\n")
+            return False       
+
         # Get line strings from 'skval.don' file 
         skval_lines = self.get_skval_data()
-
+        if(skval_lines == False):
+            print(self.s4+"[benv_eos_loop] Error: failure to retrieve data from skval file\n")
+            return False
+           
         # Format skval lines into data list, type string and pars list
-        data, type, pars = self.format_skval_data(skval_lines)    
-        #Get EoS from 'eos' folder 
-        eoslist = self.collect_eos()  
+        packed_format_skval_data = self.format_skval_data(skval_lines)
+        if(packed_format_skval_data == False):
+            print(self.s4+"[benv_eos_loop] Error: could not format skval lines from skval file\n")
+            return False            
+        data, type, pars = packed_format_skval_data  
+
+        # Get parameters par 'Parameter.don' file
+        initial_pars = self.initial_pars
+        if(initial_pars == ''):
+            self.INITIAL_PARS_ERROR = True
+            print(self.s4+"[benv_eos_loop] Warning: 'inital_pars' have not been set\n")
+         
+        # Convert parameters from string to list of floats, assign list to plst 
+        if(self.INITIAL_PARS_ERROR):
+            pass
+        else:
+            pl = self.parline_style_convert(initial_pars) 
+            if(pl == False):
+                self.INITIAL_PARS_ERROR = True
+                print(self.s4+"[benv_eos_loop] Error: could not convert 'pars' to list\n")
+            else:
+                plst = [pl[1],pl[5],pl[6],pl[7],pl[8],pl[9],pl[10]]   
+             
 
         # cycle through each EoS
-        for entry in eoslist:
-            # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
-            eos_obj,eosid = self.format_eos_data(entry, pl=plst)            
-            # Set eos data (eos_instance) and 'par.don' line (parline) 
-            eos_instance, parline = eos_obj
+        if(self.initpar and not self.INITIAL_PARS_ERROR):
+            for i,entry in enumerate(eoslist):
 
-            # Pass the eos data to the appropriate file  
-            success = self.pass_eos(eos_instance)
-            if(success == False): 
-                print(self.s4+"[benv_eos_loop] RuntimeError: error occured when passing EoS to the bin folder")
-                print(self.s4+"This occured on run number: "+str(self.run_time))
-                print(self.s4+"This exectution will be terminated, cycling to the next eos...\n"
-                continue 
-
-            # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
-            benvals = self.skval_loop(parline, data, type)
-
-            # Format data returned by skavl loop routine 
-            formatted_benvals = self.format_skval_benv_vals(benvals)
-            benvals_group.append((formatted_benvals,eosid))
-
-        if(len(pars)>0):
+                # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
+                packed_format_eos_data = self.format_eos_data(entry, pl=plst)
+                ith_entry = strl.print_ordinal(str(i+1)) 
+                if(packed_format_eos_data == False):                    
+                    print("[benv_eos_loop] Error: the "+ith_entry+" EoS could not be formatted")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+                eos_obj,eosid = packed_format_eos_data
+            
+                # Set eos data (eos_instance) and 'par.don' line (parline) 
+                eos_instance, parline = eos_obj
+		         
+                # Pass the eos data to the appropriate file  
+                success = self.pass_eos(eos_instance)
+                if(success == False): 
+                    print(self.s4+"[benv_eos_loop] RuntimeError: could not pass the "+ith_entry+" EoS to the bin folder")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+		    
+                # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
+                benvals = self.skval_loop(parline, data, type)
+                if(benvals == False):
+                    print(self.s4+"[benv_eos_loop] Error: failure of the 'skval_loop' routine\n")
+                    print(self.s4+"'skval_loop' failure occured for the "+ith_entry+" run of the loop")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+		    
+                # Format data returned by skavl loop routine 
+                try:
+                    formatted_benvals = self.format_skval_benv_vals(benvals)
+                except:
+                    print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
+                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+                    
+                if(formatted_benvals == False):
+                    print(self.s4+"[benv_eos_loop] Error: failure to properly format data from 'skval_loop'\n")
+                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+                      
+                benvals_group.append((formatted_benvals,eosid))
             benvals_cohort.append(benvals_group)
             benvals_group = []
+        else:    
+            pass 
+           
+        if(len(pars)>0):
             for i,par in enumerate(pars):
-                for entry in enumerate(eoslist):
-                    eos_obj,eosid = self.format_eos_data(entry,pl=par)
+                for j,entry in enumerate(eoslist):
+
+                    # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
+                    packed_format_eos_data = self.format_eos_data(entry, pl=par)
+                    ith_entry = strl.print_ordinal(str(i+1)) 
+                    jth_entry = strl.print_ordinal(str(j+1))
+                    if(packed_format_eos_data == False):
+                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+jth_entry+" par cycle,"                    
+                        print(self.s4+"[benv_eos_loop] Error: "+cycle_Info_Text+" could not be formatted")
+                        print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                        continue 
+                    eos_obj,eosid = packed_format_eos_data
                     eos_instance, parline = eos_obj
-                    self.pass_eos(eos_instance)
+                     
+                    # Pass the eos data to the appropriate file  
+                    success = self.pass_eos(eos_instance)
+                    if(success == False): 
+                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+jth_entry+" par cycle,"                    
+                        print(self.s4+"[benv_eos_loop] RuntimeError: "+cycle_Info_Text+" could not be passed to the bin folder")
+                        print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                        continue 
+
+                    # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
                     benvals = self.skval_loop(parline, data, type)
+                    if(benvals == False):
+                        print(self.s4+"[benv_eos_loop] Error: failure of the 'skval_loop' routine\n")
+                        print(self.s4+"'skval_loop' failure occured for the "+ith_entry+" run of the loop")
+                        print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                        continue 
+
+                # Format data returned by skavl loop routine 
+                try:
                     formatted_benvals = self.format_skval_benv_vals(benvals)
-                    benvals_group.append((formatted_benvals,"par_var_"+str(i)+"_"+eosid))
-                benvals_cohort.append(benvals_group)
-                benvals_group = []
+                except:
+                    print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
+                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+                    
+                if(formatted_benvals == False):
+                    print(self.s4+"[benv_eos_loop] Error: failure to properly format data from 'skval_loop'\n")
+                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
+                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
+                    continue 
+
+                benvals_group.append((formatted_benvals,"par_var_"+str(i)+"_"+eosid))
+
+            benvals_cohort.append(benvals_group)
+            benvals_group = []
          
         if(reset):
             self.data_to_pars(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
-    
-        return benvals_group 
+          
+        return benvals_cohort
 
 
  
