@@ -51,9 +51,9 @@ class benv:
         self.INCLOOP = re.compile("\s*INCloop\s*:\s*([T,F,t,f]\D+)") 
         self.AZPAIRS = re.compile("\s*AZpairs\s*:\s*([T,F,t,f]\D+)")
         self.MIRRORS = re.compile("\s*Mirrors\s*:\s*([T,F,t,f]\D+)")
-        self.EOSPARS = re.compile("\s*EOSpars\s*:\s*([T,F,t,f]\D+)") 
         self.INITPAR = re.compile("\s*Initpar\s*:\s*([T,F,t,f]\D+)")
-
+        self.EOSPARS = re.compile("\s*EOSpars\s*:\s*([T,F,t,f]\D+)") 
+        self.EOSGRUP = re.compile("\s*EOSgrup\s*:\s*([T,F,t,f]\D+)")    
            
         self.PAIRS = re.compile("\s*(\d+),(\d+)")
         self.LOOPS = re.compile("\s*(\d+)\s+(\d+)\s+(\d+)\s*")
@@ -61,7 +61,7 @@ class benv:
         self.PARGP = re.compile("\s*"+5*DIGITSPC+FLOATER+DIGIT)    
  
         # debug-----------------
-        time_Start = time.time()
+        self.time_Start = time.time()
          
         # Initialization
         self.INITIALIZATION = False
@@ -96,6 +96,7 @@ class benv:
         self.EOS_FILE_FORMAT_ERROR = False 
         self.EOS_SPLIT_PARSE_ERROR = False
         self.EOS_PASS_ERROR = False
+        self.INITIAL_PARS_ERROR = False
 
         # Execution Errors
         self.EXIT_ERROR = False
@@ -111,7 +112,9 @@ class benv:
         self.incloop = False  
         self.azpairs = False
         self.mirrors = False 
+        self.initpar = False
         self.eospars = False        
+        self.eosgrup = False
 
         # internal shell command line
         self.cmv = object()   
@@ -195,6 +198,7 @@ class benv:
         path5 = self.SUBPROCESS_PATH_SET
         path6 = self.INITIAL_PAR_SET
              
+        time.sleep(0.5)
         print(" ")
         if(err0):
             print(self.s4+"E0 Internal Command Line Test :          Failed")
@@ -202,7 +206,8 @@ class benv:
             if(path0):
                 print(self.s4+"E0 Internal Command Line Test :          Succeeded") 
             else:
-                print(self.s4+"E0 Internal Command Line Test :          ...command line not set")                  
+                print(self.s4+"E0 Internal Command Line Test :          ...command line not set")     
+        time.sleep(0.5)             
            
         if(err1):
             print(self.s4+"E1 Parameter File Path Test :            Failed")
@@ -210,7 +215,8 @@ class benv:
             if(path1):         
                 print(self.s4+"E1 Parameter File Path Test :            Succeeded") 
             else:
-                print(self.s4+"E1 Parameter File Path Test :            ...path not found")                
+                print(self.s4+"E1 Parameter File Path Test :            ...path not found")      
+        time.sleep(0.5)          
 
         if(err2):
             print(self.s4+"E2 SKVAL File Path Test :                Failed")
@@ -219,6 +225,7 @@ class benv:
                 print(self.s4+"E2 SKVAL File Path Test :                Succeeded") 
             else:
                 print(self.s4+"E2 SKVAL File Path Test :                ...path not found") 
+        time.sleep(0.5)
 
         if(err3):
             print(self.s4+"E3 EoS Directory Pathway Test :          Failed")
@@ -227,6 +234,7 @@ class benv:
                 print(self.s4+"E3 Eos Directory Pathway Test :          Succeeded") 
             else:
                 print(self.s4+"E3 Eos Directory Pathway Test :          ...path not found") 
+        time.sleep(0.5)
 
         if(err4):
             print(self.s4+"E4 Binary Directory Path Test :          Failed")
@@ -235,6 +243,7 @@ class benv:
                 print(self.s4+"E4 Binary Directory Path Test :          Succeeded") 
             else:
                 print(self.s4+"E4 Binary Directory Path Test :          ...path not found")             
+        time.sleep(0.5)
 
         if(err5):
             print(self.s4+"E5 Setting Binary Directory as default : Failed")
@@ -243,6 +252,7 @@ class benv:
                 print(self.s4+"E5 Setting Binary Directory as default : Succeeded") 
             else:
                 print(self.s4+"E5 Setting Binary Directory as default : Skipped")                 
+        time.sleep(0.5)
 
         if(not err1):
             if(err6):
@@ -252,7 +262,8 @@ class benv:
                     print(self.s4+"E6 Parsing inital parameter values :     Succeeded")  
                 else:
                     print(self.s4+"E6 Parsing inital parameter values :     Skipped")                         
-                      
+        time.sleep(0.5)                      
+
         print(" ")
         if(err0 or err1 or err4):
             print(self.s4+"Fatal Error Test: Failed")
@@ -260,17 +271,13 @@ class benv:
         else:
             print(self.s4+"Fatal Error Test: Succeeded")
         print(" ")
+        time.sleep(0.5)
         
         return True
 
-
-    def exit_printout(self):
-        if(not self.INITIALIZATION):
-           print(" ")
-           print("Initialization tests: \n")
-           self.assess_initialization()
-        
-     
+    def exit_error_check(self):
+        pass    
+             
     def clear_data_folder(self):
         if(not self.INTERNAL_CML_SET):
             print(self.s4+"[clear_data_folder] Error: internal CMD line has not yet been initialized\n")
@@ -282,6 +289,8 @@ class benv:
             return False 
           
         if(self.cmv.var_path_list[-1] == self.DATFILE):
+            if(len(self.cmv.var_path_contain) > 0):
+                print(self.s4+"[clear_data_folder] Warning: files where found in the data file, the files will be cleared\n")
             while(len(self.cmv.var_path_contain) > 0):
                 self.cmv.cmd("rm "+self.cmv.var_path_contain[0])
 
@@ -289,7 +298,7 @@ class benv:
         return success
 
    
-    def move_results_to_data_folder(self, move_List = ['results.srt']):
+    def move_results_to_data_folder(self, move_List = ['Pars.srt','Vals.srt']):
         if(not self.INTERNAL_CML_SET):
             print(self.s4+"[clear_data_folder] Error: internal CMD line has not yet been initialized\n")
             return False          
@@ -298,6 +307,16 @@ class benv:
         
         move_String = '' 
         if(self.DATFILE in self.cmv.var_path_contain):
+            
+            self.cmv.cmd("cd "+self.BINFILE)
+            for i,file in enumerate(move_List):
+                if(i == n-1):
+                    move_String = move_String+file
+                else:
+                    move_String = move_String+file+';'
+            self.cmv.cmd("mv "+move_String+" ..")
+            self.cmv.cmd("cd ..")
+            move_String = '' 
             for i,file in enumerate(move_List):
                 if(i == n-1):
                     move_String = move_String+file
@@ -309,6 +328,127 @@ class benv:
             return False                 
         
         return True
+
+
+    def format_benv_data(self, data, style = None, coerce_to_style = False):
+
+        def __parval_to_string__(parval_obj, coerce_to_style):
+
+            try:
+                optpars, skinvals = parval_obj
+            except:
+                print(self.s4+"[format_benv_data] [__parval_to_string__] Error: could not coerce 'parval_obj' into two objects")
+                return False
+
+            if(optpars != False):
+                pars_List = strl.str_to_list(optpars)
+            else:
+                pars_List = ["Error: No density functional parameters found, check convergence"]
+
+            if(skinvals != False):
+                vals_List = strl.str_to_list(skinvals)                         
+            else:
+                vals_List = ["Error: No found 'BENV' values found..."]       
+             
+            if(coerce_to_style):
+                pass             # Place string style formatting function here 
+            else:
+                par_String = strl.array_to_str(pars_List,spc='  ') 
+                val_String = strl.array_to_str(vals_List,spc='  ')   
+                
+
+            return (par_String, val_String)
+
+            
+         
+        if(isinstance(style,str)):
+            style = style.lower()
+        else:
+            if(style == None):
+                pass 
+            else:
+                print(self.s4+"[format_benv_data] Error: input 'style' must be a string\n")
+                return False   
+         
+        if(style == 'os' or style == 'one-shot' or style == 'single' or style == None):
+            parval_data = __parval_to_string__(data)
+            if(parval_data == False):
+                print(self.s4+"[format_benv_data] Error: 'data' could not be coerced into 'parval_data'\n")
+                return False
+            par_string, val_string = parval_data
+            output = ([par_string+'\n'], [val_string+'\n'])
+
+        elif(style == 'skval' or style == 'double' or style == 'skval-loop'):   
+
+            par_Strings = [] 
+            val_Strings = []
+             
+            for i,entry in enumerate(data):  
+                value, nucleus = entry
+                             
+                nucleus_String = strl.array_to_str(nucleus ,spc = '  ')+'\n'
+                parval_data = __parval_to_string__(value)
+                if(parval_data == False):
+                    print(self.s4+"[format_benv_data] Error: 'value' could not be coerced into 'parval_data'")
+                    print(self.s4+"Failure occured for the "+str(strl.print_ordinal(i))+" value of the input data\n")
+                    continue
+                par_string, val_string = parval_data
+                par_Strings.append(par_String+nucleus_String)                            
+                val_Strings.append(val_String+nucleus_String)                  
+
+            output = (par_Strings, val_Strings)
+                  
+        elif(style == 'eos', style == 'triple', style == 'eos-loope'):         
+
+            par_Strings = [] 
+            val_Strings = []             
+                                          
+            for cohort in data:
+
+                for i,group in enumerate(cohort):  
+
+                    parval_data = group
+                    if(parval_data == False):
+                        print(self.s4+"[format_benv_data] Error: 'group' could not be coerced into 'entry' and 'eosid'")
+                        print(self.s4+"Failure occured for the "+str(strl.print_ordinal(i))+" value of the input data\n")
+                        continue
+
+                    entry, eosid = parval_data
+                    if(entry == False):
+                        print(self.s4+"[format_benv_data] Error: 'entry' could not be coerced into 'data' and 'nucleus'")
+                        print(self.s4+"Failure occured for the "+str(strl.print_ordinal(i))+" value of the input data\n")
+                        continue
+
+                    par_Strings.append(str(eosid)+'\n')
+                    val_Strings.append(str(eosid)+'\n')   
+
+
+                    par_String, val_String, nucleus = entry
+                    nucleus = [strl.array_to_str(az ,spc = '  ')+'\n' for az in nucleus]
+                        
+#                    value = (par_String, val_String)                                                               
+#                    par_String, val_String = __parval_to_string__(value)
+                    
+                    par_list = [par for par in map(lambda x,y: x+y, par_String,nucleus)]
+                    val_list = [val for val in map(lambda x,y: x+y, val_String,nucleus)]
+
+                    for par in par_list:
+                        par_Strings.append(par)                  
+                    for val in val_list:          
+                        val_Strings.append(val)    
+
+                    par_Strings.append(" \n")
+                    val_Strings.append(" \n") 
+          
+
+            output = (par_Strings, val_Strings)                      
+             
+        else:
+            print(self.s4+"[format_benv_data] Error: 'style' input variable not reconignized")
+            return False 
+
+        return output
+
     
         
     ##############################################################
@@ -349,7 +489,6 @@ class benv:
         return True
 
     def set_bin_dir(self):
-
         success, output = self.cmv.cmd("cd "+self.BINFILE)
         if(not success):
             print(self.s4+"[set_bin_dir] Error: failure to access "+self.BINFILE+"\n")
@@ -656,7 +795,7 @@ class benv:
             lines = False 
         if(lines == False):
             print(self.s4+"[get_skval_data] IOPError: failure to access file")
-            print(self.s4+"Pathway:  '"+str(self.skvlpath)+"'" 
+            print(self.s4+"Pathway:  '"+str(self.skvlpath)+"'\n") 
          
         return lines 
        
@@ -671,8 +810,8 @@ class benv:
          
         
         # variables   
-        incloop, azpairs, mirrors, eospars, initpar = False, False, False, False, False
-        incb, azpb, mirb, newb, intp = True, True, True, True, True  
+        incloop, azpairs, mirrors, initpar, eospars, eosgrup  = False, False, False, False, False, False
+        incb, azpb, mirb, intp, newb, eosg = True, True, True, True, True, True  
           
         n = len(skval_lines)
         npreamble = -1
@@ -698,16 +837,22 @@ class benv:
                 if(mirrors != []):
                     self.mirrors = (mirrors[0].lower() == 'true')
                     mirb = False 
-            if(newb):
-                eospars = self.EOSPARS.findall(skval_lines[i])  
-                if(eospars != []):
-                    self.eospars = (eospars[0].lower() == 'true')
-                    newb = False 
             if(intp):
                 initpar = self.INITPAR.findall(skval_lines[i])  
                 if(initpar != []):
                     self.initpar = (initpar[0].lower() == 'true')
                     intp = False 
+            if(newb):
+                eospars = self.EOSPARS.findall(skval_lines[i])  
+                if(eospars != []):
+                    self.eospars = (eospars[0].lower() == 'true')
+                    newb = False 
+            if(eosg):
+                eosgrup = self.EOSGRUP.findall(skval_lines[i])  
+                if(eosgrup != []):
+                    self.eosgrup = (eosgrup[0].lower() == 'true')
+                    eosg = False 
+
 
                  
             if(i+1 == n and not all([not incb, not azpb, not mirb, not newb])):
@@ -717,11 +862,13 @@ class benv:
                     print(self.s4+"[format_skval_data] Warning: could not find parameter 'AZpairs' in 'skval_lines'\n")
                 if(mirb):
                     print(self.s4+"[format_skval_data] Warning: could not find parameter 'Mirrors' in 'skval_lines'\n")  
+                if(intp):
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Initpar' in 'skval_lines'\n")  
                 if(newb):
                     print(self.s4+"[format_skval_data] Warning: could not find parameter 'EOSpars' in 'skval_lines'\n")  
-                if(intp):
-                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'Initpar' in 'skval_lines'\n")   
-            elif(all([not incb, not azpb, not mirb, not newb, not intp])):
+                if(eosg):
+                    print(self.s4+"[format_skval_data] Warning: could not find parameter 'EOSgrup' in 'skval_lines'\n")   
+            elif(all([not incb, not azpb, not mirb, not intp, not newb, not eosg])): 
                 npreamble = i    
                 break    
             else:
@@ -1095,7 +1242,7 @@ class benv:
         return True
                     
 
-    def format_skval_benv_vals(self, benvals, split = False):
+    def format_skval_benv_vals(self, benvals, split = True):
          
         if(split):
             parlines = [] 
@@ -1126,15 +1273,33 @@ class benv:
             return outlines
             
 
-    def clean_up(self):
+    def clean_up(self, debug = False):
         
-        if(self.cmv.var_path_list[-1] != self.BINFILE):          
-            success, output = self.cmv.cmd("cd "+self.BINFILE)
-            if(not success):
-                print("[clean_up] ExitError: failure to access "+self.BINFILE)
-                self.exit_function("while changing directories")
-
-        subprocess.call("rm CONSOLE.txt",shell = True)         
+        if(debug):
+            pass
+        else:
+            if(self.cmv.var_path_list[-1] != self.BINFILE):          
+                success, output = self.cmv.cmd("cd "+self.BINFILE)
+                if(not success):
+                    print("[clean_up] ExitError: failure to access "+self.BINFILE)
+                    self.exit_function("while changing directories")
+            else:
+                return False            
+    
+            subprocess.call("rm CONSOLE.txt",shell = True)         
+        
+        self.exit_error_check()
+        print("")
+        time.sleep(0.5)
+        print("No fatal Errors detected") 
+        time.sleep(0.5)
+        print("Run Number upon exit:  "+str(self.run_time))
+        time.sleep(0.5)
+        print("Script run-time :  "+str(round(time.time()-self.time_Start,3))+" seconds")
+        time.sleep(0.5)
+        print("   ")            
+        
+             
         return True
 
     # Running and Looping functions
@@ -1159,7 +1324,7 @@ class benv:
             subprocess.call("rm "+self.SKINVAL, shell = True)
 
         self.run_time+=1
-        return ((optpars,skinvals))
+        return (optpars,skinvals)
         
       
     def skval_loop(self, parline, skval_data, skval_type):
@@ -1329,15 +1494,36 @@ class benv:
             pass 
            
         if(len(pars)>0):
-            for i,par in enumerate(pars):
-                for j,entry in enumerate(eoslist):
+             
+            if(self.eosgrup):
+                out_Iter = pars   
+                inn_Iter = eoslist 
+            else: 
+                out_Iter = eoslist 
+                inn_Iter = pars
+             
+            for i,out_entry in enumerate(out_Iter):
+                for j,inn_entry in enumerate(inn_Iter):
+
+                    if(self.eosgrup):
+                        eos_entry = inn_entry 
+                        par_entry = out_entry
+                        ith_entry = strl.print_ordinal(str(i+1)) 
+                        jth_entry = strl.print_ordinal(str(j+1))
+                    else:
+                        eos_entry = out_entry  
+                        par_entry = inn_entry 
+                        ith_entry = strl.print_ordinal(str(j+1)) 
+                        jth_entry = strl.print_ordinal(str(i+1))
+
+
 
                     # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
-                    packed_format_eos_data = self.format_eos_data(entry, pl=par)
+                    packed_format_eos_data = self.format_eos_data(eos_entry, pl=par_entry)
                     ith_entry = strl.print_ordinal(str(i+1)) 
                     jth_entry = strl.print_ordinal(str(j+1))
                     if(packed_format_eos_data == False):
-                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+jth_entry+" par cycle,"                    
+                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+ith_entry+" par cycle,"                    
                         print(self.s4+"[benv_eos_loop] Error: "+cycle_Info_Text+" could not be formatted")
                         print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
                         continue 
@@ -1375,7 +1561,10 @@ class benv:
                     print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
                     continue 
 
-                benvals_group.append((formatted_benvals,"par_var_"+str(i)+"_"+eosid))
+                if(self.eosgrup):
+                    benvals_group.append((formatted_benvals,"eos_grup_"+str(jth_entry)+"_"+eosid))
+                else:
+                    benvals_group.append((formatted_benvals,"par_var_"+str(ith_entry)+"_"+eosid))
 
             benvals_cohort.append(benvals_group)
             benvals_group = []
@@ -1384,6 +1573,29 @@ class benv:
             self.data_to_pars(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
           
         return benvals_cohort
+
+
+
+                     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  
