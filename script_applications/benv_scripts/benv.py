@@ -56,7 +56,7 @@ class benv:
         self.EOSGRUP = re.compile("\s*EOSgrup\s*:\s*([T,F,t,f]\D+)")    
            
         self.PAIRS = re.compile("\s*(\d+),(\d+)")
-        self.LOOPS = re.compile("\s*(\d+)\s+(\d+)\s+(\d+)\s*")
+        self.LOOPS = re.compile("\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")
         self.PARCM = re.compile("\s*"+9*DIGITSPC+FLOATER+DIGIT)      
         self.PARGP = re.compile("\s*"+5*DIGITSPC+FLOATER+DIGIT)    
  
@@ -947,8 +947,8 @@ class benv:
                 print(self.s4+"[format_skval_data] Error: No 'pair' values could be found\n")
                 return False
                  
-        else:
-            print(self.s4+"[format_skval_data] Error: No skval functionality detected...\n") 
+        if(not self.incloop and not self.azpairs):
+            print(self.s4+"[format_skval_data] Warning: No skval functionality detected...\n") 
             return False
         
         output = (loop_data,loop_type,pars)                           
@@ -956,17 +956,26 @@ class benv:
 
 
     def skval_loop_line_parse(self, line):
-        if(not isinstance(line,str)):      
-            print(self.s4+"Error: input 'line' must be a string\n")                  
-            return False
-          
-        loop = strl.str_to_list(line, filtre=True)
-        if(len(loop) != 6):
-            print(self.s4+"[skval_loop_line_parse] Error: there should be exactly 6 entries in 'line'\n")
+
+        
+        if(isinstance(line,str)):      
+            loop = strl.str_to_list(line, filtre=True)
+            if(loop == False or len(loop) < 4):
+                print(self.s4+"[skval_loop_line_parse] Error: couldn't coerce input string, 'line' into array of at least 4 values\n")
+                return False
+        elif(isinstance(line,(list,tuple))):
+            if(len(line) < 4):
+                print(self.s4+"[skval_loop_line_parse] Error: if input 'line' is an array it must be at least 4 values long\n")
+                return False
+            else:
+                loop = line 
+        else:
+            print(self.s4+"[skval_loop_line_parse] Error: input 'line' must either be a string or an array\n")
             return False
              
         try:
-            output_list = [int(loop[0]), int(loop[1]), int(loop[2]), bool(int(loop[3])), bool(int(loop[4])), bool(int(loop[5]))]
+#            output_list = [int(loop[0]), int(loop[1]), int(loop[2]), bool(int(loop[3])), bool(int(loop[4])), bool(int(loop[5]))]
+            output_list = [int(loop[0]), int(loop[1]), int(loop[2]), bool(int(loop[3]))]
         except:
             print(self.s4+"[skval_loop_line_parse] Error: could not coerce 'loop' list into a skval-loop list\n")
             return False
@@ -1341,7 +1350,7 @@ class benv:
             return False
         else:
             data = list(skval_data)            
-            type = skval_type              
+            type = str(skval_type)              
         
         # 'type' determines if BENV values are computed by a skval loop or individual nuclei   
         if(type == 'loop'):        
@@ -1356,9 +1365,9 @@ class benv:
             else:
                 inv = 1                     
             for i in xrange(skval_list[0]):
-                ax = self.initial_a+inv*skval_list[2]*(j+1)
+                ax = self.initial_a+inv*skval_list[2]*(i)
                 for j in xrange(skval_list[1]): 
-                    zx = self.initial_z+inv*(skval_list[2])*(j+1)                                    
+                    zx = self.initial_z+inv*(skval_list[2])*(j)                                    
                     parlines = self.format_pars_data(parline, ax, zx)     
                     if(parlines == False):
                         print(self.s4+"[skval_loop] Error: failure when formatting 'parameters', current run skipped\n")
