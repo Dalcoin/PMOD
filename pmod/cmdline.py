@@ -60,14 +60,15 @@ class path_parse:
             
         Path : 
 
-            .var_path : A string of the path in which the script is run
-            .var_path_list : A list of strings with values of the directory hiearchy in .path
-            .var_path_head : A string containing the primary (home) directory
-            .var_path_contain : A list of strings with values of the contents of .path
-            .var_path_files : A list of string with values of the file (names with file type) in .path   
+            .var_path          : A string of the path in which the script is run
+            .var_path_list     : A list of strings with values of the directory hiearchy in .path
+            .var_path_head     : A string containing the primary (home) directory
+            .var_path_contain  : A list of strings with values of the contents of .path
+            .var_path_files    : A list of strings with values of the files found in the current directory.
+            .var_path_folders  : A list os strings with values of the subdirectories in the current directory. 
             
-            .var_os:  A string to specify the operating system, this determines the path file format 
-            .var_col: True for color Escape code when printing, False by default
+            .var_os      :  A string to specify the operating system, this determines the path file format 
+            .var_col     : True for color Escape code when printing, False by default
         
         '''
         
@@ -85,7 +86,7 @@ class path_parse:
         single_path_list_nogroup = ['cd','chdir','vi','help']
         single_path_list_group = ['rm','rmdir','mkdir','dir','find','match']
         double_path_list = ['mv', 'cp', 'cpdir']
-        
+               
         self.var_os = str(os_form).lower()
 
         if(self.var_os in lx_distro):
@@ -109,9 +110,6 @@ class path_parse:
                 self.var_path_list = self.var_path.split(delim)
                 self.var_path_list = self.var_path_list[1:]
                 self.var_path_head = self.var_path_list[0]
-            self.var_path_contain = os.listdir(self.var_path)
-            self.var_path_files = self.__path_files__()
-            self.var_path_print = path_print
         else:
             self.var_path = os.getcwd()
             if(self.var_os == 'windows'):
@@ -121,9 +119,11 @@ class path_parse:
                 self.var_path_list = self.var_path.split(delim)
                 self.var_path_list = self.var_path_list[1:]
                 self.var_path_head = self.var_path_list[0]
-            self.var_path_contain = os.listdir(self.var_path)
-            self.var_path_files = self.__path_files__()
-            self.var_path_print = path_print
+
+        self.var_path_contain = self.path_files('all')
+        self.var_path_files = self.path_files('files')
+        self.var_path_folders = self.path_files('folders')
+        self.var_path_print = path_print
     
     def documentation(self, string):
         """        	    
@@ -410,11 +410,11 @@ class path_parse:
         return trac_out            
         
         
-    def __path_files__(self, style = None):
-        '''
-        ------------------
-        | __path_files__ |
-        ------------------
+    def path_files(self, type, internal_Path = True, new_Path = None, style = None):
+        ''' 
+        --------------
+        | path_files |
+        --------------
 
         Description: Returns a list of strings corrosponding to the file names in 
                      the current (path) directory, option for selecting only a 
@@ -432,19 +432,37 @@ class path_parse:
                                  'style' extension, if 'style' == None, then all
                                  file names are included in 'file_list'                    
         '''
-        current_folder_content = list(self.var_path_contain)
-        file_list = []
-        if(style == None):
-            for i in current_folder_content:
-                if(os.path.isfile(self.pw_join(self.var_path,i))):
-                    file_list.append(i)
+        
+        folder_Names = ['dir', 'dirs', 'directory', 'directories', 'folder', 'folders']
+        file_Names = ['file', 'files']
+
+        if(internal_Path): 
+            path = self.var_path
         else:
-            for i in current_folder_content:
-                file_type = '.'+str(style)
-                if(file_type in i):
-                    file_list.append(i)
-        return file_list
-    
+            path = new_Path
+
+        current_Path_Contents = os.listdir(path)
+
+        if(type.lower() == 'all'):
+            output = current_Path_Contents
+        elif(type.lower() in file_Names):              
+            if(style == None):
+                output = [i for i in current_Path_Contents if os.path.isfile(self.pw_join(self.var_path,i))]
+            else:
+                file_List = []
+                for entry in current_Path_Contents:
+                    file_type = '.'+str(style)
+                    if(file_type in entry):
+                        file_List.append(entry)
+                output = file_List             
+        elif(type.lower() in folder_Names):
+              
+            output = [i for i in current_Path_Contents if os.path.isdir(self.pw_join(self.var_path,i))]
+        else:
+            output = False
+                           
+        return output
+       
 
     def __update_path__(self, path_updater, sort):        
         '''
@@ -471,8 +489,9 @@ class path_parse:
             if(self.var_os == 'windows'):                    
                 if(self.var_path == self.var_path_head):
                     self.var_path = self.var_path+'//'
-            self.var_path_contain = os.listdir(self.var_path)
-            self.var_path_files = self.__path_files__()   
+                self.var_path_contain = self.path_files('all')
+                self.var_path_files = self.path_files('files')
+                self.var_path_folders = self.path_files('folders')
             return True
         elif(sort == 'str'):
             self.var_path = path_updater
@@ -480,8 +499,9 @@ class path_parse:
             if(self.var_os == 'windows'):                    
                 if(self.var_path == self.var_path_head):
                     self.var_path = self.var_path+'//'
-            self.var_path_contain = os.listdir(self.var_path)
-            self.var_path_files = self.__path_files__() 
+            self.var_path_contain = self.path_files('all')
+            self.var_path_files = self.path_files('files')
+            self.var_path_folders = self.path_files('folders')
             return True
         else:
             print("[__update_path__] Error: 'sort' must be string corrosponding to a compatible python type")
