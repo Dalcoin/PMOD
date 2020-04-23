@@ -262,7 +262,7 @@ def table_str_to_numeric(line_list   ,
 
     if(header):
         head = new_line_list[0]
-        new_line_list = new_line_list[1:-1]
+        new_line_list = new_line_list[1:]
         n = len(new_line_list)
         try:
             head = __strl__.str_to_list(head, spc = sep, filtre = True)
@@ -371,7 +371,7 @@ def table_str_to_fill_numeric(line_list     ,
 
     if(header):
         head = line_list[0]
-        op_list = line_list[1:-1]
+        op_list = line_list[1:]
         n = len(op_list)
         try:
             head = __strl__.str_to_list(head, spc = spc, filtre = True)
