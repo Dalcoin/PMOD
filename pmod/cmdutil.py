@@ -8,7 +8,7 @@ from cmdline import path_parse as cmv
  
 # File Utility Functions
 
-def convert_Endline(file, style = 'dos2unix'):
+def convert_Endline(file, style = 'dos2unix', space = '    '):
          
     lines = iop.flat_file_read(file) 
     if(lines == False):
@@ -22,9 +22,9 @@ def convert_Endline(file, style = 'dos2unix'):
     elif(style == None):
         end_Line = ""
     else:
-        print("    [convert_Endline] Error: 'style' not reconginzed")
+        print(space+"[convert_Endline] Error: 'style' not reconginzed")
         return False  
-
+     
     out_Lines = [i.rstrip()+end_Line for i in lines]  
     return out_Lines
  
@@ -195,6 +195,33 @@ class cmdutil(object):
                 return False
         return True
 
+
+    ############################################################33##
+
+    # File Functions
+
+    def convert_Endline(self, file, style = 'dos2unix'):
+             
+        lines = iop.flat_file_read(file) 
+        if(lines == False):
+            if(self.debug):
+                print(self.space+"[convert_Endline] Error: could not read input 'file' : "+str(file)) 
+            return False       
+         
+        if(style == 'dos2unix'):
+            end_Line = "\n"
+        elif(style == 'unix2dos'):
+            end_Line = "\r\n"
+        elif(style == None):
+            end_Line = ""
+        else:
+            if(self.debug):
+                print(self.space+"[convert_Endline] Error: 'style' not reconginzed")
+            return False  
+         
+        out_Lines = [line.rstrip()+end_Line for line in lines]  
+        return out_Lines
+
  
   
     ############################################################33##
@@ -288,9 +315,33 @@ class cmdutil(object):
         return True
 
 
-    
+     
+    def convert_File_Endline(self, fileNames, foldName = None, style):
 
+        # checking 'fileNames' input for proper formatting
+        if(isinstance(fileNames,str)):
+            fileNames = [fileNames]   
+        elif(isinstance(fileNames,(list,tuple))):
+            if(all([isinstance(entry,str) for entry in fileNames])):
+                pass 
+            else:
+                if(self.debug):
+                    print(self.space+"[convert_File_Endline] Error: all entries in 'fileNames' must be strings")
+                else:
+                    pass 
+                return False      
 
+        # actions based upon 'foldName' input
+        if(foldName == None):
+            for entry in fileNames:
+                if(entry in self.cml.var_path_files):
+                    success = self.convert_Endline(entry, style = style)  
+        elif(foldName in self.var_path_folders):
+            
+            for entry in fileNames:
+                if(entry in self.cml.var_path_files):
+                    success = self.convert_Endline(entry, style = style)  
+             
 
 
 
