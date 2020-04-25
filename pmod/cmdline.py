@@ -94,16 +94,21 @@ class path_parse:
         self.var_col = colourPrint
 
         if(newPath == None):
-            self.varPath = os.getcwd()
+            try:
+                self.varPath = os.getcwd()
+            except:
+                print(self.space+"[path_parse] Error: failure to get current pathway from OS")
+                return False
         else:            
             self.varPath = newPath
-            
-        self.varPath_List = self.Str2Arr(newPath)
-        self.varPath_Head = self.varPath_List[0]
-        self.varPath_Dir  = self.varPath_List[-1]
-        self.varPath_Contains = self.contentPath('all')
-        self.varPath_Files = self.contentPath('files')
-        self.varPath_Folders = self.contentPath('folders')
+        self.INIT_SET_PATH = self.__updatePath__(self.varPath)
+
+        if(not self.INIT_SET_PATH):
+            if(self.debug):
+                print(self.space+"[path_parse] Error: initialization failed!\n")
+            return False 
+        return True
+
 
     
     def documentation(self, string):
@@ -357,9 +362,9 @@ class path_parse:
 
     def delNode(self, oldPath, node):
           
-        if(not isinstance(inPath,str):
+        if(not isinstance(oldPath,str):
             if(self.debug):
-                print(self.space+"[Str2Arr] Error: input 'inPath' must be a string\n")
+                print(self.space+"[delNode] Error: input 'oldPath' must be a string\n")
             return False  
         else: 
             arrPath = self.Str2Arr(oldPath)
@@ -390,31 +395,33 @@ class path_parse:
 
         if(not isinstance(inPath,(list,tuple)):
             if(self.debug):
-                print(self.space+"[Arr2Str] Error: input 'path' must be a python array")
+                print(self.space+"[Arr2Str] Error: input 'path' must be a python array\n")
             return False  
         else:
             inPath = filter(None,inPath)
+            if(len(inPath) < 1):
+                if(self.debug):
+                    print(self.space+"[Arr2Str] Error: 'inPath' must contain at least one pathway entry\n")
+                return False
            
-        for dir in inPath:
-            if(count == 0):
+        for i,dir in enumerate(inPath):
+            if(i == 0):
                 outPath = str(dir) 
+                if(self.varOS == 'linux'):
+                    outPath = '/'+outPath
             else:
-                outPath = self.joinNode(outPath,dir)
+                outPath = self.joinNode(outPath,str(dir))
                 if(outPath == False):
                     if(self.debug):
                         errMSG = self.space+"[Arr2Str] Error: could not join the "
                         errMSG = errMSG+strl.print_ordinal(count+1)
-                        errMSG = errMSG+" entry of input, 'inPath'"
+                        errMSG = errMSG+" entry of input, 'inPath'\n"
                         print(errMSG)
                     return False 
-            count+=1
         
-        if(self.varOS == 'linux'):
-            outPath = '/'+outPath
-        if(self.varOS == 'windows'):
-            if(outPath == self.winHead):
-                outPath = outPath+"\\"
-         
+        if(self.varOS == 'windows' and len(outPath)==1):
+            outPath = outPath+"\\"        
+ 
         return outPath
   
 
@@ -430,7 +437,7 @@ class path_parse:
         return False 
             
         
-    def convertPath(self, inPath, inType='list', outType='str'):        
+    def convertPath(self, inPath, outType='str'):        
         '''        
         --------------
         | convertPath |  :  Convert Pathway 
@@ -441,7 +448,6 @@ class path_parse:
         Inputs :
 
             inPath : a pathway (formatted as either a string or array)
-            inType  : [string] (Default value : 'list'), corrosponding to a python data-type
             outType : [string] (Default value : 'str'), corrosponding to a python data-type      
 
         Output : Path formatted list or string                                 
@@ -449,23 +455,17 @@ class path_parse:
         outPath = ''
         count = 0
 
-        if(not isinstance(inType,str)):
-            if(self.debug):
-                print(self.space+"[convertPath] Error: 'inType' must be a string") 
-            return False        
-        else:
-            inType = inType.lower()
-
         if(not isinstance(outType,str)):
             if(self.debug):
                 print(self.space+"[convertPath] Error: 'outType' must be a string") 
             return False    
+        else:
             outType = outType.lower() 
          
         typeList = ['arr','array','list','tup','tuple']
         typeStr = ['str','string']
               
-        if(inType in typeList):                                                    
+        if(isinstance(inPath,(list,tuple))):                                                    
             if(outType in typeList):
                 if(outType == 'arr' or outType == 'array'):                                 
                     return inPath
@@ -480,7 +480,7 @@ class path_parse:
                     print(self.space+"[convertPath] Error: input 'outType' not recognized")
                 return False
              
-        elif(inType == 'str'):
+        elif(isinstance(inPath,str)):
             if(outType in typeStr):
                 return inPath
             elif(outType in typeList):
@@ -494,14 +494,14 @@ class path_parse:
                 return False
         else:
             if(self.debug):
-                print(self.space+"[convertPath] Error: input 'inType' not recognized")
+                print(self.space+"[convertPath] Error: input 'inPath' not a recognized type")
             return False      
         if(self.debug):
             print(self.space+"[convertPath] Error: path conversion failed; cause unknown")             
         return False            
         
         
-    def contentPath(self, inPath, objType = 'all', style = None):
+    def contentPath(self, inPath, objType = 'all', fileStyle = None):
         ''' 
         --------------
         | contentPath |
@@ -512,15 +512,19 @@ class path_parse:
                      specific file extension. 
         
         Input: 
+           
+            'objType'  : Type of object, may be 'all', 'file' or 'folder'. Note 
+                         that 'objType' takes precedent over 'fileStyle'. 
         
-            'style': [string], (default value: None), A string corrosponding to 
-                                                      a file extension type.
-        
+            'fileStyle': [string], (None), A string corrosponding to a file extension
+                                           type. Note that 'objType' must be set to 'file'
+                                           for 'fileStyle' to take effect        
+
         Return:
          
             'file_list': [list], A list of strings corrosponding to all the files
                                  in the current (path) directory matching the 
-                                 'style' extension, if 'style' == None, then all
+                                 'fileStyle' extension, if 'fileStyle' == None, then all
                                  file names are included in 'file_list'                    
         '''
         
@@ -531,38 +535,56 @@ class path_parse:
             objType = objType.lower() 
         else:
             if(self.debug):
-                print(self.space+"[convertPath] Error: 'objType' must be a string") 
+                print(self.space+"[convertPath] Error: 'objType' must be a string\n") 
             return False  
  
                    
         if(isinstance(inPath,str)): 
             path = inPath
+        elif(isinstance(inPath,(list,tuple))):
+            path = self.Arr2Str(inPath)
         else:
-            path = self.varPath
+            if(self.debug):
+                print(self.space+"[contentPath] Error: input 'inpath' must be either an Array or Str type\n")
+            return False
                
-        pathContents = os.listdir(path)
+        try:
+            pathContents = os.listdir(path)
+        except:
+            if(self.debug):
+                print(self.space+"[contentPath] Error: could not retrieve contents of path")
+                print(self.space+"path: "+path+"\n")
+            return False 
             
         if(objType.lower() == 'all'):
             output = pathContents
         elif(objType.lower() in file_Names):              
-            if(style == None):
-                output = [entry for entry in pathContents if os.path.isfile(self.joinNode(self.varPath,entry))]
+            if(fileStyle == None or not isinstance(fileStyle,(str,tuple,list))):
+                output = [entry for entry in pathContents if os.path.isfile(self.joinNode(path,entry))]
             else:
                 file_List = []
-                for entry in pathContents:
-                    file_type = '.'+str(style)
-                    if(file_type in entry):
-                        file_List.append(entry)
-                output = file_List             
+                if(isinstance(fileStyle,str):  
+                    fileType = '.'+fileStyle
+                    for entry in pathContents:                        
+                        if(fileType in entry):
+                            file_List.append(entry)
+                    output = file_List          
+                else:
+                    for ending in fileStyle:           
+                        fileType = '.'+str(ending)
+                        for entry in pathContents:                        
+                            if(fileType in entry):
+                                file_List.append(entry)
+                    output = file_List         
         elif(objType.lower() in folder_Names):              
-            output = [entry for entry in pathContents if os.path.isdir(self.joinNode(self.varPath,entry))]
+            output = [entry for entry in pathContents if os.path.isdir(self.joinNode(path,entry))]
         else:
             output = False
                            
         return output
        
 
-    def __updatePath__(self, newPath, inType = 'str'):        
+    def __updatePath__(self, newPath):        
         '''
         -------------------
         | __updatePath__ |
@@ -575,7 +597,6 @@ class path_parse:
         Input: 
         
             'newPath': [list,tuple], A path-formatted list 
-            'inType'        : [string], corrosponding to a python data-type
 
         Output : [Bool], success
         '''
@@ -583,42 +604,62 @@ class path_parse:
         typeList = ['arr','array','list','tup','tuple']
         typeStr = ['str','string']  
           
-        if(inType in typeList):
-            self.varPath = self.convertPath(newPath)             
-            self.varPath_List = list(newPath)
-            self.varPath_Head = self.varPath_List[0]
-            self.varPath_Dir  = self.varPath_List[-1]
-            self.varPath_Contains = self.contentPath('all')
-            self.varPath_Files = self.contentPath('files')
-            self.varPath_Folders = self.contentPath('folders')                        
-        elif(inType in typeStr):   
+        if(isinstance(newPath,str)):
             self.varPath = newPath          
             self.varPath_List = self.Str2Arr(newPath)
-            self.varPath_Head = self.varPath_List[0]
-            self.varPath_Dir  = self.varPath_List[-1]
-            self.varPath_Contains = self.contentPath('all')
-            self.varPath_Files = self.contentPath('files')
-            self.varPath_Folders = self.contentPath('folders')
+            if(self.varPath_List == False):
+                if(self.debug):
+                    print(self.space+"[__updatePath__] Error: failure to convert 'newPath' to a list")
+                return False
+        elif(isinstance(newPath,(list,tuple))): 
+            self.varPath = self.Arr2Str(newPath)
+            if(self.varPath == False):     
+                if(self.debug):
+                    print(self.space+"[__updatePath__] Error: failure to convert 'newPath' to a str")
+                return False        
+            self.varPath_List = list(newPath)                         
         else:
-            print("[__updatePath__] Error: 'inType' not a recognized type")
+            if(self.debug):
+                print("[__updatePath__] Error: 'newPath' not a recognized type")
             return False 
+
+        self.varPath_Head = self.varPath_List[0]
+        self.varPath_Dir  = self.varPath_List[-1]
+
+        self.varPath_Contains = self.contentPath(self.varPath,'all')
+        if(self.varPath_Contains == False):
+            if(self.debug):
+                print(self.space+"[__updatePath__] Error: failure to get contents from current pathway")
+            return False 
+
+        self.varPath_Files = self.contentPath(self.varPath,'files')
+        if(self.varPath_Files == False):
+            if(self.debug):
+                print(self.space+"[__updatePath__] Error: failure to get files found in current pathway")
+            return False 
+
+        self.varPath_Folders = self.contentPath(self.varPath,'folders') 
+        if(self.varPath_Contains == False):
+            if(self.debug):
+                print(self.space+"[__updatePath__] Error: failure to get directories found in current pathway")
+            return False 
+
+        return True
+
         
         
-    def __climbPath__(self, node, inType = 'str'):
+    def __climbPath__(self, node):
         '''
         Description : if 'node' is a node in the default (current) pathway 
                       that the default (current) pathway directory is moved to
             
         Input:
          
-            'inType' : [string] (Default value : 'str'), corrosponding to a python data-type
+            'node' : [string], corrosponding to a node within the current pathway
       
         The overhead and updating of class path info is taken care of with this function  
         '''        
-
-        typeList = ['arr','array','list','tup','tuple']
-        typeStr = ['str','string']     
-           
+               
         if(node in self.varPath_List):
             
             for entry in self.varPath_List:
@@ -626,56 +667,68 @@ class path_parse:
                     newPath_list.append(entry)
                 else:
                     break
-            newPath_list.append(node)
-
-            if(inType in typeList):
-                output = newPath_list
-            elif(inType in typeStr):
-                output = self.convertPath(newPath_list)
-            elif(inType == 'update'):                
-                output = self.__updatePath__(newPath_list,'list')
-            else:
-                if(self.debug):
-                    print(self.space+"[__climbPath__] Error: 'inType' command: '"+str(inType)+"' not recongized")
-                output = False
+            newPath_list.append(node)              
+            output = self.__updatePath__(newPath_list)
             return output
         else: 
             if(self.debug):
-                print(self.space+"[__climbPath__] Error: Directory "+node+" not found in current (path) hierarchy")
+                print(self.space+"[__climbPath__] Warning: Directory "+node+" not found in current (path) hierarchy")
             return False
-        return False
+        return True
         
     #############################
     # File and Folder Functions # 
     #############################
          
-    def move(self, objPath, newPath, inType = 'str', update = False):
+    def moveObj(self, objPath, newPath):
         '''
         Description : Moves and renames file and directory objects
-
+        
         Input : 
 
             objPath : [string], A complete object pathway, the final node may be either a file or directory 
             newPath : [string], A complete directory pathway, the final node must be a directory 
-            inType  : [string] (Default value : 'str'), corrosponding to a python data-type
-            update  : [Bool] (Default value : False), option to update the current path variables
 
         Output : [Bool], success
         '''
 
-        typeList = ['arr','array','list','tup','tuple']
-
-        if(inType in typeList):
-            newPath = self.convertPath(newPath)                
+        if(isinstance(objPath,(list,tuple))):
             objPath = self.convertPath(objPath)
-                                         
+            if(objPath == False):
+                if(self.debug): 
+                    print(self.space+"[moveObj] Error: failure to convert input 'objPath' to a string\n")
+                return False
+        elif(isinstance(objPath,str)):
+            pass 
+        else:
+            if(self.debug): 
+                print(self.space+"[moveObj] Error: 'objPath' must be either a pathway formatted string or array\n")
+            return False            
+
+        if(isinstance(newPath,(list,tuple))):
+            newPath = self.convertPath(newPath)
+            if(newPath == False):
+                if(self.debug): 
+                    print(self.space+"[moveObj] Error: failure to convert input 'newPath' to a string\n")
+                return False
+        elif(isinstance(newPath,str)):
+            pass 
+        else:
+            if(self.debug): 
+                print(self.space+"[moveObj] Error: 'newPath' must be either a pathway formatted string or array\n")
+            return False         
+                                                        
         try: 
             shutil.move(objPath,newPath) 
         except: 
             if(self.debug):
-                print("[move] Error: object could not be moved.")
-                print("File pathway: "+objPath)
-                print("Destination pathway: "+newPath+"\n")
+                if(not os.path.isfile(objPath) and not os.path.isdir(objPath):
+                    print(self.space+"[moveObj] Error: 'objPath' does not point to either a file or folder\n")
+                if(not os.path.isfile(objPath) and not os.path.isdir(objPath):  
+                    print(self.space+"[moveObj] Error: 'objPath' does not point to a folder\n")                               
+                print(self.space+"[moveObj] Error: object could not be moved.")
+                print(self.space+"File pathway: "+str(objPath))
+                print(self.space+"Destination pathway: "+str(newPath)+"\n")
             return False
         
         if(update):
@@ -684,91 +737,199 @@ class path_parse:
             output = True
         return output
 
+
+    def __moveObj__(self, objPath, newPath):
+
+        success = self.moveObj(objPath, newPath)
+        if(not success):
+            if(self.debug):
+                print(self.space+"[__moveObj__] Error: failure to perform move operation")
+            return success
+
+        try:
+            startDir = self.convertPath(objPath,"list")[-2]
+        except:
+            if(self.debug):
+                print(self.space+"[__moveObj__] Error: failure to find folder for object pathway\n")
+            startDir = False
+        try:
+            finalDir = self.convertPath(newPath,"list")[-1]          
+        except:
+            if(self.debug):
+                print(self.space+"[__moveObj__] Error: failure to find folder for new pathway\n")
+            finalDir = False
+
+        if(startDir == self.varPath_Dir or finalDir == self.varPath_Dir):
+            success = self.__updatePath__(self.varPath)
+            if(not success):
+                if(self.debug):
+                    print(self.space+"[__moveObj__] Error: failure to update pathway")
+        else: 
+            success = False
+         
+        return success
+
+
     
-    def delFile(self, file_loc, inType = 'str', update=False):           
+    def delFile(self, objPath):           
         '''
         Description : Attempts to delete the content at the location of the input pathway 
             
         Input:
       
-            file_loc : A complete pathway string pointing to a file 
-            inType: [string] (Default value : 'str'), corrosponding to a python data-type
-            update : [Bool] (Default value : False), option to update the current path variables
+            objPath : A complete pathway string pointing to a file 
 
         Output : [Bool], success
         '''  
-        if(inType == 'list' or inType == 'arr'):
-            file_loc = self.convertPath(file_loc)
 
+        if(isinstance(objPath,(list,tuple))):
+            objPath = self.convertPath(objPath)
+            if(objPath == False):
+                if(self.debug): 
+                    print(self.space+"[moveObj] Error: failure to convert input 'objPath' to a string\n")
+                return False
+        elif(isinstance(objPath,str)):
+            pass 
+        else:
+            if(self.debug): 
+                print(self.space+"[moveObj] Error: 'objPath' must be either a pathway formatted string or array\n")
+            return False      
+               
         try:
-            os.remove(file_loc)
+            os.remove(objPath)
         except:
             if(self.debug):
-                print("[delFile] Error: File could not be deleted.")
-                print("File pathway: "+file_loc+"\n")
+                print("[delFile] Error: Failure to delete file")
+                print("File pathway: "+objPath+"\n")
             return False
             
-        if(update):            
-            utest = self.__updatePath__(self.varPath,'str')
-            if(utest):
-                return utest
-            else:
-                print("[delFile] Error: path not updated")     
-                return False
-        else:
-            return True
+        return True 
 
 
-    def copyFile(self, old_file_dir, new_file_dir, new_file_name = None, inType = 'str', update = False):
-        '''
-        Description : Attempts to copy a file from the 'old_file_dir' full pathway 
-                      to the full directory pathway 'new_file_dir', with a name 
-                      given by 'new_file_name'   
+    def __delFile__(self, objPath):
 
-        Input : 
-          
-            new_file_name : [string], corrosponds to only the name of the copy  
-            old_file_dir  : [string], corrosponds to the full pathway of the copied file
-            new_file_dir  : [string] (Default : None), corrosponds to full pathway of the location of the copy
-            inType: [string] (Default value : 'str'), corrosponding to a python data-type
-            update : [Bool] (Default value : False), option to update the current path variables
+        success = self.delFile(objPath)
+        if(not success):
+            if(self.debug):
+                print(self.space+"[__delFile__] Error: failure to perform move operation")
+            return success
 
-        Output : [Bool], success
-        '''
-
-        if(inType == 'list' or inType == 'arr'):
-            old_file_dir = self.convertPath(old_file_dir)
-            new_file_dir = self.convertPath(new_file_dir)
-            
-        if(new_file_name != None and isinstance(new_file_name,str)):
-            file_dup_loc = self.joinNode(new_file_dir, new_file_name)
-        else: 
-            new_file_name = self.convertPath(old_file_dir, inType = 'str', outType = 'list')
-            new_file_name = new_file_name[-1].split('.')
-            if(len(new_file_name) == 2):
-                new_file_name = new_file_name[0]+'_copy.'+new_file_name[1] 
-            else:
-                new_file = new_file_name[0]+'_copy.'
-                for i in range(len(new_file_name)-1):
-                    new_file = new_file+'.'+new_file_name[i+1] 
-                new_file_name = new_file
-            file_dup_loc = self.joinNode(new_file_dir, new_file_name)
-
-        try: 
-            shutil.copyfile(old_file_dir, file_dup_loc)
+        try:
+            startDir = self.convertPath(objPath,"list")[-2]
         except:
-            print("[copyFile] Error: failure create copy: '"+str(new_file_name))
-            return False
+            if(self.debug):
+                print(self.space+"[__delFile__] Error: failure to find folder for object pathway\n")
+            startDir = False
 
-        if(update):            
-            utest = self.__updatePath__(self.varPath,'str')
-            if(utest):
-                return utest
-            else:
-                print("[copyFile] Error: path not updated")     
-                return False
-        else:
-            return True
+        if(startDir == self.varPath_Dirs):
+            success = self.__updatePath__(self.varPath)
+            if(not success):
+                if(self.debug):
+                    print(self.space+"[__delFile__] Error: failure to update pathway")
+        else: 
+            success = False
+         
+        return success
+    
+########################################################################################################################
+																													   #
+    def copyFile(self, objPath, newPath, fileName = None):                                                             #
+        '''                                                                                                            #
+        Description : Attempts to copy a file from the 'objPath' full pathway                                          #
+                      to the full directory pathway 'newPath', with a name                                             #
+                      given by 'fileName'                                                                              #
+																													   #
+        Input :                                                                                                        #
+																													   #
+            objPath : [string], corrosponds to only the name of the copy                                               #
+            newPath  : [string], corrosponds to the full pathway of the copied file                                    #
+            fileName  : [string] (Default : None), corrosponds to full pathway of the location of the copy             #
+																													   #
+        Output : [Bool], success                                                                                       #
+        '''                                                                                                            #
+																													   #
+        if(isinstance(objPath,(list,tuple))):                                                                          #
+            objPath = self.convertPath(objPath)                                                                        #
+            if(objPath == False):                                                                                      #
+                if(self.debug):                                                                                        #
+                    print(self.space+"[copyFile] Error: failure to convert input 'objPath' to a string\n")             #
+                return False                                                                                           #
+        elif(isinstance(objPath,str)):                                                                                 #
+            pass                                                                                                       #
+        else:                                                                                                          #
+            if(self.debug):                                                                                            #
+                print(self.space+"[copyFile] Error: 'objPath' must be either a pathway formatted string or array\n")   #
+            return False                                                                                               #
+																													   #
+        if(isinstance(newPath,(list,tuple))):                                                                          #
+            newPath = self.convertPath(newPath)                                                                        #
+            if(newPath == False):                                                                                      #
+                if(self.debug):                                                                                        #
+                    print(self.space+"[copyFile] Error: failure to convert input 'newPath' to a string\n")             #
+                return False                                                                                           #
+        elif(isinstance(newPath,str)):                                                                                 #
+            pass                                                                                                       #
+        else:                                                                                                          #
+            if(self.debug):                                                                                            #
+                print(self.space+"[copyFile] Error: 'newPath' must be either a pathway formatted string or array\n")   #
+            return False                                                                                               #
+																													   #
+        try:                                                                                                           #
+            shutil.copyfile(objPath, newPath)                                                                          #
+        except:                                                                                                        #
+            if(self.debug):                                                                                            #
+                if(not os.path.isfile(objPath)):                                                                       #
+                    print(self.space+"[copyFile] Error: 'objPath' does not point to either a file or folder\n")        #
+                if(os.path.isdir(newPath):                                                                             #
+                    print(self.space+"[copyFile] Error: 'objPath' does not point to a folder\n")                       #        
+                print(self.space+"[copyFile] Error: object could not be moved.")                                       #
+                print(self.space+"File pathway: "+str(objPath))                                                        #
+                print(self.space+"Destination pathway: "+str(newPath)+"\n")                                            #
+            return False                                                                                               #
+																													   #
+        if(update):                                                                                                    #
+            output = self.__updatePath__(self.varPath,'str')                                                           #
+        else:                                                                                                          #
+            output = True                                                                                              #
+        return output                                                                                                  #
+																													   #
+																													   #
+																													   #
+        if(inType == 'list' or inType == 'arr'):                                                                       #
+            old_file_dir = self.convertPath(old_file_dir)                                                              #
+            new_file_dir = self.convertPath(new_file_dir)                                                              #
+																													   #
+        if(new_file_name != None and isinstance(new_file_name,str)):                                                   #
+            file_dup_loc = self.joinNode(new_file_dir, new_file_name)                                                  #
+        else:                                                                                                          #
+            new_file_name = self.convertPath(old_file_dir, inType = 'str', outType = 'list')                           #
+            new_file_name = new_file_name[-1].split('.')                                                               #
+            if(len(new_file_name) == 2):                                                                               #
+                new_file_name = new_file_name[0]+'_copy.'+new_file_name[1]                                             #
+            else:                                                                                                      #
+                new_file = new_file_name[0]+'_copy.'                                                                   #
+                for i in range(len(new_file_name)-1):                                                                  #
+                    new_file = new_file+'.'+new_file_name[i+1]                                                         #
+                new_file_name = new_file                                                                               #
+            file_dup_loc = self.joinNode(new_file_dir, new_file_name)                                                  #
+																													   #
+        try:                                                                                                           #
+            shutil.copyfile(old_file_dir, file_dup_loc)                                                                #
+        except:                                                                                                        #
+            print("[copyFile] Error: failure create copy: '"+str(new_file_name))                                       #
+            return False                                                                                               #
+																													   #
+        if(update):                                                                                                    #
+            utest = self.__updatePath__(self.varPath,'str')                                                            #
+            if(utest):                                                                                                 #
+                return utest                                                                                           #
+            else:                                                                                                      #
+                print("[copyFile] Error: path not updated")                                                            #
+                return False                                                                                           #
+        else:                                                                                                          #
+            return True                                                                                                #
+																													   #
+########################################################################################################################
       
       
     def makeDir(self, newPath, inType='str', update=False):
@@ -1286,7 +1447,7 @@ class path_parse:
                     if(i in up_path_has):
                         print("Warning: '"+i+"' already exists in the namespace of the target directory, no action taken")
                         continue                     
-                    mtest = self.move(i,up_path_str)
+                    mtest = self.moveObj(i,up_path_str)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
@@ -1304,7 +1465,7 @@ class path_parse:
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue     
-                    mtest = self.move(i,path_str)
+                    mtest = self.moveObj(i,path_str)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
@@ -1322,7 +1483,7 @@ class path_parse:
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue            
-                    mtest = self.move(i,dest_path_list,str,list)
+                    mtest = self.moveObj(i,dest_path_list,str,list)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
@@ -1339,7 +1500,7 @@ class path_parse:
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue         
-                    mtest = self.move(i,dest_path_list,str,list)
+                    mtest = self.moveObj(i,dest_path_list,str,list)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
@@ -1349,7 +1510,7 @@ class path_parse:
 
             elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):  
                 destStr = self.joinNode(self.varPath,destStr)           
-                mtest = self.move(mv_file_list[0],destStr,str,str)
+                mtest = self.moveObj(mv_file_list[0],destStr,str,str)
                 if(not mtest):
                     success = False 
                     print("Error: contents of this path: '"+i+"' could not be moved")                                 
