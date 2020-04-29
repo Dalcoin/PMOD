@@ -146,12 +146,15 @@ def array_to_str(array, spc = ' ', endline = False, print_bool = True):
         out_str : A string if success, A False if failure 
     '''
     out_str = ''                          
-    for i in array:                        
+    for i,entry in enumerate(array):                        
         try:
-            out_str = out_str+str(spc)+str(i)
+            if(i == 0):
+                out_str = out_str+str(entry)
+            else: 
+                out_str = out_str+str(spc)+str(entry)
         except:
             if(print_bool):
-                print("[array_to_str] TypeError: element of 'array', or 'spc', not castable to a string")
+                print("[array_to_str] TypeError: the "+print_ordinal(i)+" element of 'array' is not castable to a string")
             return False
     if(endline):
         out_str = out_str+"\n"     
