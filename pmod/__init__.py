@@ -55,7 +55,7 @@ def pmod_help(string = ''):
 
 
 # Universal Info
-__version__ = '1.2'
+__version__ = '1.6'
 __author__  = 'Randy Millerson'
 
 
