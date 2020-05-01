@@ -135,7 +135,7 @@ def convertFunc(value, convert, round_Value = None, debug = True, space = '    '
         return False  
 
 
-def convert2File(fileName, style, header = False, newFile = False):
+def file2Convert(fileName, style, header = False, newFile = None):
     '''
 
     notes: 
@@ -143,7 +143,7 @@ def convert2File(fileName, style, header = False, newFile = False):
         fileName : the name of a eos file in the same directory as the script
         style    : see 'convert' function for possible options 
         header   : Set to True if there is a header, else keep as False 
-        newFile  : if False, the original file will be overwritten with the EoS
+        newFile  : if None, the original file will be overwritten with the EoS
                    if a string, a new file with a name equal to the string will be created and filled with the EoS
                    if True, a list of the strings corrosponding to the EoS will be returned. 
    '''
@@ -161,7 +161,7 @@ def convert2File(fileName, style, header = False, newFile = False):
 
     outLines = map(lambda x: strl.array_to_str(x,spc ='    ',endline=True), newLines)
 
-    if(newFile == False):
+    if(newFile == None):
         iop.flat_file_write(fileName,outLines)        
     elif(isinstance(newFile,str)):
         iop.flat_file_write(newFile,outLines)
