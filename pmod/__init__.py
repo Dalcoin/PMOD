@@ -15,42 +15,62 @@ Class list:
  
     module  | class
     _______ | ___________  
-    cmdline | path_parse
+    cmdline | PathParse
     mathops | spline
     zkparse | clock
 
 '''
 
-def pmod_help(string = ''):
-    __module_list__ = ['help','cmdline','ioparse','mathops','phelp','pinax','strlist','tcheck','zkparse']
+def pmod_help(string = '', printOption = True):
 
-    __doc_list__ = ["'help' returns the modules in the pmod package",
-                    "'cmdline' contains the 'path_parse' class which enables shell command line "+
+    __module_list__ = ['help',
+                       'cmdline',
+                       'ioparse',
+                       'mathops',
+                       'phelp',
+                       'pinax',
+                       'strlist',
+                       'tcheck',
+                       'zkparse']
+
+    __doc_list__ = ["'help' returns a list of the modules in the pmod package. ",
+
+                    "'cmdline' contains the 'PathParse' class which enables shell command line "+
                     "values to be passed to the '.cmd()' function, resulting in pathway and file "+
-                    "management functionality",
-                    "'ioparse' contains functions for file input/output, options include reading, "+
-                    "writing, appending and modifying the content of flat (text) files",
-                    "'mathops' contains functions for rounding numerical values as well as the "+
+                    "management functionality, a host of stand-alone functions provided within the "+
+                    "PathParse class provide additional pathway parsing and management utilities.",
+
+                    "Contains functions for file input/output, options include reading, "+
+                    "writing, appending and modifying the content of text files.",
+
+                    "Contains functions for rounding numerical values as well as the "+
                     "'spline' class for performing spline and calculus operations on 1D functions",
-                    "'phelp' contains functions for easy plotting using matplotlib",
+
+                    "'phelp' contains functions for easy plotting usage of matplotlib",
+
                     "'pinax' class contains functions for tabulating data",
-                    "'strlist' contains miscellaneous functions for parsing strings and lists",
+
+                    "'strlist' contains miscellaneous functions for parsing"+
+                    "strings and arrays(lists and tuples)",
+
                     "'tcheck' contains functions for 'TypeError' testing and printing",
+
                     "'zkparse' contains functions for time and calandar functionality, also "+
                     "contains the 'clock' class which improves time and date dependent automation"  
+
                    ]
 
     __module_doc_list__ = dict(zip(__module_list__,__doc_list__))
-    
-    try:      
-        test_string = strl.str_space_clean(string)
-    except:
-        test_string = ''
-     
-    if(test_string in __module_list__):
-        out_string = __module_doc_list__[strl.str_space_clean(string)]
+
+    if(string in __module_list__):
+        out_string = __module_doc_list__[string]
     else:
         out_string = "Input string not recognized, input the name of a module in pmod for additional info"
+       
+    if(printOption):
+        print(" ")
+        print(out_string+"\n")
+        
     return out_string
 
 
