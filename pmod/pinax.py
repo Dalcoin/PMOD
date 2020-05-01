@@ -8,15 +8,12 @@ global re_space
 
 re_space = re.compile("^\s+$")
 
-
 #######################
 #  General Functions  #
 #######################
 
-
-def __func_eprint__(msg):
-    if(True):
-        print(msg)
+def __error_print__(msg):
+    print(msg)
     return False
 
 ####################                         #################### 
@@ -116,7 +113,7 @@ def ismatrix(n, numeric = False):
     p2 = " entry of 'n'" 
 
     if(not __check__.array_test(n)):
-        return __func_eprint__("[ismatrix] Error: input 'n' is not a python array")
+        return __error_print__("[ismatrix] Error: input 'n' is not a python array")
       
     index_err = []
     err = False
@@ -152,7 +149,7 @@ def coerce_to_matrix(n, fill = 'NULL'):
      
     if(not __check__.array_test(n)):
         text = "[coerce_to_matrix] Error: input 'n' is not a python array; could not coerce to matrix"
-        return __func_eprint__(text)             
+        return __error_print__(text)             
         
     newn = list(n)
      
@@ -160,7 +157,7 @@ def coerce_to_matrix(n, fill = 'NULL'):
     for i in range(len(newn)):
         if(not __check__.array_test(newn[i])):
             text = "[coerce_to_matrix] Error: the "+__strl__.print_ordinal(i+1)+" entry in 'n' is not a python array"
-            return __func_eprint__(text)        
+            return __error_print__(text)        
         if(len(newn[i])>maxl):
             maxl = len(newn[i])
          
@@ -183,10 +180,10 @@ def table_trans(n, test_table=True, coerce=False, numeric=False, fill = 'NULL', 
         try:
             n = coerce_to_matrix(n, fill = fill)
             if(n == False):
-                return __func_eprint__("[table_trans] Error: attempt to coerce 'n' to a matrix failed")
+                return __error_print__("[table_trans] Error: attempt to coerce 'n' to a matrix failed")
             contrive = True
         except:
-            return __func_eprint__("[table_trans] Error: error occured while attempting to coerce 'n' into a matrix")
+            return __error_print__("[table_trans] Error: error occured while attempting to coerce 'n' into a matrix")
             return False
     elif(matrix_value == False):
         print("[table_trans] Error: 'n' did not pass the matrix test")
@@ -204,7 +201,7 @@ def table_trans(n, test_table=True, coerce=False, numeric=False, fill = 'NULL', 
             new_matrix.append(new_row)
             new_row=[]
     except: 
-        err = __func_eprint__("[table_trans] Error: input could not be cast into a translated matrix")
+        err = __error_print__("[table_trans] Error: input could not be cast into a translated matrix")
         return err           
 
     if(cleanup):
