@@ -45,7 +45,6 @@ This module is dependent on the following PMOD dependencies:
     directories. The class allows for pathway information to be stored and
     returned as string objects.
 
-
 '''
 
 import os
@@ -53,7 +52,6 @@ import shutil
 
 import pmod.ioparse as iop
 import pmod.strlist as strl
-
 
 class PathParse(object):
 
@@ -148,7 +146,7 @@ class PathParse(object):
             self.delim = ':'
         else:
             if(self.debug):
-                print(self.space+"[PathParse] Error: ")
+                print(self.space+"[PathParse] Error: 'varOS', "+str(self.varOS)+" not recognized\n")
             self.INIT_SET_PATH = False
 
         if(newPath == None):
@@ -790,7 +788,7 @@ class PathParse(object):
 
         self.varPath_Head = self.varPath_List[0]
         if(self.varOS == 'windows'):
-            self.varPath_Head = self.varPath_Head+"\\" 
+            self.varPath_Head = self.varPath_Head+"\\"
         self.varPath_Dir  = self.varPath_List[-1]
 
         self.varPath_Contains = self.contentPath(self.varPath,'all')
@@ -1523,7 +1521,9 @@ class PathParse(object):
             dirPath : [string], pathway of directory for which 'objName' is to be searched
             objType : [string] (Default : 'all'), type of object to be searched for
 
-        Output : [Bool], success
+        Output : False if error occurs, else a dictionary 
+                 The output dictionary contains the input object names as keys and 
+                 the truth value of their existance in the input directory as values 
         '''
 
         contents = self.contentPath(dirPath, objType=objType)
@@ -1666,7 +1666,7 @@ class PathParse(object):
 
 
     def __runFancyPrint__(self):
-        if(self.debug):
+        if(self.shellPrint):
             try:
                 ecrive = self.__fancyPrint__(self.varCol)
                 return ecrive
@@ -1773,17 +1773,17 @@ class PathParse(object):
                 return test
             
 
-        def updater(newPath, success, value):
+        def updater(newPath, value):
             utest = self.__updatePath__(newPath)                 
             success = printFunc(utest)
-            result = (success, value)
+            result = (success, (value))
             return result
 
-                
+
         def cmd_pwd(tup):
             success = True
-            cmdInst, file_list, destStr = tup
-                        
+            cmdInst, file_list, destStr = tup # allows for expanding functionality
+
             try:
                 value = self.varPath 
             except: 
@@ -1792,15 +1792,15 @@ class PathParse(object):
                 print("Error: current (path) directory pathway not found")
 
             success = printFunc(success)               
-            result = (success,value)                                       
+            result = (success,(value))                                       
             return result
-            
-             
+
+
         def cmd_ls(tup):
             success = True
-            cmdInst, file_list, destStr = tup 
+            cmdInst, file_list, destStr = tup # allows for expanding functionality
 
-            result = updater(self.varPath_List,True,'')
+            result = updater(self.varPath_List,'')
 
             try:
                 value = self.varPath_Contains
@@ -1812,36 +1812,45 @@ class PathParse(object):
             success = printFunc(success)            
             result = (success,value)
             return result
-            
-             
+
+
         def cmd_dir(tup):
             success = True            
             cmdInst, file_list, destStr = tup
                    
             new_file_list = []
+
+            values = self.__find__(file_list)
+            if(values == False):
+                if(self.debug):
+                    msg = "[dir] Error: occured when attempting to check current (path) directory for input files\n"
+                    print(self.space+msg)
+                return (False,None) 
                                        
-            for i in file_list:
-                verify = self.find(i, self.varPath)
-                if(verify):
-                    new_file_list.append(self.joinNode(self.varPath,i))
+            for entry in file_list:
+                if(values[entry]):
+                    new_file_list.append(self.joinNode(self.varPath,entry))
                 else:
-                    success = False
-                    print("Warning Error: file name, '"+i+"' not found in current (path) directory")
-            
+                    if(self.debug):
+                        msg = "[dir] Warning: file name, '"+str(entry)+"' not found in current (path) directory\n"
+                        print(self.space+msg)
             value = new_file_list
 
-            if(self.debug):
-                ptest_1 = self.__runFancyPrint__()                
-                print("Pathway string(s): " )
+            ptest_1 = self.__runFancyPrint__()
+            if(self.shellPrint):
+                print(self.space+"Pathway string(s): \n")
                 ptest_2 = self.__fancyPrintList__(new_file_list)
-                if(not ptest_1 or not ptest_2):
-                    success = False
-                    print("Error: An unknown error was raised while attempting to print...")
-            
+            else:
+                ptest_2 = True
+
+            if(not ptest_1 or not ptest_2):
+                success = False
+                print(self.space+"Error: An unknown error was raised while attempting to print...\n")
+
             result = (success,value)                
             return result
-             
-                     
+
+
         def cmd_cd(tup):
             success = True            
             value = None
@@ -1853,7 +1862,7 @@ class PathParse(object):
                     return result 
                 else:
                     up_path_list = list(self.varPath_List)[:-1]                 
-                result = updater(up_path_list, success,value)
+                result = updater(up_path_list,value)
                 return result
             
             elif(destStr in self.varPath_Contains):
@@ -1867,7 +1876,7 @@ class PathParse(object):
                     print("It appears that '"+dest_loc+"' is a file object or is corrupted")    
                     result = (success, value)
                     return result 
-                result = updater(newPath_list, success,value)
+                result = updater(newPath_list,value)
                 return result
             
             elif(destStr[0] == '/' or destStr[0] == '\\'):
@@ -1929,7 +1938,7 @@ class PathParse(object):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
 
-                result = updater(self.varPath_List,success,value)
+                result = updater(self.varPath_List,value)
                 return result     
             
             elif(destStr in self.varPath_Contains and destStr not in self.varPath_Files):                
@@ -1947,7 +1956,7 @@ class PathParse(object):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-                result = updater(self.varPath_List, success, value)
+                result = updater(self.varPath_List, value)
                 return result  
             
             elif(destStr[0] == '/' or destStr[0] == '\\'):
@@ -1965,7 +1974,7 @@ class PathParse(object):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-                result = updater(self.varPath_List, success, value)
+                result = updater(self.varPath_List, value)
                 return result  
                                       
             elif(destStr == '~'):                
@@ -1980,16 +1989,16 @@ class PathParse(object):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-                result = updater(self.varPath_List, success, value)
+                result = updater(self.varPath_List, value)
                 return result  
 
             elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):  
                 destStr = self.joinNode(self.varPath,destStr)           
                 mtest = self.moveObj(mv_file_list[0], destStr, str, str)
                 if(not mtest):
-                    success = False 
+                    success = False
                     print("Error: contents of this path: '"+i+"' could not be moved")                                 
-                result = updater(self.varPath_List, success, value)
+                result = updater(self.varPath_List, value)
                 return result  
             
             else:
@@ -2015,7 +2024,7 @@ class PathParse(object):
                 else: 
                     print("Error: '"+i+"' not found within the current (path) directory")
             
-            result = updater(self.varPath_List, success, value)
+            result = updater(self.varPath_List, value)
             return result
 
 
@@ -2042,7 +2051,7 @@ class PathParse(object):
                         success = False 
                         print("Error: contents of the path: '"+str(i)+"' could not be copied")
                                                                     
-                result = updater(self.varPath_List, success, value)
+                result = updater(self.varPath_List, value)
                 return result
                                 
             success = True            
@@ -2113,7 +2122,7 @@ class PathParse(object):
                     success = False 
                     print("Error: contents of this path: '"+i+"' could not be moved")
                                      
-            result = updater(self.varPath_List,success,value)
+            result = updater(self.varPath_List,value)
             return result  
 
         
@@ -2130,7 +2139,7 @@ class PathParse(object):
                     if(output == False):
                         success = False
 
-            result = updater(self.varPath_List,success,value)
+            result = updater(self.varPath_List,value)
             return result        
 
 
@@ -2154,7 +2163,7 @@ class PathParse(object):
                         success = False 
                         print("Error: contents of the path: '"+str(i)+"' could not be copied")
                                                                     
-                result = updater(self.varPath_List,success,value)
+                result = updater(self.varPath_List,value)
                 return result
 
                              
@@ -2298,19 +2307,19 @@ class PathParse(object):
                     print("Error: '"+file_name+"' not a file found in current (path) directory")         
                 value = None 
                 success = False
-                                 
-            result = updater(self.varPath_List,success,value)
+
+            result = updater(self.varPath_List,value)
             return result
-                     
-                            
+
+
         def cmd_help(tup):
 
-            success = True            
+            success = True
             value = None
-            cmdInst, file_list, destStr = tup 
-            
+            cmdInst, file_list, destStr = tup
+
             self.helpDict = self.documentation('help')
-               
+
             if(destStr == ''):
                 if(self.debug):
                     print(self.space+'Below is a list of valid input commands:\n')
@@ -2326,16 +2335,15 @@ class PathParse(object):
                     success = False
                     helpText = "Error: the command '"+cmd_val+"' not recognized"
 
-            if(self.debug):                   
+            if(self.debug):
                 print(helpText)
                 print('\n')
 
-            value = helpText                                      
+            value = helpText
             result = (success,value)
-            return result   
-                
-                
-            
+            return result
+
+
         ##################
         # Function: Main #
         ##################
@@ -2346,17 +2354,17 @@ class PathParse(object):
         if(not isinstance(cmd_string,str)):
             if(self.debug):
                 print(self.space+"Warning: Input must be a properly formated string ")
-                print(self.space+"Warning: No action taken, see help for more info on proper 'cmd' formatting\n")    
-            return result     
+                print(self.space+"Warning: No action taken, see help for more info on proper 'cmd' formatting\n")
+            return result
         if(cmd_string == '' or cmd_string.isspace()):
             if(self.debug):
                 print(self.space+"Warning: Input must be a properly formated string ")
-                print(self.space+"Warning: No action taken, see help for more info on proper 'cmd' formatting\n")    
-            return result    
+                print(self.space+"Warning: No action taken, see help for more info on proper 'cmd' formatting\n")
+            return result
 
-        cmd_tuple = self.__cmdInputParse__(cmd_string)   
-        cmdInst = cmd_tuple[0]        
-                                
+        cmd_tuple = self.__cmdInputParse__(cmd_string)
+        cmdInst = cmd_tuple[0]
+
         if(cmdInst == 'pwd'):               # print working directory 
             result = cmd_pwd(cmd_tuple)
 
@@ -2365,7 +2373,7 @@ class PathParse(object):
 
         elif(cmdInst == 'dir'):             # directory (pathway)
             result = cmd_dir(cmd_tuple)   
-          
+
         elif(cmdInst == 'cd'):              # change directory 
             result = cmd_cd(cmd_tuple)
 
@@ -2401,7 +2409,7 @@ class PathParse(object):
 
         elif(cmdInst == 'help'):            # help (display)
             result = cmd_help(cmd_tuple)
-              
+
         else:
             tup_str = str(cmd_tuple)
             if(self.debug or self.shellPrint):
@@ -2412,7 +2420,7 @@ class PathParse(object):
                 print(self.space+"Below is a summary of the output:")
                 print(self.space+"\n")
                 print(self.space+"'cmdInst' = '"+cmdInst+"'")
-                print(self.space+"'cmd_tuple' = '"+tup_str+"'") 
+                print(self.space+"'cmd_tuple' = '"+tup_str+"'")
                 print(self.space+'\n')
-         
-        return result 
+
+        return result
