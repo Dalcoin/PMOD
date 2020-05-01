@@ -197,71 +197,70 @@ def __list_repeat__(grab_list,file_lines,scrub):
     return raw_lines
 
 
-#################################################################
-# IOParse functions---------------------------------------------#
-#################################################################
-
+#########################
+#---IOParse functions---#
+#########################
 
 def flat_file_read(file_in, ptype='r'):
     '''
     flat_file_read(file_in, ptype='r')
 
     Description: Writes a list of strings (1 line per string) from an input file, various options for parsing
-      
+
     (e.g.) :
-    
-        flat_file_read('file.in', ptype='rb')   
+
+        flat_file_read('file.in', ptype='r')
 
     Variables:
-    
+
         'file_in': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'ptype': [*] a string in found in the 'ptype_read list'.         
+        'ptype': [*] a string in found in the 'ptype_read list'.
 
-    Output: List of Strings; Output: Success Boolean              
-     
-    '''    
+    Output: List of Strings; Output: Success Boolean
+
+    '''
 
     test = __io_opt_test__(ptype, 'read')
     if(not test):
-        return False            
+        return False
 
-    test = check.type_test_print(file_in, str, 'file_in', 'flat_file_read') 
+    test = check.type_test_print(file_in, str, 'file_in', 'flat_file_read')
     if(not test):
         return False
-  
+
     try:
         with open(file_in, ptype) as file_in:
             file_lines = file_in.readlines()
-        return file_lines 
+        return file_lines
     except:
         print("[flat_file_read] Error: File could not be read")
         __attempt_path_print__(file_in)
-        return False             
-    
+        return False
 
-def flat_file_write(file_out, add_list = [], par=False, ptype='w+'):
+
+def flat_file_write(file_out, add_list=[], par=False, ptype='w+'):
     '''
-    flat_file_write(file_out, add_list = [], par=False, ptype='w')
+    flat_file_write(file_out, add_list=[], par=False, ptype='w')
 
     Description: Writes a list of strings to an output file, various options for parsing
 
     (e.g.)
 
-        flat_file_write('file.in',["This is the first line!","This is line #2!"])
+        flat_file_write('file.in', ["This is the first line!","This is line #2!"])
 
     Variables:
-    
+
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'add_list': [*] list of strings, each string is a separate line, order denoted by the index. 
+        'add_list': [*] list of strings, each string is a separate line, order denoted by the index.
+                    if the 'add_list' is empty then an empty file is created
 
-        'ptype': [*] a string in found in the ptype_write list.         
+        'ptype': [*] a string in found in the ptype_write list.
 
-        'par': [*] True if endline character is to be added to each output string, else False. 
+        'par': [*] True if endline character is to be added to each output string, else False.
 
-    Output: Success Boolean         
-
+    Output: Success Boolean
     ''' 
 
     # Testing proper variable types
@@ -275,23 +274,23 @@ def flat_file_write(file_out, add_list = [], par=False, ptype='w+'):
     test = check.type_test_print(add_list, list, 'add_list', 'flat_file_write') 
     if(not test):
         return False
-    
+
     n=len(add_list)
-    for i in range(n):
+    for i in xrange(n):
         test = check.type_test_print(add_list[i], str, 'add_list['+str(i)+']', 'flat_file_write')
         if(not test):
-            return False           
-        
-    # Print content to file   
-    try: 
+            return False
+
+    # Print content to file
+    try:
         with open(file_out, ptype) as fout:
-            for i in add_list: 
+            for i in add_list:
                 if(par):
                     fout.write(i+"\n")
                 else:
-                    fout.write(i) 
-        return True 
-    except: 
+                    fout.write(i)
+        return True
+    except:
         print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
         __attempt_path_print__(file_out,'file_out')
         return False
