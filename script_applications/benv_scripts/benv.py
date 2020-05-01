@@ -7,6 +7,7 @@ import time
 import ioparse as iop 
 import strlist as strl 
 import cmdline as cml 
+#import cmdutil as cmu
 import mathops as mops
 
 
@@ -118,43 +119,45 @@ class benv:
 
         # internal shell command line
         self.cmv = object()   
-           
+        self.cmvutil = object()
+
         # variables
-        self.run_time = 0  
+        self.run_time = 0
 
         #initialization (optional)            
         if(initialize):
             self.INITIALIZATION = True
-             
+
             print(" ")
             print("Initialization option detected")
             print("Error messages and test results shown below")
             print("Initialization sequence will now begin...\n")
 
             try:
-                self.cmv = cml.path_parse(kernel) 
-                self.INITIAL_PATH = self.cmv.var_path
+                self.cmv = cml.PathParse(kernel)
+#                self.cmvutil = cmu.cmdUtil(self.cmv)
+                self.INITIAL_PATH = self.cmv.varPath
                 self.INTERNAL_CML_SET = True
             except:
                 print("[benv] Error: internal shell command object 'cmv' could not be created\n")
                 self.INTERNAL_CML_ERROR = True
-          
-            self.set_par_path()          
-            self.set_skvl_path()   
+
+            self.set_par_path()
+            self.set_skvl_path()
             self.set_eos_path()
             self.set_bin_dir()
-         
+
             if(self.PARSFILE_PATH_ERROR):
                 print("[benv] Error: no path found for the 'PARSFILE' file")
                 print("No attempt will be made to get values from 'PARSFILE'\n")
-            else: 
-                self.initial_pars, self.initial_vals = self.data_from_pars() 
+            else:
+                self.initial_pars, self.initial_vals = self.data_from_pars()
                 if((self.initial_pars, self.initial_vals) == ('','')):
                     print("[benv] Error: 'PARSFILE' file contains invalid formatting\n")
                     self.PAR_FORMAT_ERROR = True
                 else:
                     self.initial_pars = self.initial_pars[0]
-                
+
             try: 
                 self.initial_a, self.initial_z = strl.str_to_list(self.initial_vals[-1], filtre=True) 
                 self.initial_a = int(float(strl.str_clean(self.initial_a)))
@@ -288,11 +291,11 @@ class benv:
             print(self.s4+"[clear_data_folder] Error: Could not access data folder\n")
             return False 
           
-        if(self.cmv.var_path_list[-1] == self.DATFILE):
-            if(len(self.cmv.var_path_contain) > 0):
-                print(self.s4+"[clear_data_folder] Warning: files where found in the data file, the files will be cleared\n")
-            while(len(self.cmv.var_path_contain) > 0):
-                self.cmv.cmd("rm "+self.cmv.var_path_contain[0])
+        if(self.cmv.varPath_Dir == self.DATFILE):
+            if(len(self.cmv.varPath_Contains) > 0):
+                print(self.s4+"[clear_data_folder] Warning: files were found in the data file, the files will be cleared\n")
+            while(len(self.cmv.varPath_Contains) > 0):
+                self.cmv.cmd("rm "+self.cmv.varPath_Contains[0])
 
         success, value = self.cmv.cmd("cd ..")
         return success
@@ -306,7 +309,7 @@ class benv:
         n = len(move_List)
         
         move_String = '' 
-        if(self.DATFILE in self.cmv.var_path_contain):
+        if(self.DATFILE in self.cmv.varPath_Contains):
             
             self.cmv.cmd("cd "+self.BINFILE)
             for i,file in enumerate(move_List):
@@ -742,7 +745,7 @@ class benv:
             print(self.s4+"[pass_pars] Error: 'pars' must be an array or string")
             self.exit_function("running checks on 'pars'")
                  
-        par_file_path = self.cmv.pw_join(self.binpath,self.PAR_FILE_NAME)   
+        par_file_path = self.cmv.joinNode(self.binpath,self.PAR_FILE_NAME)   
         success = iop.flat_file_write(par_file_path,parslist) 
         if(not success):
             print(self.s4+"[pass_pars] ExitError: failure when writing the string(s): \n")
@@ -761,7 +764,7 @@ class benv:
         if(not isinstance(val_list,(list,tuple))):
             print(self.s4+"[pass_vals] Error: 'val_list' must be an array")
          
-        val_file_path = self.cmv.pw_join(self.binpath,self.VAL_FILE_NAME)  
+        val_file_path = self.cmv.joinNode(self.binpath,self.VAL_FILE_NAME)  
 
         success = iop.flat_file_write(val_file_path,val_list) 
         if(not success):
@@ -996,8 +999,8 @@ class benv:
         
         ''' 
 
-        eos_dir_path = self.cmv.pw_join(self.INITIAL_PATH,self.EOSDIR)
-        eos_file_list = self.cmv.pw_contain(eos_dir_path)
+        eos_dir_path = self.cmv.joinNode(self.INITIAL_PATH,self.EOSDIR)
+        eos_file_list = self.cmv.contentPath(eos_dir_path)
 
         if(eos_file_list == None or eos_file_list == False):
             print("[collect_eos] Error: EoS files could not be found")
@@ -1026,7 +1029,7 @@ class benv:
             strl.format_fancy(egshock,header=head_Text)                 
             
         for i in exfiles:
-            file_path = self.cmv.pw_join(eos_dir_path,i)  
+            file_path = self.cmv.joinNode(eos_dir_path,i)  
             ex = iop.flat_file_intable(file_path) 
             if(ex != False):
                 if(len(ex) != 3):
@@ -1060,10 +1063,10 @@ class benv:
                 e1name = baselist[0]+e1add+baselist[1]   
                 idbaseline = baselist[0]+baselist[1]                               
              
-            e0_file_path = self.cmv.pw_join(eos_dir_path,i)  
+            e0_file_path = self.cmv.joinNode(eos_dir_path,i)  
             if(e1name in e1files):
                 e1pack = True
-                e1_file_path = self.cmv.pw_join(eos_dir_path,e1name)     
+                e1_file_path = self.cmv.joinNode(eos_dir_path,e1name)     
 
             e0data = iop.flat_file_intable(e0_file_path)
             if(e1pack):
@@ -1183,21 +1186,21 @@ class benv:
          
         type = formatted_eos[0]  
         if(type == 0):
-            eos_path = self.cmv.pw_join(self.binpath,'ex_nxlo.don') 
+            eos_path = self.cmv.joinNode(self.binpath,'ex_nxlo.don') 
             success = iop.flat_file_write(eos_path, formatted_eos[1])  
             if(not success): 
                 print("[pass_eos] Error: when writing to 'ex_nxlo.don'")          
         elif(type == 1):
-            e0_path = self.cmv.pw_join(self.binpath,'e0_nxlo.don') 
+            e0_path = self.cmv.joinNode(self.binpath,'e0_nxlo.don') 
             success = iop.flat_file_write(e0_path, formatted_eos[1])
             if(not success): 
                 print("[pass_eos] Error: when writing to 'e0_nxlo.don'")   
-            e1_path = self.cmv.pw_join(self.binpath,'e1_nxlo.don') 
+            e1_path = self.cmv.joinNode(self.binpath,'e1_nxlo.don') 
             success = iop.flat_file_write(e1_path, formatted_eos[2])      
             if(not success): 
                 print("[pass_eos] Error: when writing to 'e1_nxlo.don'")   
         elif(type == 2):
-            e0_path = self.cmv.pw_join(self.binpath,'e0_nxlo.don') 
+            e0_path = self.cmv.joinNode(self.binpath,'e0_nxlo.don') 
             success = iop.flat_file_write(e0_path, formatted_eos[1])  
             if(not success): 
                 print("[pass_eos] Error: when writing to 'e0_nxlo.don'")                   
@@ -1220,7 +1223,7 @@ class benv:
 
         '''
                       
-        filepath = self.cmv.pw_join(self.binpath,file_Name)
+        filepath = self.cmv.joinNode(self.binpath,file_Name)
         lines = iop.flat_file_grab(filepath)
 
         if(lines == False or not isinstance(lines,list)):
@@ -1287,7 +1290,7 @@ class benv:
         if(debug):
             pass
         else:
-            if(self.cmv.var_path_list[-1] != self.BINFILE):          
+            if(self.cmv.varPath_Dir != self.BINFILE):          
                 success, output = self.cmv.cmd("cd "+self.BINFILE)
                 if(not success):
                     print("[clean_up] ExitError: failure to access "+self.BINFILE)
@@ -1525,27 +1528,25 @@ class benv:
                         ith_entry = strl.print_ordinal(str(j+1)) 
                         jth_entry = strl.print_ordinal(str(i+1))
 
-
-
-                    # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
+                    # Convert each EoS object into eos data (eos_obj) and eos id (eosid)
                     packed_format_eos_data = self.format_eos_data(eos_entry, pl=par_entry)
-                    ith_entry = strl.print_ordinal(str(i+1)) 
+                    ith_entry = strl.print_ordinal(str(i+1))
                     jth_entry = strl.print_ordinal(str(j+1))
                     if(packed_format_eos_data == False):
-                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+ith_entry+" par cycle,"                    
+                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+ith_entry+" par cycle,"
                         print(self.s4+"[benv_eos_loop] Error: "+cycle_Info_Text+" could not be formatted")
                         print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                        continue 
+                        continue
                     eos_obj,eosid = packed_format_eos_data
                     eos_instance, parline = eos_obj
-                     
+
                     # Pass the eos data to the appropriate file  
                     success = self.pass_eos(eos_instance)
-                    if(success == False): 
-                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+jth_entry+" par cycle,"                    
+                    if(success == False):
+                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+jth_entry+" par cycle,"
                         print(self.s4+"[benv_eos_loop] RuntimeError: "+cycle_Info_Text+" could not be passed to the bin folder")
                         print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                        continue 
+                        continue
 
                     # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
                     benvals = self.skval_loop(parline, data, type)
@@ -1553,22 +1554,22 @@ class benv:
                         print(self.s4+"[benv_eos_loop] Error: failure of the 'skval_loop' routine\n")
                         print(self.s4+"'skval_loop' failure occured for the "+ith_entry+" run of the loop")
                         print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                        continue 
+                        continue
 
-                # Format data returned by skavl loop routine 
+                # Format data returned by skavl loop routine
                 try:
                     formatted_benvals = self.format_skval_benv_vals(benvals)
                 except:
                     print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
                     print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
                     print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
-                    
+                    continue
+
                 if(formatted_benvals == False):
                     print(self.s4+"[benv_eos_loop] Error: failure to properly format data from 'skval_loop'\n")
                     print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
                     print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
+                    continue
 
                 if(self.eosgrup):
                     benvals_group.append((formatted_benvals,"eos_grup_"+str(jth_entry)+"_"+eosid))
@@ -1577,34 +1578,8 @@ class benv:
 
             benvals_cohort.append(benvals_group)
             benvals_group = []
-         
+
         if(reset):
             self.data_to_pars(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
-          
+
         return benvals_cohort
-
-
-
-                     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
