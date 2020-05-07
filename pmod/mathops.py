@@ -7,6 +7,7 @@ from scipy.interpolate import splint as __integ__
 from scipy.integrate import quad as __definteg__
 
 import tcheck as __check__
+import strlist as strl
 
 '''
 Functions useful for mathmatical operations and plotting, fills a void found in math and numpy
@@ -15,7 +16,7 @@ Functions useful for mathmatical operations and plotting, fills a void found in 
 
 # Rounding functions 
 
-def round_decimal(num, deci, str_bool=True):
+def round_decimal(num, deci, string=True):
     
     # round_decimal(30.112,1,True)
     
@@ -29,7 +30,7 @@ def round_decimal(num, deci, str_bool=True):
     test = __check__.type_test_print(deci,int,'deci','round_decimal')
     if(not test):
         return test 
-    test = __check__.type_test_print(str_bool,bool,'str_bool','round_decimal') 
+    test = __check__.type_test_print(string,bool,'string','round_decimal') 
     if(not test):
         return test 
     
@@ -41,7 +42,7 @@ def round_decimal(num, deci, str_bool=True):
     fm = '%.' + str(int(deci)) + 'f'
     rnum = fm % num
 
-    if(str_bool):
+    if(string):
         if(deci > 0):
             output = str(rnum)
             return output
@@ -57,7 +58,7 @@ def round_decimal(num, deci, str_bool=True):
             return output                  
 
 
-def round_scientific(num, digi, pyver = '2.7', str_bool = True):
+def round_scientific(num, digi, pyver = '2.7', string = True):
     
     # round_scientific(30.112,1,True)    
     # num: input file string
@@ -69,7 +70,7 @@ def round_scientific(num, digi, pyver = '2.7', str_bool = True):
     test = __check__.type_test_print(digi,int,'digi','round_scientific')
     if(not test):
         return test 
-    test = __check__.type_test_print(str_bool,bool,'str_bool','round_scientific') 
+    test = __check__.type_test_print(string,bool,'string','round_scientific') 
     if(not test):
         return test 
     
@@ -88,7 +89,7 @@ def round_scientific(num, digi, pyver = '2.7', str_bool = True):
         print("[round_scientific] Error: 'pyver' not recognized'")
         return False        
          
-    if(str_bool):
+    if(string):
         return str(rnum)
     else:
         return float(rnum)    
@@ -173,55 +174,64 @@ def space_format(num, spc, adjust = 'left'):
 
     def __extra_spaces__(string, extra_Spaces, adjust):
         out_Str = ''
-        adj = adjust.lower()
-        print(adj)
-        if(adj == 'left'): 
-            print(extra_Spaces)
+        adjust = adjust.lower()
+        if(adjust == 'left'):
             out_Str = extra_Spaces*' '+string
             return out_Str
-        if(adj == 'right'):
-            out_Str = string+extra_Spaces*' ' 
+        if(adjust == 'right'):
+            out_Str = string+extra_Spaces*' '
             return out_Str
-        if(adj == 'split'):
-            extra_Spaces_Right = extra_Spaces/2    
+        if(adjust == 'split'):
+            extra_Spaces_Right = extra_Spaces/2
             extra_Spaces_Left = extra_Spaces - extra_Spaces_Right
             out_Str = extra_Spaces_Left*' '+string+extra_Spaces_Right*' '
             return out_Str
-        return False 
+        return False
 
-    sci_Notation = False  
+    sci_notation = False
+    decimal = False
+    negative = False
+
     output_String = ''
     required_String = ''
-     
+
     if(not isinstance(num,str)):
-        print("[space_format] Error: 'num' must be a string")
-        return False 
+        try:
+            num = str(num)
+        except:
+            print("[space_format] Error: 'num' should be a string, input could not be coerced")
+            return False
+    num = num.lower()
 
     n = len(num)
 
-    if('e' in num or 'd' in num or 'D' in num or 'E' in num):
-        sci_Notation = True 
-      
+    if('e' in num or 'd' in num):
+        sci_notation = True
+    if('.' in num):
+        decimal = True
+    if('-' in num):
+        negative = True
 
-    if(len(num) > spc and sci_Notation == False):
-        num_List = [i for i in num]
-        if('.' in num):
-            i = 0
-            while(i <= spc-1 and i<n-1):   
-                output_String+=num_List[i]
-                i+=1              
-            if('.' in output_String):                
-                output_String = __extra_spaces__(output_String, (spc-len(output_String)), adjust)
-                return output_String 
-            else:
-                print("[space_format] Error: the input 'num' has more characters than spaces")
-                return False 
-    if(n <= spc and sci_Notation):
-        output_String = __extra_spaces__(num, (spc-n), adjust) 
+    if(spc > n):
+        output_String = __extra_spaces__(num, (spc-len(num)), adjust)
         return output_String
-     
-     
-    
+    elif(n > spc):
+        numlist = [j for i,j in enumerate(num) if i < spc]
+        output_String = strl.array_to_str(numlist,spc='')
+
+        if(sci_notation and ('e' not in output_String or 'd' not in output_String)):
+            return False
+        if(decimal and '.' not in output_String):
+            return False
+        if(negative and '.' not in output_String):
+            return False
+
+        return output_String
+    else:
+        return num
+
+
+
 def span_vec(xvec, nspan):
     '''
     Description: generates a list which spans the range of numerical 
