@@ -427,8 +427,8 @@ class benv:
 
 
                     par_String, val_String, nucleus = entry
-                    nucleus = [strl.array_to_str(az ,spc = '  ')+'\n' for az in nucleus]
-                        
+                    nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+'\n' for az in nucleus]
+    
 #                    value = (par_String, val_String)                                                               
 #                    par_String, val_String = __parval_to_string__(value)
                     
