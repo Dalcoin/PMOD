@@ -2292,16 +2292,16 @@ class PathParse(object):
                 except:
                     if(self.debug):
                         print("Error: Could not retrieve the contents of '"+file_name+"'")         
-                    value = None 
+                    value = None
                     success = False
             elif(file_name not in self.varPath_Contains):
-                try: 
-                    value = iop.flat_file_write(file_path_str) 
+                try:
+                    value = iop.flat_file_write(file_path_str)
                 except:
                     if(self.debug):
-                        print("Error: The file '"+file_name+"' could not be opened")         
-                    value = None 
-                    success = False    
+                        print("Error: The file '"+file_name+"' could not be opened")
+                    value = None
+                    success = False
             else:
                 if(self.debug):
                     print("Error: '"+file_name+"' not a file found in current (path) directory")         
