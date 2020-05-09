@@ -405,7 +405,10 @@ class benv:
 
             par_Strings = [] 
             val_Strings = []             
-                                          
+
+            val_Strings.append("NR      PR      NS    CHR      BE      SEC   A   Z\n")
+            val_Strings.append("\n")
+
             for cohort in data:
 
                 for i,group in enumerate(cohort):  
@@ -436,24 +439,35 @@ class benv:
                     val_list = [val for val in map(lambda x,y: x+y, val_String,nucleus)]
 
                     for par in par_list:
-                        par_Strings.append(par)                  
-                    for val in val_list:          
-                        val_Strings.append(val)    
+                        par_Strings.append(par)
+                    for val in val_list:
+                        val_Strings.append(val)
 
                     par_Strings.append(" \n")
-                    val_Strings.append(" \n") 
-          
+                    val_Strings.append(" \n")
 
-            output = (par_Strings, val_Strings)                      
-             
+            val_Strings.append("\n")
+            val_Strings.append("\n")
+            val_Strings.append("*Key\n")
+            val_Strings.append("\n")
+            val_Strings.append("NR  :  Neutron Radius\n")
+            val_Strings.append("PR  :  Proton  Radius\n")
+            val_Strings.append("NS  :  Neutron Skin\n")
+            val_Strings.append("CHR :  Charge  Radius\n")
+            val_Strings.append("BE  :  Binding Energy\n")
+            val_Strings.append("SEC :  Sym. Eng. Coef\n")
+            val_Strings.append("A   :  Mass    number\n")
+            val_Strings.append("Z   :  Atomic  number\n")
+
+            output = (par_Strings, val_Strings)
+
         else:
             print(self.s4+"[format_benv_data] Error: 'style' input variable not reconignized")
-            return False 
+            return False
 
         return output
 
-    
-        
+
     ##############################################################
     # functions to set the internal pathway strings used in BENV #
     ############################################################## 
@@ -467,7 +481,7 @@ class benv:
             return False         
         self.parspath = data[0]
         self.PARSFILE_PATH_SET = True
-        return True       
+        return True
      
     def set_skvl_path(self):
         success, data = self.cmv.cmd("dir "+self.SKVLFILE)
