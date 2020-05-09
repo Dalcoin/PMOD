@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import time
 
 import pmod.cmdline as cml
 import pmod.cmdutil as cmu
@@ -8,6 +9,9 @@ import pmod.ioparse as iop
 import pmod.strlist as strl
 
 '''
+
+- This script goes in the PMOD folder
+
 This script faciliates compiling binaries from source files 
 within the source folder ('src'), this is accomplished by 
 formatting and running a shell script.
@@ -344,6 +348,9 @@ def compileFunc(bin_list,
     return True
 
 
+#----------
+# example |
+#----------
 
 # Main program: test example, change "False" to "True" to actually run
 
