@@ -1,0 +1,5 @@
+Skval options
+
+ - code Mirrors
+ - test EOSgrup
+ - test EOSpars
