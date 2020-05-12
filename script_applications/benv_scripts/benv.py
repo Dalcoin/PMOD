@@ -37,13 +37,13 @@ class benv:
         self.SKVLFILE = 'skval.don'
         self.skvlpath = ''
            
-        self.EOSDIR = 'eos' 
-        self.eospath = '' 
+        self.EOSDIR = 'eos'
+        self.eospath = ''
 
         self.OPTPARS = 'opt_par.etr'
-        self.SKINVAL = 'skin.srt'  
+        self.SKINVAL = 'skin.srt'
 
-        # Regex codes 
+        # Regex codes
         DIGIT    = "(\d+)"
         DIGITSPC = DIGIT+"\s+"
         FLOATER  = "(\d+.+\d*)\s*"

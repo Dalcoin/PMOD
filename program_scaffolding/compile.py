@@ -1,12 +1,4 @@
-import sys
-import os
-import subprocess
-import time
-
-import pmod.cmdline as cml
-import pmod.cmdutil as cmu
-import pmod.ioparse as iop
-import pmod.strlist as strl
+#!/usr/bin/env python
 
 '''
 
@@ -23,9 +15,9 @@ A graphical example is shown below: this script is run within 'Main'
 'Main' --|            |
          |-- 'src'-|  |---''  <----------<------|
                    |                            |
-                   |--'aux'   <----------|-->|  |
-                   |                     |   |--| The script moves the binaries 'aux' and 'xeb_server'
-                   |--'xeb_server'  <----|-->|    into the 'bin' folder from the 'src' folder
+                   |--'bin-2'   <--------|-->|  |
+                   |                     |   |--| The script moves the binaries 'bin-1' and 'bin-2'
+                   |--'bin-1'   <--------|-->|    into the 'bin' folder from the 'src' folder
                    |                     |
                    |--'compile.sh'  -->--| 'compile.sh' creates 'aux' and 'xeb_server'
 
@@ -61,6 +53,18 @@ Output:
     Boolean: "True" if success, else "False" if failure.
 
 '''
+
+import sys
+import os
+import subprocess
+import time
+
+import pmod.cmdline as cml
+import pmod.cmdutil as cmu
+import pmod.ioparse as iop
+import pmod.strlist as strl
+
+
 
 def compileFunc(bin_list,
                 src_script = "compile.sh",
