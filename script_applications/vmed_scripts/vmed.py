@@ -5,8 +5,7 @@ import strlist as strl
 import ioparse as iop 
 import mathops as mops
 import pinax   as px  
-import cmdline as cl
-import tcheck as __check__
+import cmdline as cml
 
 '''
     --------
@@ -89,7 +88,7 @@ def jsl_entry(j,p1,p2,t):
     p1, p2 - A python numeric or string corrosponding to a numeric 
     t => {'singlet', triplet', 'V++', 'V--', 'V+-', 'V-+'}
     '''
-
+    # Future addition convert to named Tuple
     entry = (str(j),'('+str(p1)+','+str(p2)+')',str(t))
     return entry
 
@@ -135,9 +134,9 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
     for i in range(len(finalvals)):
         if(round_form == 1):
             if(round_length == None or round_length < 7):
-                sticky = mops.round_scientific(float(finalvals[i]),9,'26')
+                sticky = mops.round_scientific(float(finalvals[i]), 9, pyver='2.6')
             else:
-                sticky = mops.round_scientific(float(finalvals[i]),round_length,'26')
+                sticky = mops.round_scientific(float(finalvals[i]),round_length, pyver='2.6')
         else:
             sticky = finalvals[i]
         finalvals[i] = sticky
@@ -147,7 +146,7 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
 
 def get_contribs():
 
-    cmv = cl.path_parse('linux')
+    cmv = cml.PathParse('linux')
     
     # Get path of file storing the contribs
     success, file_path_list = cmv.cmd("dir contribs.txt")
@@ -158,7 +157,7 @@ def get_contribs():
 
     file_path_list = file_path_list[0]
 
-    lines_list = iop.flat_file_grab(file_path_list, [], scrub = True)
+    lines_list = iop.flat_file_grab(file_path_list, scrub = True)
     return lines_list
 
 
@@ -440,7 +439,7 @@ def partial_eos(file_name = None, lines = None):
         except:
             fail = True 
             print("[partial_eos] Error: could not open file: "+file_name)
-    elif(__check__.array_test(lines)):
+    elif(isinstance(lines,(list,tuple))):
         for i in range(len(lines)):
             if(not isinstance(lines[i],str)):
                 fail = True 
@@ -642,7 +641,20 @@ def mat_parline_parse(par_Lines):
                    }
                      
     return (parline_Dict, numline_Dict)  
-      
+
+
+partial_wave_dict = {
+                     '1s0' : ('0','singlet'),
+                     '3p0' : ('0','V++'),
+                     '1p1' : ('1','singlet'),
+                     '3p1' : ('1','triplet'),
+                     '3d1' : ('1','V++'),
+                     '3s1' : ('1','V--'),
+                     '3s1-3d1' : ('1','V+-'),
+                     '3d1-3s1' : ('1','V-+')
+                    }
+
+
 # Constants
      
 pi = 3.141592653589793 # pi - 16 digits 

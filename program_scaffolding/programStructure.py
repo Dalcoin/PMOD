@@ -394,7 +394,7 @@ class progStruct(object):
             return False
 
         if(fold_name in self.FOLDNAME_LIST):
-            self.FOLDPATH_DICT[fold_name] = self.cmv.joinNode(self.cmv.varPath,fold_name)
+            self.FOLDPATH_DICT[fold_name] = self.cmv.joinNode(self.DIRPATH,fold_name)
 		    self.FOLDPATH_SET_DICT[fold_name] = True
 		    self.PATH_ERROR_DICT[fold_name] = False
             return True
@@ -417,7 +417,7 @@ class progStruct(object):
             return False
 
         if(file_name in self.FILENAME_LIST):
-            self.FILEPATH_DICT[file_name] = self.cmv.joinNode(self.cmv.varPath,file_name)
+            self.FILEPATH_DICT[file_name] = self.cmv.joinNode(self.DIRPATH,file_name)
 		    self.FILEPATH_SET_DICT[file_name] = True
 		    self.FILEPATH_ERROR_DICT[file_name] = False
             return True
@@ -593,6 +593,38 @@ class progStruct(object):
     #-----------------------#----------------#-----------------------#
 
 
+    def name_compliment(self, name, comp_dict):
+
+        if(not isinstance(name,str)):
+            if(self.debug):
+                msg = self.s4+"[name_compliment] Error: input, 'name', should be a string, not a "
+                print(msg+str(type(name))+"\n")
+            return False
+
+        if(not isinstance(comp_dict,dict)):
+            if(self.debug):
+                msg = self.s4+"[name_compliment] Error: input, 'comp_dict', should be of type 'dict', not a "
+                print(msg+str(type(comp_dict))+"\n")
+            return False
+
+        add_val = None
+        for entry in comp_dict:
+            if(len(name.split(entry))==2):
+                add_val = comp_dict[entry]
+                base_val = name.split(entry)
+                break
+
+        if(add_val != None):
+            if(base_val[0] == ''):
+                new_name = add_val+base_val[1]
+                base_id = base_val[1]
+            else:
+                new_name = base_val[0]+add_val+base_val[1]
+                base_id = base_val[0]+base_val[1]
+
+        return (new_name, base_id)   
+
+
 
 
     #------------------------#----------------#------------------------#
@@ -691,16 +723,3 @@ class progStruct(object):
                 continue
 
         return True
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -77,7 +77,7 @@ for i in xrange(len(nqftest_list)):
             lines = iop.flat_file_grab('pot.d', scrub=True)        
             vals = vf.grab_jsl(lines,jsls,1)     
             for k in xrange(len(vals)):
-                vals[k] = str(mops.round_uniform(float(vals[k])*vf.vmhc, pyver = '26')) 
+                vals[k] = str(mops.round_uniform(float(vals[k])*vf.vmhc, pyver = '2.6')) 
             gp_vals.append(str(cqfi_list[j])+'  '+strl.array_to_str(vals, spc = '  '))   
         mx_vals.append(gp_vals)                  
         gp_vals = []                 
@@ -91,7 +91,7 @@ for i in xrange(len(nqftest_list)):
         lines = iop.flat_file_grab('pot.d', scrub=True)        
         vals = vf.grab_jsl(lines,jsls,1)   
         for k in xrange(len(vals)):
-            vals[k] = str(mops.round_uniform(float(vals[k])*vf.vmhc, pyver = '26')) 
+            vals[k] = str(mops.round_uniform(float(vals[k])*vf.vmhc, pyver = '2.6')) 
         mx_vals.append(str(nqftest_list[i])+'  '+strl.array_to_str(vals, spc = '  '))         
            
 for i in xrange(len(mx_vals)):    

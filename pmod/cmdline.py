@@ -80,7 +80,7 @@ class PathParse(object):
     def __init__(self,
                  osFormat,
                  newPath=None,
-                 rename=True,
+                 rename=False,
                  debug=True,
                  shellPrint=False,
                  colourPrint=True,
@@ -1026,6 +1026,11 @@ class PathParse(object):
                 if(self.debug):
                     print(self.space+"[moveObj] Error: failure to generate 'destPath' destination pathway\n")
                 return False
+        else:
+            if(isinstance(objName,str)):
+                destPath = self.joinNode(destPath,objName)
+            else:
+                destPath = destPath
 
         #Move contents of 'objPath' to the 'destPath' destination
         try:
@@ -1204,6 +1209,11 @@ class PathParse(object):
                 if(self.debug):
                     print(self.space+"[copyFile] Error: failure to generate 'destPath' destination pathway\n")
                 return False
+        else:
+            if(isinstance(objName,str)):
+                destPath = self.joinNode(destPath,objName)
+            else:
+                destPath = destPath  
 
         try:
             shutil.copyfile(filePath, destPath)
@@ -1251,9 +1261,9 @@ class PathParse(object):
  
     def makeDir(self, dirPath, dirName=None, renameOverride=None):
         '''
-        Description : Attempts to copy a file from the 'dirPath' full pathway                                          
-                      to the full directory pathway 'dirPath', with a name                                             
-                      given by 'fileName'                                                                              
+        Description : Attempts to create a folder at the full pathway string, 'dirPath'.
+                      If 'dirName' is a a string, then this string will be appended onto
+                      the pathway and used as the new folder name
 
         Input :
 
@@ -1267,13 +1277,15 @@ class PathParse(object):
             dirPath = self.convertPath(dirPath)
             if(dirPath == False):
                 if(self.debug):
-                    print(self.space+"[copyObj] Error: failure to convert input 'dirPath' to a string\n")
+                    print(self.space+"[makeDir] Error: failure to convert input 'dirPath' to a string\n")
+                    print(self.space+"[makeDir] 'dirPath' : '"+str(dirPath)+"'\n")
                 return False
         elif(isinstance(dirPath,str)):
             pass
         else:
             if(self.debug):
-                print(self.space+"[copyObj] Error: 'dirPath' must be either a pathway formatted string or array\n")
+                print(self.space+"[makeDir] Error: 'dirPath' must be either a pathway formatted string or array\n")
+                print(self.space+"[makeDir] 'dirPath' : '"+str(dirPath)+"'\n")
             return False
 
         #If 'renameOption', perform 'renamePath' operation
@@ -1289,8 +1301,14 @@ class PathParse(object):
             destPath = self.renamePath(dirPath, dirPath, objType = 'directory', objName = dirName)
             if(destPath == False):
                 if(self.debug):
-                    print(self.space+"[moveObj] Error: failure to generate 'destPath' destination pathway\n")
+                    print(self.space+"[makeDir] Error: failure to generate 'destPath' destination pathway\n")
+                    print(self.space+"[makeDir] 'dirPath' : '"+str(dirPath)+"'\n")
                 return False
+        else:
+            if(isinstance(dirName,str)):
+                destPath = self.joinNode(dirPath,dirName)
+            else:
+                destPath = dirPath  
 
         try:
             os.mkdir(destPath)
@@ -1342,7 +1360,7 @@ class PathParse(object):
 
         Input : 
 
-            delPath : [string], corrosponds to
+            delPath : [string], corrosponds to path containing directory to be deleted
 
         Output : [Bool], success
         '''
@@ -1969,35 +1987,34 @@ class PathParse(object):
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
                         continue            
-                    mtest = self.moveObj(i,dest_path_list, str,list)
+                    mtest = self.moveObj(i, dest_path_list)
                     if(not mtest):
                         success = False 
                         print("Error: contents of this path: '"+i+"' could not be moved")
-                                     
+
                 result = updater(self.varPath_List, value)
-                return result  
-                                      
-            elif(destStr == '~'):                
-                dest_path_str = self.convertPath(self.varPath_Head) 
+                return result
+
+            elif(destStr == '~'):
+                dest_path_str = self.convertPath(self.varPath_Head)
                 path_has = self.contentPath(dest_path_str)
-                for i in mv_file_list:       
+                for i in mv_file_list:
                     if(i in path_has):
                         print("Warning: '"+i+"' already exists in target directory, no action taken")
-                        continue         
-                    mtest = self.moveObj(i,dest_path_list, str, list)
+                        continue
+                    mtest = self.moveObj(i, dest_path_list)
                     if(not mtest):
-                        success = False 
+                        success = False
                         print("Error: contents of this path: '"+i+"' could not be moved")
-                                     
-                result = updater(self.varPath_List, value)
-                return result  
 
-            elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):  
-                destStr = self.joinNode(self.varPath,destStr)           
-                mtest = self.moveObj(mv_file_list[0], destStr, str, str)
+                result = updater(self.varPath_List, value)
+                return result
+
+            elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):          
+                mtest = self.moveObj(mv_file_list[0], destStr)
                 if(not mtest):
                     success = False
-                    print("Error: contents of this path: '"+i+"' could not be moved")                                 
+                    print("Error: contents of this path: '"+str(mv_file_list[0])+"' could not be moved")                                 
                 result = updater(self.varPath_List, value)
                 return result  
             
@@ -2020,9 +2037,9 @@ class PathParse(object):
                     dtest = self.delFile(file_path_str)
                     if(not dtest):
                         success = False 
-                        print("Error: contents of the path: '"+i+"' could not be deleted")
+                        print("Error: contents of the path: '"+str(i)+"' could not be deleted")
                 else: 
-                    print("Error: '"+i+"' not found within the current (path) directory")
+                    print("Error: '"+str(i)+"' not found within the current (path) directory")
             
             result = updater(self.varPath_List, value)
             return result
@@ -2120,7 +2137,7 @@ class PathParse(object):
                 ctest = self.makeDir(file_path_str)  
                 if(not ctest):
                     success = False 
-                    print("Error: contents of this path: '"+i+"' could not be moved")
+                    print(self.space+"Error: contents of this path: '"+str(i)+"' could not be moved\n")
                                      
             result = updater(self.varPath_List,value)
             return result  
@@ -2138,6 +2155,7 @@ class PathParse(object):
                     output = self.delDir(file_path_str)
                     if(output == False):
                         success = False
+                        print(self.space+"Error: contents of this folder: '"+str(i)+"' could not be deleted\n")
 
             result = updater(self.varPath_List,value)
             return result        

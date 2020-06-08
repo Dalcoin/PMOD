@@ -1,10 +1,7 @@
 import subprocess
 import re
 
-from pmod import strlist as strl
 from pmod import ioparse as iop
-from pmod import mathops as mops
-from pmod import pinax   as px
 
 from pmod import vmed as vf      # not a standard pmod file; must be added for compatability with all vmed scripts 
 

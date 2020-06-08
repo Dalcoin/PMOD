@@ -7,8 +7,7 @@ import time
 from pmod import strlist as strl
 from pmod import ioparse as iop
 from pmod import mathops as mops
-from pmod import pinax   as px
-from pmod import cmdline as cl
+from pmod import cmdline as cml
 
 from pmod import vmed as vf
 
@@ -21,11 +20,11 @@ f13n = 'fig13_v'
 # Get V groupings
 numgroup, ngroup = vf.v_group()
 
-cmv = cl.path_parse('linux')
+cmv = cml.path_parse('linux')
 success, in_path_list = cmv.cmd("dir dpot1.d")
 in_path = in_path_list[0]
 
-lines_list = iop.flat_file_grab(in_path, [])
+lines_list = iop.flat_file_grab(in_path)
 demark = lines_list[-1]
 lines_list = lines_list[:-1]
 
@@ -78,12 +77,12 @@ for i in xrange(len(numgroup)):
     filename = filename[0]
     filetable = iop.flat_file_intable(filename)    
     oneszero = filetable[1]
-    p1s0.append(str(mops.round_uniform(float(oneszero[0]), pyver='26')))   # 0.1
-    p1s0.append(str(mops.round_uniform(float(oneszero[4]), pyver='26')))   # 0.5
-    p1s0.append(str(mops.round_uniform(float(oneszero[9]), pyver='26')))   # 1.0
-    p1s0.append(str(mops.round_uniform(float(oneszero[12]), pyver='26')))  # 1.3 
-    p1s0.append(str(mops.round_uniform(float(oneszero[14]), pyver='26')))  # 1.5
-    p1s0.append(str(mops.round_uniform(float(oneszero[19]), pyver='26')))  # 2.0   
+    p1s0.append(str(mops.round_uniform(float(oneszero[0]), pyver='2.6')))   # 0.1
+    p1s0.append(str(mops.round_uniform(float(oneszero[4]), pyver='2.6')))   # 0.5
+    p1s0.append(str(mops.round_uniform(float(oneszero[9]), pyver='2.6')))   # 1.0
+    p1s0.append(str(mops.round_uniform(float(oneszero[12]), pyver='2.6')))  # 1.3 
+    p1s0.append(str(mops.round_uniform(float(oneszero[14]), pyver='2.6')))  # 1.5
+    p1s0.append(str(mops.round_uniform(float(oneszero[19]), pyver='2.6')))  # 2.0   
     p1s0.append('v'+str(numgroup[i]))
     t1s0.append(strl.array_to_str(p1s0, spc = '   ')) 
     p1s0 = []
