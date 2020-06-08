@@ -73,7 +73,30 @@ import cmdline as cml
         pf_vals_20 : integer roundings of qf_vals_20, required for vmed parsing of jsl codes  
 
         sm_vals_20 : symmetric matter densities (MeV/fm^{3}) corrosponding to fermi momenta in kf_vals_20  
-        nm_vals_20 : neutron matter densities (MeV/fm^{3}) corrosponding to fermi momenta in kf_vals_20      
+        nm_vals_20 : neutron matter densities (MeV/fm^{3}) corrosponding to fermi momenta in kf_vals_20
+
+
+Partial wave notes:
+
+Each group of the potential matrix reads: 
+
+   j (angular momentum)     x (momentum 1)    y (momentum 2)
+
+   'singlet',   triplet',   'V++',   'V--',   'V+-',   'V-+'
+
+
+For j = 0 
+
+'1s0'  'NA'  '3p0'  'NA'  'NA'  'NA'
+
+For j = 1
+
+'1p1'  '3p1'  '3d1'  '3s1'  '3s1+3d1'  '3d1+3s1'
+
+.
+.
+.
+
 '''
 
 
