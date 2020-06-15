@@ -134,7 +134,7 @@ def array_filter_spaces(array, filter_none = True):
 
 
 # array to string         
-       
+
 
 def array_to_str(array, spc = ' ', endline = False, print_bool = True):
     ''' 
