@@ -35,8 +35,8 @@ This module is dependent on the following PMOD dependencies:
 
        Consists of 'PathParse', which is a class to call commands within python
     scripts, allowing functionality in the image of Linux command-line inputs.
-    Performing manipulations of the locations of files and directories from
-    within python scripts.
+    Perform manipulations on the location of files and directories from within
+    python scripts.
     
        The main function in the class is 'cmd' : PathParse.cmd(). This
     function allows commands to be passed which, among other things, return the
@@ -69,12 +69,23 @@ class PathParse(object):
                       default .path variable.
         if [string] : the input string becomes the default .path variable
 
-    debug       = False [default] :
+    debug       = True [default] :
                   If True, debug info is printed to console, else nothing is printed
 
-    colourPrint = False [default] :
-                  If True, directory variable names are denoted by color when printing
+    colourPrint = True [default] :
+                  If True, directory variable names are denoted by color when printed
 
+
+    *Style note: ``Camel'' style names are used for this class
+                 The style dictates that first or only words in
+                 variable names are all lower-case, all proceeding
+                 other words start with a capital letter.
+
+    varPath : corrosponds to the string pointing to the current (path) directory
+              *Style note: all addition current (path) pathway information is
+              indicated by the addition of and underscore and a descriptive word
+              starting with a capital letter (e.g. files in the current (path) 
+              directory are stored as a list of strings with the variable: varPath_Files)
     '''
 
     def __init__(self,
@@ -114,7 +125,7 @@ class PathParse(object):
             .varCol     :  True for color Escape code when printing, False by default
         '''
 
-        self.INIT_SET_PATH = False
+        self.SET_INIT_PATH = False
         self.HELP_DICT_INIT = False
 
         self.cdList = ['ls', 'pwd', 'dir', 'cd', 'chdir', 'mv', 'rm', 'cp',
@@ -147,15 +158,15 @@ class PathParse(object):
         else:
             if(self.debug):
                 print(self.space+"[PathParse] Error: 'varOS', "+str(self.varOS)+" not recognized\n")
-            self.INIT_SET_PATH = False
+            self.SET_INIT_PATH = False
 
         if(newPath == None):
             try:
                 self.varPath = os.getcwd()
                 success = True
             except:
-                print(self.space+"[PathParse] Error: failure to get current pathway from OS")
-                self.INIT_SET_PATH = False
+                print(self.space+"[PathParse] Error: failure to get current pathway from OS..")
+                self.SET_INIT_PATH = False
                 success = False
         else:
             self.varPath = newPath
@@ -164,13 +175,13 @@ class PathParse(object):
         if(success):
             updateTest = self.__updatePath__(self.varPath)
             if(updateTest == False):
-                self.INIT_SET_PATH = False
+                self.SET_INIT_PATH = False
             else:
-                self.INIT_SET_PATH = True
+                self.SET_INIT_PATH = True
 
-        if(self.INIT_SET_PATH == False):
+        if(self.SET_INIT_PATH == False):
             if(self.debug):
-                print(self.space+"[PathParse] Error: initialization failed!\n")
+                print(self.space+"[PathParse] Error: Initialization failed!\n")
 
 
 
@@ -257,6 +268,26 @@ class PathParse(object):
             return self.helpDict
         else:
             return None
+
+
+    def errPrint(self, errMsg, input=False, funcAdd=None):
+        '''
+        Description: Checks if input is, or evaulates to, False
+                     and then returns and error message, if True
+                     returns True
+
+        '''
+        if(input):
+            return False
+        else:
+            if(self.debug):
+                funcStr = ''
+                if(isinstance(funcAdd,str)):
+                    funcStr = "[PP]["+funcAdd+"]"
+                else:
+                    funcStr = "[PP]"
+                print(self.space+funcStr+errMsg+"\n")
+            return True
 
 
     def __cmdInputParse__(self, string):
@@ -385,7 +416,7 @@ class PathParse(object):
         return None
 
 
-    def uniqueName(self, destPath, objName):
+    def uniqueName(self, destPath, objName, uniqueNameLimit = 500):
         '''
         Description: 
 
@@ -401,19 +432,19 @@ class PathParse(object):
                        directory, if there is overlap the
                        a indexer number will be added until
                        there is no overlap or index limit
-                       is exceeded.
+                       number is exceeded.
 
         output: A string if no error is detected, else False
         '''
 
         contents = self.contentPath(destPath)
-        if(contents == False):
-            if(self.debug):
-                print(self.space+"[uniqueName] Error: input 'destPath' must be a directory\n")
-            return False 
+        if(self.errPrint("[uniqueName] Error: input 'destPath' must be a directory",contents)): 
+            return False
 
         nameList = strl.str_to_list(objName, spc='.')
         name = ''
+
+        # Checks if there is a file ending on 'objName', if there isn't one unique name is determined
         if(len(nameList) > 1):
             pass
         elif(len(nameList) == 1):
@@ -422,34 +453,30 @@ class PathParse(object):
                 count = 1
                 outName = name
                 while(outName in contents):
-                    if(count > 500):
-                        if(self.debug):
-                            print(self.space+"[uniqueName] Error: iteration overflow, exiting function...")
+                    if(count > uniqueNameLimit):
+                        self.errPrint("[uniqueName] Error: iteration overflow, exiting function...")
                         return False                    
-                    outName = name+"("+str(count)+")"
+                    outName = name+"_"+str(count)
                     count += 1
                 return outName
             else:
-                if(self.debug):
-                    print(self.space+"[uniqueName] Error: 'objName' is empty\n")
+                self.errPrint("[uniqueName] Error: 'objName' is empty")
         else:
-            if(self.debug):
-                print(self.space+"[uniqueName] Error: 'objName' is empty\n")
+            self.errPrint("[uniqueName] Error: 'objName' is empty")
             return False
-        
+
+        # If there is a file ending attached to 'objName', the unique name is generated
         count = 1
         name = objName
+        pad = newList[-2]
         while(name in contents):
-            if(count > 500):
-                if(self.debug):
-                    print(self.space+"[uniqueName] Error: iteration overflow, exiting function...")
+            if(count > uniqueNameLimit):
+                self.errPrint("[uniqueName] Error: iteration overflow, exiting function...")
                 return False
-            newList = list(nameList)
-            newList[-2] =  newList[-2]+"("+str(count)+")"
+            newList[-2] = pad+"_"+str(count)
             name = strl.array_to_str(newList, spc='.')
             count+=1
         return name
-
 
 
     def joinNode(self, oldPath, newNode):
@@ -465,13 +492,11 @@ class PathParse(object):
         '''
 
         if(not isinstance(oldPath, str)):
-            if(self.debug):
-                print(self.space+"[joinNode] Error: 'oldPath' must be a string\n")
+            self.errPrint("[joinNode] Error: 'oldPath' must be a string, 'oldPath' : '"+str(oldPath)+"'")
             return False
 
         if(not isinstance(newNode, str)):
-            if(self.debug):
-                print(self.space+"[joinNode] Error: 'newNode' must be a string\n")
+            self.errPrint("[joinNode] Error: 'newNode' must be a string, 'newNode' : '"+str(newNode)+"'")
             return False
 
         newPath = oldPath+self.delim+newNode
@@ -492,18 +517,19 @@ class PathParse(object):
 
         oldPath = self.convertPath(oldPath, outType="list")
         if(oldPath == False):
-            if(self.debug):
-                print(self.space+"[delNode] Error: input 'oldPath' must be a string\n")
+            self.errPrint("[delNode] Error: input 'oldPath' must be a string")
             return False
 
-        if(len(oldPath) < 1):
-            if(self.debug):
-                print(self.space+"[delNode] Error: pathway is empty\n")
+        n = len(oldPath)
+
+        if(n < 1):
+            self.errPrint("[delNode] Error: pathway is empty")
             return False
-        if(len(oldPath) == 1):
-            if(self.debug):
-                print(self.space+"[delNode] Error: home directory reached, cannot delete home node\n")
-            return self.convertPath(oldPath)       
+        elif(n == 1):
+            self.errPrint("[delNode] Error: home directory reached, cannot delete home node")
+            return self.convertPath(oldPath)
+        else:
+            pass
 
         if(nodeID == -1 or nodeID == None):
             newPath = oldPath[:-1]
@@ -511,18 +537,18 @@ class PathParse(object):
             return strPath
         elif(isinstance(nodeID, int)):
             try:
-                newPath = oldPath[:-1]
+                if(nodeID != 0):
+                    newPath = oldPath[:nodeID]
+                else:
+                    newPath = oldPath
                 strPath = self.Arr2Str(newPath)
             except:
-                if(self.debug):
-                    print(self.space+"[delNode] Error: 'nodeID' : "+str(nodeID)+" out of range\n")
+                self.errPrint("[delNode] Error: 'nodeID' : "+str(nodeID)+" out of range")
                 strPath = False
             return strPath
         else:
-            if(self.debug):
-                print(self.space+"[getNode] Error: 'nodeID' not recognized\n")
+            self.errPrint("[delNode] Error: 'nodeID' not recognized")
             return False
-
         return False
 
 
@@ -530,28 +556,24 @@ class PathParse(object):
 
         pathList = self.convertPath(inPath, outType='list')
         if(pathList == False):
-            if(self.debug):
-                print(self.space+"[getNode] Error: input 'path' could not be converted to a pathway list\n")
+            self.errPrint("[getNode] Error: input 'path' could not be converted to a pathway list")
             return False
 
         if(nodeID == None or nodeID == -1):
             if(len(pathList) > 0):
                 return pathList[-1]
             else:
-                if(self.debug):
-                    print(self.space+"[getNode] Error: pathway is empty\n")
+                self.errPrint("[getNode] Error: pathway is empty")
                 return False
         elif(isinstance(nodeID, int)):
             try:
                 nodeValue = pathList[nodeID]
                 return nodeValue
             except:
-                if(self.debug):
-                    print(self.space+"[getNode] Error: node id: "+str(nodeID)+" not found\n")
+                self.errPrint("[getNode] Error: node id: "+str(nodeID)+" not found")
                 return False
         else:
-            if(self.debug):
-                print(self.space+"[getNode] Error: 'nodeID' not recognized\n")
+            self.errPrint("[getNode] Error: 'nodeID' not recognized : '"+str(nodeID)+"'")
             return False
         return False
 
@@ -559,14 +581,12 @@ class PathParse(object):
     def Arr2Str(self, inPath):
 
         if(not isinstance(inPath, (list, tuple))):
-            if(self.debug):
-                print(self.space+"[Arr2Str] Error: input 'path' must be a python array\n")
+            self.errPrint("[Arr2Str] Error: input 'path' must be a python array")
             return False
         else:
             inPath = filter(None, inPath)
             if(len(inPath) < 1):
-                if(self.debug):
-                    print(self.space+"[Arr2Str] Error: 'inPath' must contain at least one pathway entry\n")
+                self.errPrint("[Arr2Str] Error: 'inPath' must contain at least one pathway entry")
                 return False
 
         for i,dir in enumerate(inPath):
@@ -593,8 +613,7 @@ class PathParse(object):
     def Str2Arr(self, inPath):
 
         if(not isinstance(inPath,str)):
-            if(self.debug):
-                print(self.space+"[Str2Arr] Error: input 'inPath' must be a string")
+            self.errPrint("[Str2Arr] Error: input 'inPath' must be a string")
             return False
         else:
             try:
@@ -622,8 +641,7 @@ class PathParse(object):
         '''
 
         if(not isinstance(outType, str)):
-            if(self.debug):
-                print(self.space+"[convertPath] Error: 'outType' must be a string\n")
+            self.errPrint("[convertPath] Error: 'outType' must be a string")
             return False
         else:
             outType = outType.lower()
@@ -639,8 +657,7 @@ class PathParse(object):
             elif(outType in self.typeStr):
                 return self.Arr2Str(inPath)
             else:
-                if(self.debug):
-                    print(self.space+"[convertPath] Error: input 'outType' not recognized\n")
+                self.errPrint("[convertPath] Error: input 'outType' not recognized")
                 return False
 
         elif(isinstance(inPath, str)):
@@ -652,15 +669,12 @@ class PathParse(object):
                 else:
                     return tuple(self.Str2Arr(inPath))
             else:
-                if(self.debug):
-                    print(self.space+"[convertPath] Error: input 'outType' not recognized\n")
+                self.errPrint("[convertPath] Error: input 'outType' not recognized")
                 return False
         else:
-            if(self.debug):
-                print(self.space+"[convertPath] Error: input 'inPath' not a recognized type\n")
+            self.errPrint("[convertPath] Error: input 'inPath' not a recognized type")
             return False
-        if(self.debug):
-            print(self.space+"[convertPath] Error: path conversion failed; cause unknown\n")
+        self.errPrint("[convertPath] Error: path conversion failed; cause unknown")
         return False
 
 
@@ -698,8 +712,7 @@ class PathParse(object):
         elif(isinstance(inPath,(list,tuple))):
             path = self.Arr2Str(inPath)
         else:
-            if(self.debug):
-                print(self.space+"[contentPath] Error: input 'inpath' must be either an Array or Str type\n")
+            self.errPrint("[contentPath] Error: input 'inpath' must be either an Array or Str type")
             return False
         if(os.path.isdir(path) == False):
             if(self.debug):
@@ -710,8 +723,7 @@ class PathParse(object):
         if(isinstance(objType,str)):
             objType = objType.lower()
         else:
-            if(self.debug):
-                print(self.space+"[convertPath] Error: 'objType' must be a string\n")
+            self.errPrint("[convertPath] Error: 'objType' must be a string")
             return False
 
         try:
@@ -771,19 +783,16 @@ class PathParse(object):
             self.varPath = newPath
             self.varPath_List = self.Str2Arr(newPath)
             if(self.varPath_List == False):
-                if(self.debug):
-                    print(self.space+"[__updatePath__] Error: failure to convert 'newPath' to a list\n")
+                self.errPrint("[__updatePath__] Error: failure to convert 'newPath' to a list")
                 return False
         elif(isinstance(newPath,(list,tuple))):
             self.varPath = self.Arr2Str(newPath)
             if(self.varPath == False):
-                if(self.debug):
-                    print(self.space+"[__updatePath__] Error: failure to convert 'newPath' to a str\n")
+                self.errPrint("[__updatePath__] Error: failure to convert 'newPath' to a str")
                 return False
             self.varPath_List = list(newPath)
         else:
-            if(self.debug):
-                print("[__updatePath__] Error: 'newPath' not a recognized type\n")
+            self.errPrint("[__updatePath__] Error: 'newPath' not a recognized type")
             return False
 
         self.varPath_Head = self.varPath_List[0]
@@ -793,20 +802,17 @@ class PathParse(object):
 
         self.varPath_Contains = self.contentPath(self.varPath,'all')
         if(self.varPath_Contains == False):
-            if(self.debug):
-                print(self.space+"[__updatePath__] Error: failure to get contents from current pathway\n")
+            self.errPrint("[__updatePath__] Error: failure to get contents from current pathway")
             return False
 
         self.varPath_Files = self.contentPath(self.varPath,'files')
         if(self.varPath_Files == False):
-            if(self.debug):
-                print(self.space+"[__updatePath__] Error: failure to get files found in current pathway\n")
+            self.errPrint("[__updatePath__] Error: failure to get files found in current pathway")
             return False
 
         self.varPath_Folders = self.contentPath(self.varPath,'folders')
         if(self.varPath_Contains == False):
-            if(self.debug):
-                print(self.space+"[__updatePath__] Error: failure to get directories found in current pathway\n")
+            self.errPrint("[__updatePath__] Error: failure to get directories found in current pathway")
             return False
 
         return True
@@ -835,124 +841,106 @@ class PathParse(object):
             output = self.__updatePath__(newPath_list)
             return output
         else:
-            if(self.debug):
-                print(self.space+"[__climbPath__] Warning: Directory "+node+" not found in current (path) hierarchy\n")
+            self.errPrint("[__climbPath__] Warning: Directory "+node+" not found in current (path) hierarchy")
             return False
         return True
 
 
-    def renamePath(self, originPath, destPath, objType, objName = None):
+    def renamePath(self, originPath, destPath, objName=None, climbPath=False):
         '''
-        Description : Takes an input path and an output path along with the
-                      object's name and the object's type. The input path is
-                      the original path of the object. The output path is the
-                      new path to which the object will be transfered. From
-                      the original path the object's original name can
-                      be determined. If the object's name is a string then
-                      that string will be used when determining the new path
-                      of the object, else the original name will be used.
-                      Object type will be used to determine if the object's
-                      type matches the one found at the original location.
+        Description : Takes an input pathway and an destination pathway along 
+                      options for the object's name and climbing pathway if
+                      destination path terminates with a non-folder object.
+
+                      The final node of the input pathway determines the original
+                      name of the object. If 'objName' is a string then the new
+                      path of the object will replace the object's original name
+
+        Usage: This function is useful when working with the pathways of objects
+               to be moved or copied between directories; ensures that the no
+               error will occured due to duplicated file names
 
         Input :
 
             originPath : [string], A complete object pathway, the final node may be either a file or directory
-            destPath   : [string], A directory pathway, the final node must be a directory
+            destPath   : [string], A directory pathway for the destination, the final node must be a directory
+            objName    : [string] (None), If a string, this string will be the final node in 'newPath' output
+            climbPath  : [bool] (False), If true then if 'destPath' does have a directory as the final node,
+                                         the node will be climbed unitil a directory is found or the home
+                                         directory is reached
 
         Output : [Bool], success
         '''
 
-        objDirTest = False
-        objFileTest = False
+        def __create_path__(novPath, novName):
 
-        if(not isinstance(objType,str)):
-            objType = 'all'
-        else:
-            objType = objType.lower()
-
-        if(objType in self.dirNames):
-            if(os.path.isdir(originPath)):
-                objDirTest = True
-            else:
-                if(self.debug):
-                    print(self.space+"[renamePath] Error: 'originPath' does not point to a directory\n")
-                    print(self.space+"File pathway: "+str(originPath)+'\n')
+            dNode = self.uniqueName(novPath, novName)
+            if(dNode == False):
+                errPrint("[renamePath][__create_path__] Error: Failure to generate a unique name from input path")
                 return False
-        elif(objType in self.fileNames):
-            if(os.path.isfile(originPath)):
-                objFileTest = True
-            else:
-                if(self.debug):
-                    print(self.space+"[renamePath] Error: 'originPath' does not point to a file\n")
-                    print(self.space+"File pathway: "+str(originPath)+'\n')
-                return False
-        elif(objType == 'all'):
-            if(os.path.isdir(originPath)):
-                objDirTest = True
-            elif(os.path.isfile(originPath)):
-                objFileTest = True
-            else:
-                if(self.debug):
-                    print(self.space+"[renamePath] Error: 'originPath' must either be a file or directory\n")
-                return False
-        else:
-            if(self.debug):
-                print(self.space+"[renamePath] Error: 'objType' not recognized\n")
-            return False
+            return self.joinNode(novPath, dNode)
 
 
         destNode = self.getNode(originPath)
+        originPath = self.convertPath(originPath)
+        destPath = self.convertPath(destPath)
+
         if(destNode == False):
-            if(self.debug):
-                print(self.space+"[renamePath] Error: could not get node from 'originPath'\n")
+            self.errPrint("[renamePath] Error: could not get terminating node from 'originPath'")
             return False
 
+        # If the objName variable is changed to a string 
         if(isinstance(objName,str)):
             if(os.path.isdir(destPath)):
                 pass
             else:
                 if(self.debug):
-                    print(self.space+"[renamePath] Error: 'destPath' does not point to a directory")
-                    print(self.space+"If the 'objName' is set, then the 'destPath' pathway must point to a directory\n")
-                    print(self.space+"Pathway: "+str(destPath)+'\n')
+                    print(self.space+"[PP][renamePath] Error: 'destPath' does not point to a directory")
+                    print(self.space+"If 'objName' is set, then the 'destPath' pathway must point to a directory")
+                    print(self.space+"'destPath': "+str(destPath)+'\n')
                 return False
-            destNode = self.uniqueName(destPath,objName)
-            newPath = self.joinNode(destPath,destNode)
+
+            newPath = __create_path__(destPath, objName)
             if(newPath == False):
-                if(self.debug):
-                    print(self.space+"[renamePath] Error: 'objName' could not be established\n")
-                return False
+                self.errPrint("[renamePath] Error: new pathway could not be established")
             return newPath
+
+        # Default method: will attempt to establish a unique pathway 
         else:
             if(os.path.isdir(destPath)):
-                destNode = self.uniqueName(destPath,destNode)
-                newPath = self.joinNode(destPath,destNode)
+                newPath = __create_path__(destPath, destNode)
                 if(newPath == False):
-                    if(self.debug):
-                        print(self.space+"[renamePath] Error: could add directory name node to 'destPath'\n")
-                    return False
+                    self.errPrint("[renamePath] Error: new pathway could not be established")
                 return newPath
-            else:
+
+            # climbPath option----
+            if(climbPath):
                 parentPath = self.delNode(destPath)
 
-                if(parentPath == False):
-                    if(self.debug):
-                        print(self.space+"[renamePath] Error: could not move up the 'destPath' pathway\n")
-                    return False
-
-                if(os.path.isdir(parentPath)):
-                    destNode = self.uniqueName(parentPath,destNode)
-                    newPath = self.joinNode(parentPath,destNode)
-                    if(newPath == False):
-                        if(self.debug):
-                            print(self.space+"[renamePath] Error: could add directory name node to 'destPath'\n")
+                while(self.convertPath(parentPath) != self.varPath_Head):
+			    
+                    if(parentPath == False):
+                        self.errPrint("[renamePath] Error: could not move up the 'destPath' pathway")
                         return False
-                    return newPath
-                else:
-                    if(self.debug):
-                        print(self.space+"[renamePath] Error: 'destPath' does not point to a valid pathway destination")
-                        print(self.space+"Pathway: "+str(destPath)+'\n')
-                    return False
+			        
+                    if(os.path.isdir(parentPath)):
+                        destNode = self.uniqueName(parentPath,destNode)
+                        newPath = self.joinNode(parentPath,destNode)
+                        if(newPath == False):
+                            self.errPrint("[renamePath] Error: could add directory name node to 'destPath'")
+                            return False
+                        return newPath
+                    else:
+                        if(self.debug):
+                            print(self.space+"[PP][renamePath] Error: 'destPath' does not point to a valid pathway destination")
+                            print(self.space+"'destPath': "+str(destPath)+'\n')
+
+                    parentPath = self.delNode(parentPath)
+
+                self.errPrint("[renamePath] Error: couldn't find valid destination before 'home' directory")
+
+            self.errPrint("[renamePath] Error: 'destPath' does not point to a valid pathway destination")
+
         return False
 
 
@@ -987,28 +975,24 @@ class PathParse(object):
         if(isinstance(objPath,(list,tuple))):
             objPath = self.convertPath(objPath)
             if(objPath == False):
-                if(self.debug):
-                    print(self.space+"[moveObj] Error: failure to convert input 'objPath' to a string\n")
+                self.errPrint("[moveObj] Error: failure to convert input 'objPath' to a string")
                 return False
         elif(isinstance(objPath,str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[moveObj] Error: 'objPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[moveObj] Error: 'objPath' must be either a pathway formatted string or array")
             return False
 
         #Parse destination pathway into the string format
         if(isinstance(destPath,(list,tuple))):
             destPath = self.convertPath(destPath)
             if(destPath == False):
-                if(self.debug):
-                    print(self.space+"[moveObj] Error: failure to convert input 'destPath' to a string\n")
+                self.errPrint("[moveObj] Error: failure to convert input 'destPath' to a string")
                 return False
         elif(isinstance(destPath,str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[moveObj] Error: 'destPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[moveObj] Error: 'destPath' must be either a pathway formatted string or array")
             return False
 
         #If 'renameOption', perform 'renamePath' operation
@@ -1023,8 +1007,7 @@ class PathParse(object):
         if(renameOption):
             destPath = self.renamePath(objPath, destPath, objType = 'all', objName = objName)
             if(destPath == False):
-                if(self.debug):
-                    print(self.space+"[moveObj] Error: failure to generate 'destPath' destination pathway\n")
+                self.errPrint("[moveObj] Error: failure to generate 'destPath' destination pathway")
                 return False
         else:
             if(isinstance(objName,str)):
@@ -1051,28 +1034,24 @@ class PathParse(object):
 
         success = self.moveObj(objPath, newPath, objName=objName, renameOverride=renameOverride)
         if(not success):
-            if(self.debug):
-                print(self.space+"[__moveObj__] Error: failure to perform move operation")
+            self.errPrint("[__moveObj__] Error: failure to perform move operation")
             return success
 
         try:
             startDir = self.convertPath(objPath,"list")[-2]
         except:
-            if(self.debug):
-                print(self.space+"[__moveObj__] Error: failure to find folder for object pathway\n")
+            self.errPrint("[__moveObj__] Error: failure to find folder for object pathway")
             startDir = False
         try:
             finalDir = self.convertPath(newPath,"list")[-1]
         except:
-            if(self.debug):
-                print(self.space+"[__moveObj__] Error: failure to find folder for new pathway\n")
+            self.errPrint("[__moveObj__] Error: failure to find folder for new pathway")
             finalDir = False
 
         if(startDir == self.varPath_Dir or finalDir == self.varPath_Dir):
             success = self.__updatePath__(self.varPath)
             if(not success):
-                if(self.debug):
-                    print(self.space+"[__moveObj__] Error: failure to update pathway")
+                self.errPrint("[__moveObj__] Error: failure to update pathway")
         else:
             success = False
 
@@ -1096,14 +1075,12 @@ class PathParse(object):
         if(isinstance(delPath,(list,tuple))):
             delPath = self.convertPath(delPath)
             if(delPath == False):
-                if(self.debug):
-                    print(self.space+"[delFile] Error: failure to convert input 'delPath' to a string\n")
+                self.errPrint("[delFile] Error: failure to convert input 'delPath' to a string")
                 return False
         elif(isinstance(delPath,str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[delFile] Error: 'delPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[delFile] Error: 'delPath' must be either a pathway formatted string or array")
             return False
 
         if(os.path.isfile(delPath)):
@@ -1128,22 +1105,19 @@ class PathParse(object):
 
         success = self.delFile(delPath)
         if(not success):
-            if(self.debug):
-                print(self.space+"[__delFile__] Error: failure to perform move operation")
+            self.errPrint("[__delFile__] Error: failure to perform move operation")
             return success
 
         try:
             startDir = self.convertPath(delPath,"list")[-2]
         except:
-            if(self.debug):
-                print(self.space+"[__delFile__] Error: failure to find folder for object pathway\n")
+            self.errPrint("[__delFile__] Error: failure to find folder for object pathway")
             startDir = False
 
         if(startDir == self.varPath_Dir):
             success = self.__updatePath__(self.varPath)
             if(not success):
-                if(self.debug):
-                    print(self.space+"[__delFile__] Error: failure to update pathway")
+                self.errPrint("[__delFile__] Error: failure to update pathway")
         else:
             success = False
 
@@ -1171,27 +1145,23 @@ class PathParse(object):
         if(isinstance(filePath,(list,tuple))):
             filePath = self.convertPath(filePath)
             if(filePath == False):
-                if(self.debug):                                                                                        
-                    print(self.space+"[copyFile] Error: failure to convert input 'filePath' to a string\n")
+                self.errPrint("[copyFile] Error: failure to convert input 'filePath' to a string")
                 return False
         elif(isinstance(filePath,str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[copyFile] Error: 'filePath' must be either a pathway formatted string or array\n")
+            self.errPrint("[copyFile] Error: 'filePath' must be either a pathway formatted string or array")
             return False
 
         if(isinstance(destPath, (list, tuple))):
             destPath = self.convertPath(destPath)
             if(destPath == False):
-                if(self.debug):
-                    print(self.space+"[copyFile] Error: failure to convert input 'destPath' to a string\n")
+                self.errPrint("[copyFile] Error: failure to convert input 'destPath' to a string")
                 return False
         elif(isinstance(destPath,str)):                                                                                 
             pass
         else:
-            if(self.debug):
-                print(self.space+"[copyFile] Error: 'destPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[copyFile] Error: 'destPath' must be either a pathway formatted string or array")
             return False
 
         #If 'renameOption', perform 'renamePath' operation
@@ -1206,8 +1176,7 @@ class PathParse(object):
         if(renameOption):
             destPath = self.renamePath(filePath, destPath, objType='file', objName=objName)
             if(destPath == False):
-                if(self.debug):
-                    print(self.space+"[copyFile] Error: failure to generate 'destPath' destination pathway\n")
+                self.errPrint("[copyFile] Error: failure to generate 'destPath' destination pathway")
                 return False
         else:
             if(isinstance(objName,str)):
@@ -1231,8 +1200,7 @@ class PathParse(object):
 
         success = self.copyFile(objPath, newPath, objName=objName, renameOverride=renameOverride)
         if(not success):
-            if(self.debug):
-                print(self.space+"[__copyFile__] Error: failure to perform move operation")
+            self.errPrint("[__copyFile__] Error: failure to perform move operation")
             return success
 
         try:
@@ -1241,15 +1209,13 @@ class PathParse(object):
             else:
                 startDir = self.convertPath(objPath, "list")[-2]
         except:
-            if(self.debug):
-                print(self.space+"[__copyFile__] Error: failure to find folder for object pathway\n")
+            self.errPrint("[__copyFile__] Error: failure to find folder for object pathway")
             startDir = False
 
         if(startDir == self.varPath_Dir):
             success = self.__updatePath__(self.varPath)
             if(not success):
-                if(self.debug):
-                    print(self.space+"[__copyFile__] Error: failure to update pathway")
+                self.errPrint("[__copyFile__] Error: failure to update pathway")
         else:
             success = False
 
@@ -1324,8 +1290,7 @@ class PathParse(object):
 
         success = self.makeDir(self, dirPath, dirName=dirName, renameOverride=renameOverride)
         if(not success):
-            if(self.debug):
-                print(self.space+"[__makeDir__] Error: failure to perform move operation")
+            self.errPrint("[__makeDir__] Error: failure to perform move operation")
             return success
 
         try:
@@ -1334,16 +1299,14 @@ class PathParse(object):
             else:
                 newDir = self.convertPath(dirPath,"list")[-2]
         except:
-            if(self.debug):
-                print(self.space+"[__makeDir__] Error: failure to find new pathway directory\n")
+            self.errPrint("[__makeDir__] Error: failure to find new pathway directory")
             success = False
             newDir = False
 
         if(newDir == self.varPath_Dir):
             success = self.__updatePath__(self.varPath)
             if(not success):
-                if(self.debug):
-                    print(self.space+"[__makeDir__] Error: failure to update pathway")
+                self.errPrint("[__makeDir__] Error: failure to update pathway")
         else:
             success = True
 
@@ -1367,14 +1330,12 @@ class PathParse(object):
         if(isinstance(delPath,(list,tuple))):
             delPath = self.convertPath(delPath)
             if(delPath == False):
-                if(self.debug):
-                    print(self.space+"[delDir] Error: failure to convert input 'delPath' to a string\n")
+                self.errPrint("[delDir] Error: failure to convert input 'delPath' to a string")
                 return False
         elif(isinstance(delPath,str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[delDir] Error: 'delPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[delDir] Error: 'delPath' must be either a pathway formatted string or array")
             return False
 
         if(os.path.isdir(delPath)):
@@ -1407,15 +1368,13 @@ class PathParse(object):
         try:
             startDir = self.convertPath(delPath,"list")[-2]
         except:
-            if(self.debug):
-                print(self.space+"[__delDir__] Error: failure to find folder for object pathway\n")
+            self.errPrint("[__delDir__] Error: failure to find folder for object pathway")
             startDir = False
 
         if(startDir == self.varPath_Dir):
             success = self.__updatePath__(self.varPath)
             if(not success):
-                if(self.debug):
-                    print(self.space+"[__delDir__] Error: failure to update pathway")
+                self.errPrint("[__delDir__] Error: failure to update pathway")
         else:
             success = False
 
@@ -1446,27 +1405,23 @@ class PathParse(object):
         if(isinstance(dirPath,(list, tuple))):
             dirPath = self.convertPath(dirPath)
             if(dirPath == False):
-                if(self.debug):
-                    print(self.space+"[copyFile] Error: failure to convert input 'dirPath' to a string\n")
+                self.errPrint("[copyFile] Error: failure to convert input 'dirPath' to a string")
                 return False
         elif(isinstance(dirPath,str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[copyFile] Error: 'dirPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[copyFile] Error: 'dirPath' must be either a pathway formatted string or array")
             return False
 
         if(isinstance(destPath, (list, tuple))):
             destPath = self.convertPath(destPath)
             if(destPath == False):
-                if(self.debug):
-                    print(self.space+"[copyFile] Error: failure to convert input 'destPath' to a string\n")
+                self.errPrint("[copyFile] Error: failure to convert input 'destPath' to a string")
                 return False
         elif(isinstance(destPath, str)):
             pass
         else:
-            if(self.debug):
-                print(self.space+"[copyFile] Error: 'destPath' must be either a pathway formatted string or array\n")
+            self.errPrint("[copyFile] Error: 'destPath' must be either a pathway formatted string or array")
             return False
 
         #If 'renameOption', perform 'renamePath' operation
@@ -1481,17 +1436,16 @@ class PathParse(object):
         if(renameOption):
             destPath = self.renamePath(dirPath, destPath, objType='all', objName=dirName)
             if(destPath == False):
-                if(self.debug):
-                    print(self.space+"[moveObj] Error: failure to generate 'destPath' destination pathway\n")
+                self.errPrint("[PP][moveObj] Error: failure to generate 'destPath' destination pathway")
                 return False
 
         try:
             shutil.copyfile(dirPath, destPath)
         except:
             if(self.debug):
-                print(self.space+"[copyDir] Error: directory could not be copied.")
-                print(self.space+"Directory pathway: "+str(dirPath))
-                print(self.space+"Destination pathway: "+str(destPath)+"\n")
+                print(self.space+"[PP][copyDir] Error: directory could not be copied.")
+                print(self.space+"Directory pathway, 'dirPath': "+str(dirPath))
+                print(self.space+"Destination pathway, 'destPath': "+str(destPath)+"\n")
             return False
         return True
 
@@ -1500,8 +1454,7 @@ class PathParse(object):
 
         success = self.copyDir(dirPath, destPath, dirName=dirName, renameOverride=renameOverride)
         if(not success):
-            if(self.debug):
-                print(self.space+"[__copyDir__] Error: failure to perform move operation\n")
+            self.errPrint("[__copyDir__] Error: failure to perform move operation")
             return success
 
         try:
@@ -1510,15 +1463,13 @@ class PathParse(object):
             else:
                 startDir = self.convertPath(destPath, "list")[-2]
         except:
-            if(self.debug):
-                print(self.space+"[__copyDir__] Error: failure to find folder for object pathway\n")
+            self.errPrint("[__copyDir__] Error: failure to find folder for object pathway")
             startDir = False
 
         if(startDir == self.varPath_Dir):
             success = self.__updatePath__(self.varPath)
             if(not success):
-                if(self.debug):
-                    print(self.space+"[__copyDir__] Error: failure to update pathway\n")
+                self.errPrint("[__copyDir__] Error: failure to update pathway")
         else:
             success = False
 
@@ -1546,8 +1497,7 @@ class PathParse(object):
 
         contents = self.contentPath(dirPath, objType=objType)
         if(contents == False):
-            if(self.debug):
-                print(self.space+"[find] Error: failure to get contents of pathway 'dirPath'\n")
+            self.errPrint("[find] Error: failure to get contents of pathway 'dirPath'")
             return False
 
         if(isinstance(objName, str)):
@@ -1566,8 +1516,7 @@ class PathParse(object):
                 outDict[obj] = within
             return outDict
         else:
-            if(self.debug):
-                print(self.space+"[find] Error: input 'objName' must be either a string or an array\n")
+            self.errPrint("[find] Error: input 'objName' must be either a string or an array")
             return False
         return False
 
@@ -1575,8 +1524,7 @@ class PathParse(object):
 
         outDict = self.find(objName, self.varPath, objType=objType)
         if(outDict == False):
-            if(self.debug):
-                print(self.space+"[__find__] Error: failure to perform internal 'find' operation")
+            self.errPrint("[__find__] Error: failure to perform internal 'find' operation")
             return False
         else:
             return outDict
@@ -1601,8 +1549,7 @@ class PathParse(object):
 
         contents = self.contentPath(dirPath, objType=objType)
         if(contents == False):
-            if(self.debug):
-                print(self.space+"[match] Error: failure to get contents of pathway 'dirPath'\n")
+            self.errPrint("[match] Error: failure to get contents of pathway 'dirPath'")
             return False
 
         if(isinstance(fragment, str)):
@@ -1621,8 +1568,7 @@ class PathParse(object):
                 outDict[frag] = capList
             return outDict
         else:
-            if(self.debug):
-                print(self.space+"[match] Error: input 'fragment' must be either a string or an array\n")
+            self.errPrint("[match] Error: input 'fragment' must be either a string or an array")
             return False
         return False
 
@@ -1630,8 +1576,7 @@ class PathParse(object):
 
         outDict = self.match(fragment, self.varPath, objType=objType)
         if(outDict == False):
-            if(self.debug):
-                print(self.space+"[__match__] Error: failure to perform internal 'match' operation")
+            self.errPrint("[__match__] Error: failure to perform internal 'match' operation")
             return False
         else:
             return outDict
@@ -1684,7 +1629,7 @@ class PathParse(object):
 
 
     def __runFancyPrint__(self):
-        if(self.shellPrint):
+        if(self.shellPrint and self.debug):
             try:
                 ecrive = self.__fancyPrint__(self.varCol)
                 return ecrive
@@ -1769,27 +1714,22 @@ class PathParse(object):
 
         def headCheck():                  
             if(len(self.varPath_List) == 1):
-                if(self.debug):                        
-                    print(self.space+"[cmd] Warning: No remaining parent directories left\n")
+                self.errPrint("[headCheck] Warning: No remaining parent directories left", funcAdd = 'cmd')
                 return True
             else:
                 return False
 
         def printFunc(test):
             success = True
-            if(self.debug):
-                if(test):
-                    ptest = self.__runFancyPrint__()
-                    if(not ptest):
-                        success = False 
-                        print(self.space+"[cmd] Error: An unknown error was raised while attempting to print...\n")
-                else:
-                    print(self.space+"[cmd] Error: Failure while updating current path\n")
+            if(test):
+                ptest = self.__runFancyPrint__()
+                if(not ptest):
                     success = False
-                return success
+                    self.errPrint("[printFunc] Error occured while attempting to print...", funcAdd = 'cmd')
             else:
-                return test
-            
+                self.errPrint("[printFunc] Error: Failure while updating current path", funcAdd = 'cmd')
+                success = False
+            return success
 
         def updater(newPath, value):
             utest = self.__updatePath__(newPath)                 
@@ -1807,7 +1747,7 @@ class PathParse(object):
             except: 
                 value = None
                 success = False
-                print("Error: current (path) directory pathway not found")
+                self.errPrint("[cmd_pwd] Error: current (path) directory pathway not found", funcAdd = 'cmd')
 
             success = printFunc(success)               
             result = (success,(value))                                       
