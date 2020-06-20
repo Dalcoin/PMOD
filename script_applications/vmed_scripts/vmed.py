@@ -249,45 +249,76 @@ def v_lines():
     return vlineslist
 
 
-
-
 def v_group():
 
-    # Get contrib lines 
+    vnline = '\D+\s+v(\d+\d*)\s+'
+    vnlinec = re.compile(vnline)
 
-    lines_list = get_contribs()
+    # Get contrib lines as group
+    lines_list = v_lines()
     if(lines_list == False):
         return False
-    
-    # Pair up V line with fun. line 
-    main = strl.array_nth_index(lines_list, 2)
-    comp = strl.array_nth_index(lines_list, 2, True)
-    paired = map(lambda x,y: [x,y], main,comp)
-        
-    ### Group V contribs by number
-    ngroup = []
-    lngroup = []
+
+    # Pair up V line with fun. line
     numgroup = []
+    lngroup = []
+    ngroup = []
+
     setn = -1
-    for i in paired:
-        get = i[0]
-        vn = strl.str_to_list(get,filtre=True)[1]
-        num = int(vn[1:])
-        if(setn == num):
-            lngroup.append(i)
+    for line in lines_list:
+        vn = vnlinec.findall(line[0])[0]
+        vn = int(vn)
+        if(setn == vn):
+            lngroup.append(line)
         else:
-            numgroup.append(num)
+            numgroup.append(vn)
             ngroup.append(lngroup)
             lngroup = []
-            lngroup.append(i)
-            setn = num        
+            lngroup.append(line)
+            setn = vn
     ngroup.append(lngroup)
     ngroup = filter(None,ngroup)
-    
-    for i in range(len(ngroup)):
-        ngroup[i] = strl.array_flatten(ngroup[i],safety=False)    
 
     return numgroup, ngroup
+
+
+#def v_group():
+#
+#    # Get contrib lines 
+#
+#    lines_list = get_contribs()
+#    if(lines_list == False):
+#        return False
+#    
+#    # Pair up V line with fun. line 
+#    main = strl.array_nth_index(lines_list, 2)
+#    comp = strl.array_nth_index(lines_list, 2, True)
+#    paired = map(lambda x,y: [x,y], main,comp)
+#        
+#    ### Group V contribs by number
+#    ngroup = []
+#    lngroup = []
+#    numgroup = []
+#    setn = -1
+#    for i in paired:
+#        get = i[0]
+#        vn = strl.str_to_list(get,filtre=True)[1]
+#        num = int(vn[1:])
+#        if(setn == num):
+#            lngroup.append(i)
+#        else:
+#            numgroup.append(num)
+#            ngroup.append(lngroup)
+#            lngroup = []
+#            lngroup.append(i)
+#            setn = num        
+#    ngroup.append(lngroup)
+#    ngroup = filter(None,ngroup)
+#    
+#    for i in range(len(ngroup)):
+#        ngroup[i] = strl.array_flatten(ngroup[i],safety=False)    
+#
+#    return numgroup, ngroup
 
 
 def gen_table_12_13(lines):

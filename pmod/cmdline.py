@@ -818,6 +818,40 @@ class PathParse(object):
         return True
 
 
+    def climbPath(self, path, node):
+        '''
+        Description : if 'node' is a node in the default (current) pathway
+                      that the default (current) pathway directory is moved to
+
+        Input:
+
+            'node' : [string], corrosponding to a node within the current pathway
+
+        The overhead and updating of class path info is taken care of with this function
+        '''
+
+        if(isinstance(path,str)):
+            path = convertPath(path, outType='list')
+        elif(isinstance(path,(list,tuple))):
+            pass
+        else:
+            self.errPrint("[climbPath] Error: input, '"+str(path)+"' must be a string")
+            return False
+
+        newPath_List = []
+        if(node in path):
+            for entry in path:
+                if(entry != node):
+                    newPath_List.append(entry)
+                else:
+                    break
+            newPath_List.append(node)
+            return newPath_List
+        else:
+            self.errPrint("[climbPath] Warning: Directory, '"+node+"', not found in 'path' hierarchy")
+            return False
+
+
     def __climbPath__(self, node):
         '''
         Description : if 'node' is a node in the default (current) pathway
@@ -829,24 +863,16 @@ class PathParse(object):
 
         The overhead and updating of class path info is taken care of with this function
         '''
-        newPath_list = []
-        if(node in self.varPath_List):
 
-            for entry in self.varPath_List:
-                if(entry != node):
-                    newPath_list.append(entry)
-                else:
-                    break
-            newPath_list.append(node)
-            output = self.__updatePath__(newPath_list)
-            return output
-        else:
-            self.errPrint("[__climbPath__] Warning: Directory "+node+" not found in current (path) hierarchy")
-            return False
-        return True
+        newPath_List = self.climbPath(self.varPath_List, node)
+        if(newPath_List == False):
+            return newPath_List
+
+        output = self.__updatePath__(newPath_List)
+        return output
 
 
-    def renamePath(self, originPath, destPath, objName=None, climbPath=False):
+    def renamePath(self, originPath, destPath, objName=None, climbPath_Opt=False):
         '''
         Description : Takes an input pathway and an destination pathway along 
                       options for the object's name and climbing pathway if
@@ -865,7 +891,7 @@ class PathParse(object):
             originPath : [string], A complete object pathway, the final node may be either a file or directory
             destPath   : [string], A directory pathway for the destination, the final node must be a directory
             objName    : [string] (None), If a string, this string will be the final node in 'newPath' output
-            climbPath  : [bool] (False), If true then if 'destPath' does have a directory as the final node,
+            climbPath_Opt  : [bool] (False), If true then if 'destPath' does have a directory as the final node,
                                          the node will be climbed unitil a directory is found or the home
                                          directory is reached
 
@@ -913,8 +939,8 @@ class PathParse(object):
                     self.errPrint("[renamePath] Error: new pathway could not be established")
                 return newPath
 
-            # climbPath option----
-            if(climbPath):
+            # climbPath_Opt option----
+            if(climbPath_Opt):
                 parentPath = self.delNode(destPath)
 
                 while(self.convertPath(parentPath) != self.varPath_Head):
@@ -1744,10 +1770,10 @@ class PathParse(object):
 
             try:
                 value = self.varPath 
-            except: 
-                value = None
-                success = False
-                self.errPrint("[cmd_pwd] Error: current (path) directory pathway not found", funcAdd = 'cmd')
+                if(value == False):
+                    self.errPrint("[cmd_pwd] Error: 'varPath' not set...", addFunc='cmd')
+            except:
+                self.errPrint("[cmd_pwd] Error: 'varPath' not set...", addFunc='cmd')
 
             success = printFunc(success)               
             result = (success,(value))                                       
@@ -1763,35 +1789,30 @@ class PathParse(object):
             try:
                 value = self.varPath_Contains
             except:
-                value = None 
+                value = None
                 success = False
                 print("Error: current (path) directory contents not found")
 
-            success = printFunc(success)            
             result = (success,value)
             return result
 
 
         def cmd_dir(tup):
-            success = True            
+            success = True
             cmdInst, file_list, destStr = tup
-                   
+
             new_file_list = []
 
             values = self.__find__(file_list)
             if(values == False):
-                if(self.debug):
-                    msg = "[dir] Error: occured when attempting to check current (path) directory for input files\n"
-                    print(self.space+msg)
-                return (False,None) 
-                                       
+                self.errPrint("[cmd_dir] Error: occured when attempting to find input files in the current directory", funcAdd = 'cmd')
+                return (False,None)
+
             for entry in file_list:
                 if(values[entry]):
                     new_file_list.append(self.joinNode(self.varPath,entry))
                 else:
-                    if(self.debug):
-                        msg = "[dir] Warning: file name, '"+str(entry)+"' not found in current (path) directory\n"
-                        print(self.space+msg)
+                    self.errPrint("[cmd_dir] Warning: file name, '"+str(entry)+"' not found in current directory", funcAdd = 'cmd')
             value = new_file_list
 
             ptest_1 = self.__runFancyPrint__()
@@ -1803,166 +1824,125 @@ class PathParse(object):
 
             if(not ptest_1 or not ptest_2):
                 success = False
-                print(self.space+"Error: An unknown error was raised while attempting to print...\n")
+                self.errPrint("[cmd_dir] Error: An unknown error was raised during printing", funcAdd = 'cmd')
 
-            result = (success,value)                
+            result = (success,value)
             return result
 
 
         def cmd_cd(tup):
-            success = True            
+            success = True
             value = None
             cmdInst, file_list, destStr = tup
-                                    
-            if(destStr == '..'):                  
+
+            if(destStr == '..'):
                 if(headCheck()):
                     result = (success,value)
-                    return result 
+                    return result
                 else:
-                    up_path_list = list(self.varPath_List)[:-1]                 
+                    up_path_list = list(self.varPath_List)[:-1]
                 result = updater(up_path_list,value)
-                return result
-            
+
             elif(destStr in self.varPath_Contains):
                 dest_loc = self.joinNode(self.varPath, destStr)
-                if(os.path.isdir(dest_loc)): 
+                if(os.path.isdir(dest_loc)):
                     newPath_list = list(self.varPath_List)
                     newPath_list.append(destStr)
                 else:
-                    success = False 
-                    print("Error: '"+dest_loc+"not a valid folder in current (path) directory")
-                    print("It appears that '"+dest_loc+"' is a file object or is corrupted")    
-                    result = (success, value)
-                    return result 
+                    self.errPrint("[cmd_cd] Error: '"+str(dest_loc)+"' is not a valid folder in current directory", funcAdd = 'cmd')
+                    result = (False, value)
+                    return result
                 result = updater(newPath_list,value)
-                return result
-            
+
             elif(destStr[0] == '/' or destStr[0] == '\\'):
-                ndir_inst = destStr[1:]
-                ctest = self.__climbPath__(-1)
-                success = printFunc(ctest)  
-                result = (success,value)
-                return result
-                    
-            elif(destStr == '~'):                
-                ctest = self.__climbPath__(-1)
-                success = printFunc(ctest)  
-                result = (success,value)
-                return result
-                
+                destStr = destStr[1:]
+                ctest = self.__climbPath__(destStr)
+                if(ctest == False):
+                    self.errPrint("[cmd_cd] Error: failure to climb pathway", funcAdd='cmd')
+                result = (ctest, value)
+
+            elif(destStr == '~'):
+                result = self.updater(self.varPath_Head, value)
+
             else:
-                print("Error: '"+destStr+"' not a valid destination")
-                success = False
-            
-            result = (success,value)
+                self.errPrint("Error: '"+str(destStr)+"' not a valid destination", funcAdd = 'cmd')
+                result = (False, value)
+
             return result
-            
-            
+
+
         def cmd_chdir(tup):
             cmdInst, file_list, destStr = tup
 
             utest = self.__updatePath__(destStr)
-            success = printFunc(utest)
-            result = (success,None)
+            if(utest == False):
+                self.errPrint("[cmd_chdir] Error: failure to change path directory", funcAdd='cmd')
+            result = (utest,None)
             return result
 
         def cmd_mv(tup):
-            
-            success = True            
-            value = None
-            cmdInst, file_list, destStr = tup      
-             
-            mv_file_list = file_list 
-            
-            for i in range(len(mv_file_list)):
-                mv_file_list[i] = self.joinNode(self.varPath, mv_file_list[i])
-                         
-            # Move File                                     
-            if(destStr == '..'):                  
-                if(headCheck()):
-                    result = (success, value)
-                    return result  
+
+            def __move_object_2_path__(dest_path_list, move_file_list, rename=False):
+                success = True
+                dest_path_str = self.convertPath(dest_path_list)
+                if(rename):
+                    path_has = self.contentPath(self.varPath)
                 else:
-                    up_path_list = list(self.varPath_List)[:-1]
-
-                up_path_str = self.convertPath(up_path_list)   
-                up_path_has = self.contentPath(up_path_str)
-                for i in mv_file_list: 
-                    if(i in up_path_has):
-                        print("Warning: '"+i+"' already exists in the namespace of the target directory, no action taken")
-                        continue                     
-                    mtest = self.moveObj(i,up_path_str)
-                    if(not mtest):
-                        success = False 
-                        print("Error: contents of this path: '"+i+"' could not be moved")
-
-                result = updater(self.varPath_List,value)
-                return result     
-            
-            elif(destStr in self.varPath_Contains and destStr not in self.varPath_Files):                
-                dest_path_list = list(self.varPath_List)
-                dest_path_list.append(destStr)  
-                     
-                path_str = self.convertPath(dest_path_list)   
-                path_has = self.contentPath(path_str)
-                for i in mv_file_list:           
-                    if(i in path_has):
-                        print("Warning: '"+i+"' already exists in target directory, no action taken")
-                        continue     
-                    mtest = self.moveObj(i,path_str)
-                    if(not mtest):
-                        success = False 
-                        print("Error: contents of this path: '"+i+"' could not be moved")
-                                     
-                result = updater(self.varPath_List, value)
-                return result  
-            
-            elif(destStr[0] == '/' or destStr[0] == '\\'):
-                destStr = destStr[1:]
-                dest_path_list = self.__climbPath__(-1)
-
-                path_str = self.convertPath(dest_path_list)   
-                path_has = self.contentPath(path_str)
-                for i in mv_file_list:   
-                    if(i in path_has):
-                        print("Warning: '"+i+"' already exists in target directory, no action taken")
-                        continue            
-                    mtest = self.moveObj(i, dest_path_list)
-                    if(not mtest):
-                        success = False 
-                        print("Error: contents of this path: '"+i+"' could not be moved")
-
-                result = updater(self.varPath_List, value)
-                return result
-
-            elif(destStr == '~'):
-                dest_path_str = self.convertPath(self.varPath_Head)
-                path_has = self.contentPath(dest_path_str)
-                for i in mv_file_list:
-                    if(i in path_has):
-                        print("Warning: '"+i+"' already exists in target directory, no action taken")
+                    path_has = self.contentPath(dest_path_str)
+                for entry in move_file_list:
+                    if(entry in path_has):
+                        self.errPrint("[cmd_mv] Warning: '"+entry+"' already exists in target directory, no action taken", funcAdd = 'cmd')
                         continue
-                    mtest = self.moveObj(i, dest_path_list)
+                    mtest = self.moveObj(entry,dest_path_str)
                     if(not mtest):
                         success = False
-                        print("Error: contents of this path: '"+i+"' could not be moved")
+                        self.errPrint("[cmd_mv] Error: contents of this path: '"+entry+"' could not be moved", funcAdd = 'cmd')
+                    return success
 
-                result = updater(self.varPath_List, value)
-                return result
+            success = True
+            value = None
+            rename = False
+            cmdInst, file_list, destStr = tup
 
-            elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):          
-                mtest = self.moveObj(mv_file_list[0], destStr)
-                if(not mtest):
-                    success = False
-                    print("Error: contents of this path: '"+str(mv_file_list[0])+"' could not be moved")                                 
-                result = updater(self.varPath_List, value)
-                return result  
-            
+            mv_file_list = [self.joinNode(self.varPath, entry) for entry in file_list]
+
+            # destination choice
+            if(destStr == '..'):
+                if(headCheck()):
+                    self.errPrint("[cmd_mv] Warning: 'home' directory reached, no action taken", addFunc='cmd')
+                    result = (success, value)
+                    return result
+                else:
+                    dpath_list = list(self.varPath_List)
+                    dpath_list = dpath_list[:-1]
+
+            elif(destStr == '~'):
+                dpath_list = [self.varPath_Head]
+
+            elif(destStr in self.varPath_Contains and destStr not in self.varPath_Files):                
+                dpath_list = list(self.varPath_List)
+                dpath_list.append(destStr)
+
+            elif(destStr[0] == '/' or destStr[0] == '\\'):
+                destStr = destStr[1:]
+                dpath_list = self.climbPath(destStr)
+
+            elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):
+                dpath_list = list(self.varPath_List)
+                dpath_list.append(destStr)
+                rename = True
+
             else:
                 print("Error: Invalid formatting; the input object(s) could not be moved...")
-                return None                 
-            
-            
+                return result
+
+            # Move file(s) to destination
+            __move_object_2_path__(dpath_list, mv_file_list, rename=rename)
+
+            result = updater(self.varPath_List, value)
+            return result
+
+
         def cmd_rm(tup):
                       
             success = True            
@@ -2064,7 +2044,7 @@ class PathParse(object):
                 success = False            
             result = (success,value)
             return result 
-            
+
 
         def cmd_mkdir(tup):
             
@@ -2095,10 +2075,10 @@ class PathParse(object):
                     output = self.delDir(file_path_str)
                     if(output == False):
                         success = False
-                        print(self.space+"Error: contents of this folder: '"+str(i)+"' could not be deleted\n")
+                        self.errPrint("[cmd_rmdir] Error: folder, '"+str(i)+"', could not be deleted", funcAdd='cmd')
 
             result = updater(self.varPath_List,value)
-            return result        
+            return result
 
 
         def cmd_cpdir(tup):                   

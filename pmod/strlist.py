@@ -32,7 +32,7 @@ function list:
 ### array functions
 
 
-# checking and modifying arrays by content:  
+# checking and modifying arrays by content:
 
 
 

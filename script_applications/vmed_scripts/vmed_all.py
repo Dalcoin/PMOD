@@ -2,11 +2,11 @@ import subprocess as subp
 import sys
 import time
 
-from pmod import ioparse as iop
-from pmod import cmdline as cml
+import pmod.ioparse as iop
+import pmod.cmdline as cml
+import pmod.strlist as strl
 
-from pmod import vmed as vf
-
+import pmod.vmed as vf
 
 # Get V groupings
 tstart = time.time()
@@ -21,6 +21,7 @@ if(not success):
 in_path = in_path_list[0]
 
 lines_list = iop.flat_file_grab(in_path)
+original_lines = list(lines_list)
 if(lines_list == False):
     print("CMDError: an error occured when reading file at pathway: str(in_path)")
     sys.exit("The python script 'vmed_all.py' has been terminated.")
@@ -45,19 +46,25 @@ else:
     cmv.cmd('mkdir vincp')
     exist = True
 
-for i in range(len(ngroup)):
-     
+for i, entry in enumerate(ngroup):
+
     # Add new V-vals generator
     new_lines = list(lines_list)
-    for j in ngroup[i]:
-        val = j+'\n'
-        new_lines.append(val)
-    new_lines.append(demark)   
+    for ventry in entry:
+        print(ventry)
+        for vm in ventry:
+            val = vm+'\n'
+            new_lines.append(val)
+    new_lines.append(demark)
     iop.flat_file_write(in_path, new_lines)
 
-    subp.call("./xl", shell=True)    
-    cmv.cmd('mv pot.d pot'+str(numgroup[i])+'.txt')     
-    cmv.cmd('mv '+'pot'+str(numgroup[i])+'.txt'+' vincp')
+    subp.call("./xl", shell=True)
+    success, value = cmv.cmd('mv pot.d pot'+str(numgroup[i])+'.txt')
+    if(success == False):
+        print(spc+"Error: failure to rename 'pot' file for the "+strl.print_ordinal(i)+" run")
+    success, value = cmv.cmd('mv '+'pot'+str(numgroup[i])+'.txt'+' vincp')
+    if(success == False):
+        print(spc+"Error: failure to move 'pot' file into 'vincp' for the "+strl.print_ordinal(i)+" run")
 
 tend = time.time()
 
@@ -70,3 +77,5 @@ if(exist):
     print(spc+"The script found an existing 'vincp' directory and overwrote it\n")
 else:
     print(spc+"The script did not find an existing 'vincp' directory; one was created\n")
+
+iop.flat_file_write(in_path, original_lines)

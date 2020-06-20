@@ -4,6 +4,7 @@ import pmod.vmed as vf
 import pmod.ioparse as iop
 import pmod.strlist as strl
 import pmod.cmdline as cmd
+import pmod.mathops as mops
 
 
 vmed_index_finder = re.compile('\d+\d*')
@@ -13,8 +14,11 @@ def tabulate_vmed_all(jv_list,
                       momenta=None,
                       print_lines=True,
                       momenta_units='invfm',
-                      pot_units='fm',
-                      round_value=None):
+                      pot_units='invmev2',
+                      round_value=None,
+                      digits=3,
+                      espace=3,
+                      pyver='2.6'):
 
     '''
     Inputs:
@@ -27,9 +31,9 @@ def tabulate_vmed_all(jv_list,
 
         print_lines : (True), If true, outlines are printed to a file, either way the list of strings is returned
 
-        momenta_units : ('invfm'), options are 'invfm' or 'mev2' corrosponding to Inverse Fermi and MeV^2 respectively
+        momenta_units : ('invfm'), options are 'invfm' or 'mev' corrosponding to Inverse Fermi and MeV^2 respectively
 
-        pot_units : ('fm'), options are 'fm' or 'mev' corrosponding to Fermi and MeV respectively
+        pot_units : ('fm'), options are 'fm' or 'invmev2' corrosponding to Fermi and MeV respectively
 
     '''
 
@@ -73,18 +77,23 @@ def tabulate_vmed_all(jv_list,
         if(momenta_units.lower() == 'invfm'):
             plist = map(lambda x: str(round(float(x)/vf.hc,2)), plist)
 
-    sp7 = '       '
-    print(plist)
-    heading = 'p'+sp7+strl.array_to_str(plist,spc='              ')*len(jv_list)+'\n'
+    pstring = ''
+    for entry in plist:
+        pstring = pstring + mops.space_format(entry, 12, adjust='right')
+    pline = mops.space_format('p', 14, adjust='right')
+
+    heading = pline+pstring+'\n'
     outlines.append(heading)
+    outlines.append('\n')
+
     for entry in vincp_content:
         vval = entry[0]
         filename = entry[1]
         filepath = cml.joinNode(vincp_path,filename)
         filetext = iop.flat_file_grab(filepath)
         matching_values = vf.grab_jsl(filetext, jsl_list, round_form = 1)
-        if(isinstance(matching_values,(list,tuple)) and isinstance(momenta_units,str)):
-            if(momenta_units.lower() == 'mev2'):
+        if(isinstance(matching_values,(list,tuple)) and isinstance(pot_units,str)):
+            if(pot_units.lower() == 'invmev2'):
                 pass
             else:
                 if(not isinstance(round_value,int)):
@@ -92,8 +101,11 @@ def tabulate_vmed_all(jv_list,
                 else:
                     if(round_value > 2):
                         matching_values = map(lambda x: str(round(float(x)*vf.vmhc,round_value)), matching_values)
-            outline = strl.array_to_str(matching_values, spc = '  ')
-            outline = 'vmed '+str(vval)+'  '+outline+'\n'
+            matching_values = mops.sci_space_format(matching_values, digi=digits, spacing=espace, pyver=pyver)
+            outline = strl.array_to_str(matching_values, spc = ' ')
+            out_heading = 'vmed '+str(vval)
+            out_heading = mops.space_format(out_heading, 9, adjust='right')
+            outline = out_heading+"  "+outline+'\n'
             outlines.append(outline)
         elif(matching_values == False or matching_values == None):
             print('    '+"Error: parsing partial wave value failed\n")

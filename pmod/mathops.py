@@ -164,7 +164,7 @@ def round_format(num, dec):
         except:
             return False
 
-    f = "0:."+str(dec)+"f"
+    f = "{0:."+str(dec)+"f}"
 
     out_String = f.format(num) 
     return out_String    
@@ -230,6 +230,70 @@ def space_format(num, spc, adjust = 'left'):
     else:
         return num
 
+
+def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6'):
+
+    def to_float(num):
+
+        if(not isinstance(num, (float,int))):
+            try:
+                num = float(num)
+                return num
+            except:
+                print(space+"Error: input, 'num' could not be coerced to numeric: "+str(num)) 
+                return None
+        else:
+            return num
+
+    space='    '
+    if(not isinstance(digi, int)):
+        print(space+"[sci_space_format] Error: input 'digi' must be an integer, not a "+str(type(digit)))
+    else:
+        if(digi < 1):
+            print(space+"[sci_space_format] Warning: the lowest number of digits allowed is 1")
+            digi = 1
+
+    value_array = []
+
+    if(isinstance(num,(list,tuple))):
+        for i,entry in enumerate(num):
+            value = to_float(entry)
+            if(value == None):
+                print(space+"[sci_space_format] Error: 'num' entry, "+str(i)+", cannot be converted to numeric")
+                continue
+            else:
+                value_array.append(value)
+    elif(isinstance(num,str)):
+        value = to_float(num)
+        if(value == None):
+            print(space+"[sci_space_format] Error: 'num' entry, "+str(num)+", cannot be converted to numeric")
+            return False
+        else:
+            value_array.append(value)
+    elif(isinstance(num,(float,int))):
+        value_array.append(num)
+    else:
+        print(space+"[sci_space_format] Error: 'num', "+str(num)+", not a recognized type")
+
+    if(len(value_array) == 0):
+        print(space+"[sci_space_format] Error: no values found after parsing values into array")
+        return False
+
+    for i,entry in enumerate(value_array):
+#        try:
+        if(abs(value_array[i]) < 10e100):
+            spacing_value = digi+5+spacing
+        else:
+            spacing_value = digi+6+spacing
+        value_array[i] = round_scientific(entry, digi, pyver=pyver)
+        if(value_array[i] == False):
+            print(space+"[sci_space_format] Error: could not parse, "+str(value_array[i]))
+        value_array[i] = space_format(value_array[i], spacing_value, adjust=adjust)
+#        except:
+#            print(space+"[sci_space_format] Error: terminal error, could not parse value number "+str(i))
+#            return False
+    
+    return value_array
 
 
 def span_vec(xvec, nspan):
