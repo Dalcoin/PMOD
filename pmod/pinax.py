@@ -33,13 +33,13 @@ def __bool_tester__(obj, array_of_arrays):
 
 def __nan_func__(check):
     
-    nan_list = ['nan','NaN','NAN','-nan','-NaN','-NAN']
-    inf_list = ['inf','Inf','INF','-inf','-Inf','-INF']
+    nan_list = ['nan', 'NaN', 'NAN', '-nan', '-NaN', '-NAN']
+    inf_list = ['inf', 'Inf', 'INF', '-inf', '-Inf', '-INF']
     null_list = ['null', 'Null', 'NULL', '-null', '-Null', '-NULL']
 
     truth = ('nan','inf','null')
 
-    nil = (nan_list,inf_list,null_list)
+    nil = (nan_list, inf_list, null_list)
 
     truth_dict = dict(zip(truth,check))
     match_dict = dict(zip(truth,nil))

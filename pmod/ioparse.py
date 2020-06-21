@@ -5,7 +5,7 @@ import strlist as strl
 
 '''
 
-Description: A class for performing basic IO functions on flat (text) files. 
+Description: Functions for performing basic IO functions on flat (text) files. 
 
 
 Below is a list of the functions this class offers (w/ input):
@@ -16,11 +16,11 @@ Below is a list of the functions this class offers (w/ input):
 
    flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=True, ptype='w') 
 
-   flat_file_grab(file_in,grab_list,scrub=False,repeat=False,count_offset=True,ptype='r')        
+   flat_file_grab(file_in, grab_list, scrub=False, repeat=False, count_offset=True, ptype='r')        
 
-   flat_file_copy(file_in,file_out,grab_list,repeat=False,group=0,ptype='w')  
+   flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w')  
 
-   flat_file_intable(file_in, header = False)
+   flat_file_intable(file_in, header=False)
         
 '''
 
@@ -562,6 +562,8 @@ def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=f
         entete  : If True and header is True, then the header values are included in the output 
         
         columns : If True, lists of the data value are returned by column, else data values are returned by row
+
+        genre   : The variable type of the entries in the table
      
     '''  
     table_lines = flat_file_grab(file_in, scrub = True)

@@ -423,7 +423,7 @@ class PathParse(object):
         Inputs: 
 
             destPath : [string], [array],
-                       A pathway formatted string or array
+                       A pathway formatted string or array which points to a directory
 
             objName  : [string]
                        A string corrosponding to an object,
@@ -438,7 +438,8 @@ class PathParse(object):
         '''
 
         contents = self.contentPath(destPath)
-        if(self.errPrint("[uniqueName] Error: input 'destPath' must be a directory",contents)): 
+        if(contents == False):
+            self.errPrint("[uniqueName] Error: input 'destPath' must be a valid directory pathway")
             return False
 
         nameList = strl.str_to_list(objName, spc='.')
@@ -454,27 +455,27 @@ class PathParse(object):
                 outName = name
                 while(outName in contents):
                     if(count > uniqueNameLimit):
-                        self.errPrint("[uniqueName] Error: iteration overflow, exiting function...")
+                        self.errPrint("[uniqueName] Warning: iteration overflow, exiting function...")
                         return False                    
                     outName = name+"_"+str(count)
                     count += 1
                 return outName
             else:
-                self.errPrint("[uniqueName] Error: 'objName' is empty")
+                self.errPrint("[uniqueName] Error: 'objName' is empty and should be string corrosponding to the new object name")
         else:
-            self.errPrint("[uniqueName] Error: 'objName' is empty")
+            self.errPrint("[uniqueName] Error: 'objName' is empty and should be string corrosponding to the new object name")
             return False
 
         # If there is a file ending attached to 'objName', the unique name is generated
         count = 1
         name = objName
-        pad = newList[-2]
+        pad = nameList[-2]
         while(name in contents):
             if(count > uniqueNameLimit):
-                self.errPrint("[uniqueName] Error: iteration overflow, exiting function...")
+                self.errPrint("[uniqueName] Warning: iteration overflow, exiting function...")
                 return False
-            newList[-2] = pad+"_"+str(count)
-            name = strl.array_to_str(newList, spc='.')
+            nameList[-2] = pad+"_"+str(count)
+            name = strl.array_to_str(nameList, spc='.')
             count+=1
         return name
 
@@ -818,7 +819,7 @@ class PathParse(object):
         return True
 
 
-    def climbPath(self, path, node):
+    def climbPath(self, oldpath, node):
         '''
         Description : if 'node' is a node in the default (current) pathway
                       that the default (current) pathway directory is moved to
@@ -830,12 +831,14 @@ class PathParse(object):
         The overhead and updating of class path info is taken care of with this function
         '''
 
-        if(isinstance(path,str)):
-            path = convertPath(path, outType='list')
-        elif(isinstance(path,(list,tuple))):
-            pass
+        if(isinstance(oldpath,str)):
+            path = self.convertPath(oldpath, outType='list')
+            if(path == False):
+                self.errPrint("climbPath Error: failure to convert path,'"+str(oldpath)+"' to a list")
+        elif(isinstance(oldpath,(list,tuple))):
+            path = list(oldpath)
         else:
-            self.errPrint("[climbPath] Error: input, '"+str(path)+"' must be a string")
+            self.errPrint("[climbPath] Error: input, '"+str(oldpath)+"' must be a path string or path array")
             return False
 
         newPath_List = []
@@ -866,13 +869,14 @@ class PathParse(object):
 
         newPath_List = self.climbPath(self.varPath_List, node)
         if(newPath_List == False):
+            self.errPrint("[__climbPath__] Error: failure to find node: '"+str(node)+"' in the path directory")
             return newPath_List
 
         output = self.__updatePath__(newPath_List)
         return output
 
 
-    def renamePath(self, originPath, destPath, objName=None, climbPath_Opt=False):
+    def renamePath(self, originPath, destPath, objName=None, climbPath_Opt=True):
         '''
         Description : Takes an input pathway and an destination pathway along 
                       options for the object's name and climbing pathway if
@@ -902,7 +906,7 @@ class PathParse(object):
 
             dNode = self.uniqueName(novPath, novName)
             if(dNode == False):
-                errPrint("[renamePath][__create_path__] Error: Failure to generate a unique name from input path")
+                self.errPrint("[renamePath][__create_path__] Error: Failure to generate a unique name from input path")
                 return False
             return self.joinNode(novPath, dNode)
 
@@ -950,8 +954,8 @@ class PathParse(object):
                         return False
 			        
                     if(os.path.isdir(parentPath)):
-                        destNode = self.uniqueName(parentPath,destNode)
-                        newPath = self.joinNode(parentPath,destNode)
+                        destNode = self.uniqueName(parentPath, destNode)
+                        newPath = self.joinNode(parentPath, destNode)
                         if(newPath == False):
                             self.errPrint("[renamePath] Error: could add directory name node to 'destPath'")
                             return False
@@ -1031,7 +1035,7 @@ class PathParse(object):
             renameOption = self.rename
 
         if(renameOption):
-            destPath = self.renamePath(objPath, destPath, objType = 'all', objName = objName)
+            destPath = self.renamePath(objPath, destPath, objName=objName)
             if(destPath == False):
                 self.errPrint("[moveObj] Error: failure to generate 'destPath' destination pathway")
                 return False
@@ -1200,7 +1204,7 @@ class PathParse(object):
             renameOption = self.rename
 
         if(renameOption):
-            destPath = self.renamePath(filePath, destPath, objType='file', objName=objName)
+            destPath = self.renamePath(filePath, destPath, objName=objName)
             if(destPath == False):
                 self.errPrint("[copyFile] Error: failure to generate 'destPath' destination pathway")
                 return False
@@ -1290,7 +1294,7 @@ class PathParse(object):
             renameOption = self.rename
 
         if(renameOption):
-            destPath = self.renamePath(dirPath, dirPath, objType = 'directory', objName = dirName)
+            destPath = self.renamePath(dirPath, dirPath, objName=dirName)
             if(destPath == False):
                 if(self.debug):
                     print(self.space+"[makeDir] Error: failure to generate 'destPath' destination pathway\n")
@@ -1306,7 +1310,7 @@ class PathParse(object):
             os.mkdir(destPath)
         except:
             print(self.space+"[makeDir] Error: directory could not be created")
-            print("Pathway : "+destPath+'\n')
+            print(self.space+"Pathway : '"+destPath+"'\n")
             return False
 
         return True 
@@ -1460,7 +1464,7 @@ class PathParse(object):
             renameOption = self.rename
 
         if(renameOption):
-            destPath = self.renamePath(dirPath, destPath, objType='all', objName=dirName)
+            destPath = self.renamePath(dirPath, destPath, objName=dirName)
             if(destPath == False):
                 self.errPrint("[PP][moveObj] Error: failure to generate 'destPath' destination pathway")
                 return False
@@ -1763,6 +1767,26 @@ class PathParse(object):
             result = (success, (value))
             return result
 
+        def files_present(fileList, cmdInst=None, funcName=None):
+            outfiles = []
+
+            if(fileList == []):
+                return []
+
+            for file in fileList:
+                if(file not in self.varPath_Files and cmdInst not in self.singlePathListGroup):
+                    if(isinstance(funcName,str)):
+                        self.errPrint("["+funcName+"]"+"[files_present] Error: '"+str(file)+"' not found in current directory", funcAdd='cmd')
+                    else:
+                        self.errPrint("[files_present] Error: '"+str(file)+"' not found in current directory", funcAdd='cmd')
+                else:
+                    outfiles.append(file)
+            if(len(outfiles) == 0):
+                if(isinstance(funcName,str)):
+                    self.errPrint("["+funcName+"]"+"[files_present] Warning: none of the files were found in the current directory", funcAdd='cmd')
+                else:
+                    self.errPrint("[files_present] Warning: The file(s) was not found in the current directory", funcAdd='cmd')
+            return outfiles
 
         def cmd_pwd(tup):
             success = True
@@ -1771,9 +1795,9 @@ class PathParse(object):
             try:
                 value = self.varPath 
                 if(value == False):
-                    self.errPrint("[cmd_pwd] Error: 'varPath' not set...", addFunc='cmd')
+                    self.errPrint("[cmd_pwd] Error: 'varPath' not set...", funcAdd='cmd')
             except:
-                self.errPrint("[cmd_pwd] Error: 'varPath' not set...", addFunc='cmd')
+                self.errPrint("[cmd_pwd] Error: 'varPath' not set...", funcAdd='cmd')
 
             success = printFunc(success)               
             result = (success,(value))                                       
@@ -1880,38 +1904,48 @@ class PathParse(object):
             result = (utest,None)
             return result
 
+
         def cmd_mv(tup):
 
             def __move_object_2_path__(dest_path_list, move_file_list, rename=False):
                 success = True
+
                 dest_path_str = self.convertPath(dest_path_list)
+                newname = dest_path_list[-1]
+
                 if(rename):
                     path_has = self.contentPath(self.varPath)
                 else:
                     path_has = self.contentPath(dest_path_str)
+
+                if(newname in path_has and self.rename == False):
+                    self.errPrint("[cmd_mv] Error: '"+str(newname)+"' already exists in target directory", funcAdd = 'cmd')
+                    return False
+
                 for entry in move_file_list:
-                    if(entry in path_has):
-                        self.errPrint("[cmd_mv] Warning: '"+entry+"' already exists in target directory, no action taken", funcAdd = 'cmd')
-                        continue
-                    mtest = self.moveObj(entry,dest_path_str)
+                    init_path = self.joinNode(self.varPath, entry)
+                    if(rename):
+                        mtest = self.__moveObj__(init_path, self.varPath, objName=newname)
+                    else:
+                        mtest = self.__moveObj__(init_path, dest_path_str)
                     if(not mtest):
                         success = False
-                        self.errPrint("[cmd_mv] Error: contents of this path: '"+entry+"' could not be moved", funcAdd = 'cmd')
-                    return success
+                        self.errPrint("[cmd_mv] Error: contents of this path: '"+str(init_path)+"' could not be moved", funcAdd = 'cmd')
+                return success
 
             success = True
             value = None
             rename = False
+
+            dpath_list = []
+
             cmdInst, file_list, destStr = tup
 
-            mv_file_list = [self.joinNode(self.varPath, entry) for entry in file_list]
-
-            # destination choice
+            # parsing destination in list format
             if(destStr == '..'):
                 if(headCheck()):
-                    self.errPrint("[cmd_mv] Warning: 'home' directory reached, no action taken", addFunc='cmd')
-                    result = (success, value)
-                    return result
+                    self.errPrint("[cmd_mv] Warning: 'home' directory reached, no action taken", funcAdd='cmd')
+                    return (success, value)
                 else:
                     dpath_list = list(self.varPath_List)
                     dpath_list = dpath_list[:-1]
@@ -1919,26 +1953,34 @@ class PathParse(object):
             elif(destStr == '~'):
                 dpath_list = [self.varPath_Head]
 
-            elif(destStr in self.varPath_Contains and destStr not in self.varPath_Files):                
+            elif(destStr[0] == '/' or destStr[0] == '\\'):
+                destStr = destStr[1:]
+                dpath_list = self.climbPath(self.varPath, destStr)
+                if(dpath_list == False):
+                    errPrint("[cmd_mv] Error: failure while climbing path to find folder, '"+str(destStr)+"'", funcAdd='cmd')
+                    return (climb_check, value)
+
+            elif(destStr in self.varPath_Folders):
                 dpath_list = list(self.varPath_List)
                 dpath_list.append(destStr)
 
-            elif(destStr[0] == '/' or destStr[0] == '\\'):
-                destStr = destStr[1:]
-                dpath_list = self.climbPath(destStr)
-
-            elif(destStr not in self.varPath_Contains and len(mv_file_list) == 1):
+            elif(len(file_list) == 1 and destStr not in self.varPath_Folders):
                 dpath_list = list(self.varPath_List)
                 dpath_list.append(destStr)
                 rename = True
 
             else:
-                print("Error: Invalid formatting; the input object(s) could not be moved...")
+                errPrint("[cmd_mv] Error: Invalid formatting; the input object(s) could not be moved", funcAdd='cmd')
+                result = (success, value)
                 return result
 
             # Move file(s) to destination
-            __move_object_2_path__(dpath_list, mv_file_list, rename=rename)
+            if(len(dpath_list) == 0):
+                self.errPrint("[cmd_mv] Error: destination pathway list could not be parsed", funcAdd='cmd')
+                return False
+            __move_object_2_path__(dpath_list, file_list, rename=rename)
 
+            # Update 
             result = updater(self.varPath_List, value)
             return result
 
@@ -1990,11 +2032,11 @@ class PathParse(object):
                                                                     
                 result = updater(self.varPath_List, value)
                 return result
-                                
-            success = True            
+
+            success = True
             value = None
-            cmdInst, file_list, destStr = tup 
-          
+            cmdInst, file_list, destStr = tup
+
             if(destStr == '.'):
 
                 result = __cp_help_func__(file_list, self.varPath)
@@ -2059,7 +2101,7 @@ class PathParse(object):
                     success = False 
                     print(self.space+"Error: contents of this path: '"+str(i)+"' could not be moved\n")
                                      
-            result = updater(self.varPath_List,value)
+            result = updater(self.varPath_List, value)
             return result  
 
         
@@ -2287,6 +2329,7 @@ class PathParse(object):
         ##################
 
         result = (False,None)
+        print("")
 
         # Dummy test
         if(not isinstance(cmd_string,str)):
@@ -2301,7 +2344,10 @@ class PathParse(object):
             return result
 
         cmd_tuple = self.__cmdInputParse__(cmd_string)
-        cmdInst = cmd_tuple[0]
+
+        cmdInst, fileList, destStr = cmd_tuple
+        fileList = files_present(fileList, cmdInst=cmdInst)
+        cmd_tuple = (cmdInst, fileList, destStr)
 
         if(cmdInst == 'pwd'):               # print working directory 
             result = cmd_pwd(cmd_tuple)
