@@ -51,7 +51,7 @@ for i, entry in enumerate(ngroup):
     # Add new V-vals generator
     new_lines = list(lines_list)
     for ventry in entry:
-        print(ventry)
+        print(ventry[0])
         for vm in ventry:
             val = vm+'\n'
             new_lines.append(val)

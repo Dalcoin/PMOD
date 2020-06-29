@@ -264,7 +264,7 @@ class PathParse(object):
         if(string in self.cdList):
             if(self.debug):
                 print(self.space+string+":\n")
-                print(helpDict[string])
+                print(self.helpDict[string])
             return self.helpDict
         else:
             return None
@@ -679,7 +679,7 @@ class PathParse(object):
         return False
 
 
-    def contentPath(self, inPath, objType = 'all', fileStyle = None):
+    def contentPath(self, inPath, objType='all', fileStyle=None):
         '''
         ---------------
         | contentPath |
@@ -702,10 +702,10 @@ class PathParse(object):
 
         Return:
 
-            'file_list': [list], A list of strings corrosponding to all the files
-                                 in the current (path) directory matching the
-                                 'fileStyle' extension, if 'fileStyle' == None, then all
-                                 file names are included in 'file_list'.
+            'output': [list], A list of strings corrosponding to all the files
+                              in the current (path) directory matching the
+                              'fileStyle' extension, if 'fileStyle' == None, then all
+                              file names are included in 'file_list'.
         '''
 
         if(isinstance(inPath,str)):
@@ -851,7 +851,7 @@ class PathParse(object):
             newPath_List.append(node)
             return newPath_List
         else:
-            self.errPrint("[climbPath] Warning: Directory, '"+node+"', not found in 'path' hierarchy")
+            self.errPrint("[climbPath] Warning: Directory, '"+str(node)+"', not found in 'path' hierarchy")
             return False
 
 
@@ -1410,10 +1410,10 @@ class PathParse(object):
 
         return success
 
+
     ##########################################
     # Copy directory from path to a new path #
     ##########################################
-
 
     def copyDir(self, dirPath, destPath, dirName=None, renameOverride=None):
         '''
@@ -1470,7 +1470,7 @@ class PathParse(object):
                 return False
 
         try:
-            shutil.copyfile(dirPath, destPath)
+            shutil.copytree(dirPath, destPath)
         except:
             if(self.debug):
                 print(self.space+"[PP][copyDir] Error: directory could not be copied.")
@@ -1593,7 +1593,7 @@ class PathParse(object):
             for frag in fragment:
                 capList = []
                 for entry in contents:
-                    if(fragment in entry):
+                    if(frag in entry):
                         capList.append(entry)
                 outDict[frag] = capList
             return outDict
@@ -1774,7 +1774,7 @@ class PathParse(object):
                 return []
 
             for file in fileList:
-                if(file not in self.varPath_Files and cmdInst not in self.singlePathListGroup):
+                if(file not in self.varPath_Files and cmdInst not in self.singlePathListGroup and cmdInst not in self.singlePathListNoGroup):
                     if(isinstance(funcName,str)):
                         self.errPrint("["+funcName+"]"+"[files_present] Error: '"+str(file)+"' not found in current directory", funcAdd='cmd')
                     else:
@@ -1802,7 +1802,6 @@ class PathParse(object):
             success = printFunc(success)               
             result = (success,(value))                                       
             return result
-
 
         def cmd_ls(tup):
             success = True
@@ -1886,7 +1885,7 @@ class PathParse(object):
                 result = (ctest, value)
 
             elif(destStr == '~'):
-                result = self.updater(self.varPath_Head, value)
+                result = updater(self.varPath_Head, value)
 
             else:
                 self.errPrint("Error: '"+str(destStr)+"' not a valid destination", funcAdd = 'cmd')
@@ -2060,11 +2059,11 @@ class PathParse(object):
                 return result
 
             elif(destStr[0] == '/' or destStr[0] == '\\'):
-                ndir_inst = destStr[1:]
-                path_str = self.__climbPath__(-1)
+                node_inst = destStr[1:]
+                path_str = self.__climbPath__(node_inst)
                 if(path_str == False):
                     success = False
-                    print("Error: the folder: '"+str(ndir_inst)+"' could not be found in the root pathway")
+                    print("Error: the folder: '"+str(node_inst)+"' could not be found in the root pathway")
                     return (success,value)
 
                 result = __cp_help_func__(file_list, path_str)
@@ -2175,11 +2174,11 @@ class PathParse(object):
                 return result
             
             elif(destStr[0] == '/' or destStr[0] == '\\'):
-                ndir_inst = destStr[1:]
-                path_str = self.__climbPath__(-1)
+                node_inst = destStr[1:]
+                path_str = self.__climbPath__(node_inst)
                 if(path_str == False):
                     success = False
-                    print("Error: the folder: '"+str(ndir_inst)+"' could not be found in the root pathway")
+                    print("Error: the folder: '"+str(node_inst)+"' could not be found in the root pathway")
                     return (success,value)
                     
                 result = __cpdir_help_func__(file_list, path_str)
@@ -2195,60 +2194,52 @@ class PathParse(object):
                 success = False            
             result = (success,value)
             return result 
-        
-        
+
+
         def cmd_find(tup):
 
-            success = True            
+            success = True
             value = None
-            cmdInst, file_list, destStr = tup   
-            
-            found_list = []
-            for i in file_list:            
-                ftest = self.find(i, self.varPath)
-                found_list.append(ftest)
+            cmdInst, file_list, destStr = tup
 
-#            found_dict = {k: v for k, v in zip(file_list, found_list)}   
-            found_dict = dict(zip(file_list,found_list))
-                
+            found_dict = self.__find__(file_list)
+            if(found_dict == False):
+                self.errPrint("[cmd_find] Error: failure to parse 'find' values", funcAdd='cmd')
+                return (False, None)
+
             if(self.debug):
-                if(all(i == True for i in found_list)):
-                    print("All Files have been found in the current directory!")
+                if(all(i == True for i in found_dict)):
+                    print(self.space+"All searched objects have been found in the current directory!\n")
                 else:
-                    for j in found_dict:
-                        if(found_dict[j] == False):
-                            print("No file named '"+j+"' found in current directory.")
-            
-            value = found_dict
-            result = (success,value)
+                    for found in found_dict:
+                        if(found_dict[found] == False):
+                            print(self.space+"No object named '"+str(found)+"' found in current directory.")
+
+            result = (success, found_dict)
             return result
-          
-        
+
+
         def cmd_match(tup):
 
-            success = True            
+            success = True
             value = None
-            cmdInst, file_list, destStr = tup   
-            
-            match_list = []
-            for i in file_list:
-                gtest = self.match(self.varPath, i)
-                match_list.append(gtest)
+            cmdInst, file_list, destStr = tup
 
-#            match_dict = {k: v for k, v in zip(file_list, match_list)} 
-            match_dict = dict(zip(file_list,match_list))
-             
+            match_dict = self.__match__(file_list)
+            if(match_dict == False):
+                self.errPrint("[cmd_match] Error: failure to parse 'match' values", funcAdd='cmd')
+                return (False, None)
+
             if(self.debug):
-                for i in file_list:
-                    if(len(match_dict[i]) == 0):
-                        print("No matches found for the string, '"+i+"' ")
-                    else:
-                        print("The following matches were found for the string, '"+i+"' :")
-                        self.__fancyPrintList__(match_dict[i])
-                        
-            value = match_dict
-            result = (success,value)                       
-            return result           
+                if(len(match_dict) == 0):
+                    print(self.space+"No matches found for the string, '"+str(frag)+"' \n")
+                else:
+                    for frag in match_dict:
+                        print(self.space+"The following matches were found for the string, '"+str(frag)+"' :")
+                        self.__fancyPrintList__(match_dict[frag])
+
+            result = (success, match_dict)
+            return result
 
 
         def cmd_vi(tup):
@@ -2259,7 +2250,7 @@ class PathParse(object):
 
             if(len(file_list) > 1):
                 if(self.debug):
-                    print("Warning: Only one file can be grabbed at a time")         
+                    self.errPrint("Warning: Only one file can be grabbed at a time", funcAdd='cmd')         
                 value = None 
                 success = False
 
@@ -2271,7 +2262,7 @@ class PathParse(object):
                     value = iop.flat_file_grab(file_path_str)
                 except:
                     if(self.debug):
-                        print("Error: Could not retrieve the contents of '"+file_name+"'")         
+                        errPrint("[cmd_vi] Error: Could not retrieve the contents of '"+file_name+"'", funcAdd='cmd')         
                     value = None
                     success = False
             elif(file_name not in self.varPath_Contains):
@@ -2279,12 +2270,12 @@ class PathParse(object):
                     value = iop.flat_file_write(file_path_str)
                 except:
                     if(self.debug):
-                        print("Error: The file '"+file_name+"' could not be opened")
+                        errPrint("[cmd_vi] Error: The file '"+file_name+"' could not be opened", funcAdd='cmd')
                     value = None
                     success = False
             else:
                 if(self.debug):
-                    print("Error: '"+file_name+"' not a file found in current (path) directory")         
+                    errPrint("[cmd_vi] Error: '"+file_name+"' not a file found in current (path) directory", funcAdd='cmd')         
                 value = None 
                 success = False
 
@@ -2355,13 +2346,13 @@ class PathParse(object):
         elif(cmdInst == 'ls'):              # list (content of working directory)
             result = cmd_ls(cmd_tuple)        
 
-        elif(cmdInst == 'dir'):             # directory (pathway)
+        elif(cmdInst == 'dir'):             # return directory (pathway) of object in cwd
             result = cmd_dir(cmd_tuple)   
 
-        elif(cmdInst == 'cd'):              # change directory 
+        elif(cmdInst == 'cd'):              # change directory (pathway)
             result = cmd_cd(cmd_tuple)
 
-        elif(cmdInst == 'chdir'):           # change directory (with pathway)
+        elif(cmdInst == 'chdir'):           # change directory (with new pathway)
             result = cmd_chdir(cmd_tuple)
 
         elif(cmdInst == 'mv'):              # move and rename (files and directories)
@@ -2388,7 +2379,7 @@ class PathParse(object):
         elif(cmdInst == 'match'):           # match (file names) 
             result = cmd_match(cmd_tuple)
 
-        elif(cmdInst == 'vi'):              # visual interface (read text files)
+        elif(cmdInst == 'vi'):              # visual interface (read\create flat files)
             result = cmd_vi(cmd_tuple)
 
         elif(cmdInst == 'help'):            # help (display)

@@ -45,22 +45,26 @@ def __dup_check__(array):
             return True
         else:
             s.add(i)         
-    return False        
+    return False
 
 
-def __attempt_path_print__(filepath, path_name=None, func_name=None):       
-    try:
-        if(path_name != None):
-            if(func_name != None):
-                print("["+func_name+"] Error")
-            print("Given pathway '"+path_name+"': "+str(filepath))
-            return True                
-        else:
-            print("Given pathway: "+str(filepath))
-            return True
-    except:
-        print("Pathway could not be parsed")  
-        return False       
+def __attempt_path_print__(filepath, path_name=None, func_name=None, spc='    '):
+
+    if(isinstance(func_name, str)):
+        print(spc+'['+func_name+']'+"[__attempt_path_print__] Error")
+    else:
+        print(spc+"[__attempt_path_print__] Error:")
+
+    if(not isinstance(filepath, str)):
+        print(spc+"'filepath' is not a string: '"+str(filepath)+"'\n")
+        return False
+
+    if(isinstance(path_name, str)):
+        print(spc+"Given pathway '"+path_name+"': "+str(filepath)+'\n')
+        return True
+    else:
+        print(spc+"Given pathway: "+str(filepath))
+        return True
 
 
 def __io_opt_test__(ptype, io, par=False, count_offset=False):
@@ -235,7 +239,7 @@ def flat_file_read(file_in, ptype='r'):
         return file_lines
     except:
         print("[flat_file_read] Error: File could not be read")
-        __attempt_path_print__(file_in)
+        __attempt_path_print__(file_in, func_name='flat_file_read')
         return False
 
 
@@ -292,7 +296,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype='w+'):
         return True
     except:
         print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-        __attempt_path_print__(file_out,'file_out')
+        __attempt_path_print__(file_out, path_name='file_out', func_name='flat_file_write')
         return False
 
 
@@ -346,11 +350,11 @@ def flat_file_append(file_out, add_list, par=False):
         return True 
     except: 
         print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-        __attempt_path_print__(file_out,'file_out')
+        __attempt_path_print__(file_out, path_name='file_out', func_name='flat_file_append')
         return False         
      
      
-def flat_file_replace(file_out, grab_list , change_list, count_offset=True, par=False, ptype='w'):
+def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=False, ptype='w'):
     '''
     Description: In the file 'file_out', the lines in 'grab_list' are replaced with the strings in 'change_list'
 
@@ -374,7 +378,7 @@ def flat_file_replace(file_out, grab_list , change_list, count_offset=True, par=
 
     Output: Success Boolean   
     '''
-    
+    spc = '    '
     # Testing proper variable types
     test = __io_opt_test__(ptype, 'write', par=par, count_offset=count_offset)
     if(not test):
@@ -406,7 +410,9 @@ def flat_file_replace(file_out, grab_list , change_list, count_offset=True, par=
             file_lines[i] = change_list[j]
     
     # Print modifications to file 
-    result = flat_file_write(file_out,file_lines,ptype=ptype)
+    result = flat_file_write(file_out, file_lines, ptype=ptype)
+    if(result == False):
+        print(spc+"[flat_file_replace] Error: failure to replace files\n")
     return result
     
     

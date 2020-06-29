@@ -1,21 +1,33 @@
+'''
+This program is for use with the following program pipeline:
+
+    matter.f
+    nxloyyynew.f (x = 2,3,4 ; y = 450,500)
+    nnsum.f\nnsum_2015_opti.f
+
+Computes and stores EoS files generated from selected 3NF contributions at specified chiral order
+'''
+
 import subprocess as subp
-import time 
+import time
 import sys
 
-from pmod import ioparse as iop
-from pmod import cmdline as cl 
-from pmod import strlist as strl
-from pmod import vmed as vf
+import pmod.vmed as vf
+import pmod.ioparse as iop
+import pmod.cmdline as cmv
+import pmod.strlist as strl
+
 
 def exit_func():
     print("[vmed_con_eos_scripter] Exit: Error detected, see previous msg for details...exiting script")
-    sys.exit()   
+    sys.exit()
 
 tstart = time.time()
 
-cml = cl.path_parse('Linux')
+cml = cmv.PathParse('Linux')
 
-if('vincp' not in cml.var_path_contain):
+# Make empty 'vincp' folder, clear folder if it already exists
+if('vincp' not in cml.varPath_Contains):
     cml.cmd('mkdir vincp')
     exist = False
 else:
@@ -24,10 +36,13 @@ else:
     exist = True
 
 ### Group V contribs 
-vlist = vf.v_lines()
-if(vlist == False or vlist == []):
-    if(vlist == []):
+numgroup, ngroup = vf.v_group()
+n = len(ngroup)
+if(ngroup == False or n == []):
+    if(n == []):
         print("[vmed_con_eos_scripter] Error: no contributions could be parsed from 'contribs.txt'")
+    else:
+        print("[vmed_con_eos_scripter] Error: failure to parse contributions from 'contribs.txt'")
     exit_func()
     
     
@@ -39,62 +54,53 @@ if(success == False):
 
 in_path = in_path_list[0]
 
-lines_list = iop.flat_file_grab(in_path, [])
-demark = lines_list[-1]
+lines_list = iop.flat_file_grab(in_path)
 
-if(strl.str_space_clean(demark.strip('\n').strip('\r')) == ''):
+# set the demarcation line, removes empty lines at end of file
+demarc = lines_list[-1]
+if(demarc.rstrip() == ''):
     j = 0
-    while(strl.str_space_clean(lines_list[-1+j].strip('\n').strip('\r')) == ''):
+    while(lines_list[-1+j].rstrip() == ''):
         j+=-1
-    demark = lines_list[-1+j]
+    demarc = lines_list[-1+j]
     lines_list = lines_list[:j]
 
-if(demark != "end param."):
+if(demarc.rstrip() != "end param."):
     print("[vmed_con_eos_scripter] Warning: the end line in 'sample_input.txt' is not 'end param.'")
-    
-sum_failure = False     
+
+sum_failure = False
     
 
 lines_list = lines_list[:-1]
 
 ### Cycle through running each new contrib and storing the result
 
-n = len(vlist)
-
 output_lines = []
 
 output_lines.append("\n")
-output_lines.append("         Basic   Part    Tot      Final e   vspread  f    V     t    n\n")
+output_lines.append("         Basic   Part    Tot      Final e   vspread  n\n")
 output_lines.append("\n")
 
-for i in range(n):
+for i, entry in enumerate(ngroup):
 
-    # Generate new input 
+    # Add new V-vals generator
     new_lines = list(lines_list)
-    for j in vlist[i]:
-        val = j+'\n'
-        new_lines.append(val)
-    new_lines.append(demark)
+    for ventry in entry:
+        for vm in ventry:
+            val = vm+'\n'
+            new_lines.append(val)
+    new_lines.append(demarc)
+    iop.flat_file_write(in_path, new_lines)
 
-    force = vf.ventry("force",vlist[i])
-    if(len(force) == 1):
-        force=force+' '
-    vnum  = vf.ventry("v",vlist[i])
-    if(len(vnum)==2):
-        vnum = vnum+' '
-    tensor= vf.ventry("tensor",vlist[i])
+    subp.call("./xtest", shell=True)
 
-    # Write the new output and run the program
-    iop.flat_file_write(in_path,new_lines)
-    subp.call('./xtest',shell=True)
-
-    # 
-    iop.flat_file_grab('test1.txt', scrub=True) 
+   # 
     values = vf.partial_eos(file_name = 'test1.txt')
-    for j in range(len(values)):
-        values[j] = strl.str_to_list(values[j], filtre = True)
 
     try:
+
+        for j in range(len(values)):
+            values[j] = strl.str_to_list(values[j], filtre = True)
 
         v1 = values[-1][-1] 
         v2 = values[-2][-1] 
@@ -130,9 +136,6 @@ for i in range(n):
                          str(totconv),
                          str(v1),
                          str(vspread),
-                         force,
-                         vnum,
-                         tensor,
                          str(i)+'\n']
 
     except:
@@ -151,8 +154,10 @@ for i in range(n):
     cml.cmd('mv test.txt;test1.txt '+new_fold_name)
     cml.cmd('cd ..')
 
-lines_list.append(demark)              
-iop.flat_file_write(in_path,lines_list)
+
+
+lines_list.append(demarc)              
+iop.flat_file_write(in_path, lines_list)
 
 try:
     iop.flat_file_write('sum_test.txt', output_lines) 

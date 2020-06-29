@@ -5,16 +5,16 @@ import subprocess
 import ioparse as iop
 from cmdline import PathParse as cmv
 
- 
+
 # File Utility Functions
 
 def convert_endline(file, style = 'dos2unix', space = '    '):
-         
-    lines = iop.flat_file_read(file) 
+
+    lines = iop.flat_file_read(file)
     if(lines == False):
-        print("    [convert_endline] Error: could not read input 'file' : "+str(file)) 
-        return False       
-     
+        print("    [convert_endline] Error: could not read input 'file' : "+str(file))
+        return False
+
     if(style == 'dos2unix'):
         end_Line = "\n"
     elif(style == 'unix2dos'):
@@ -347,12 +347,12 @@ class cmdUtil(object):
                             print(self.space+"[convert_file_endline] Warning: '"+str(entry)+"' not resolved\n")
                         return False
         elif(foldName in self.cml.varPath_Folders):
-            fold_node = self.cml.joinNode(self.cml.varPath,foldName)
+            fold_node = self.cml.joinNode(self.cml.varPath, foldName)
             if(fold_node == False):
                 if(self.debug):
                     print(self.space+"[convert_file_endline] Error: "+str(foldName)+" not reconginzed\n")
                 return False
-            fold_contents = self.cml.contentPath(fold_node,objType='file')
+            fold_contents = self.cml.contentPath(fold_node, objType='file')
             if(fold_contents == False):
                 if(self.debug):
                     print(self.space+"[convert_file_endline] Error: '"+str(fold_node)+"' contents not retrieved\n")

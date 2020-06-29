@@ -186,9 +186,9 @@ def get_contribs():
 
 def ventry(dictval, vlist):
     fkey = ['number','values']
-    vkey = ['force','v','factor','zero','pion','tensor','prop']     
+    vkey = ['force','v','factor','zero','pion','tensor','prop']
     vval = strl.str_to_list(vlist[0], filtre=True)
-                     
+
     funs = vlist[1:] 
     funlist = []       
     for i in funs:
@@ -257,7 +257,7 @@ def v_group():
     # Get contrib lines as group
     lines_list = v_lines()
     if(lines_list == False):
-        return False
+        return (False, False)
 
     # Pair up V line with fun. line
     numgroup = []
@@ -282,6 +282,7 @@ def v_group():
     return numgroup, ngroup
 
 
+# Old version of v_group()
 #def v_group():
 #
 #    # Get contrib lines 
