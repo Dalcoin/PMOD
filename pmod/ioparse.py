@@ -5,7 +5,7 @@ import strlist as strl
 
 '''
 
-Description: Functions for performing basic IO functions on flat (text) files. 
+Description: Functions for performing basic IO functions on flat (text) files.
 
 
 Below is a list of the functions this class offers (w/ input):
@@ -21,183 +21,176 @@ Below is a list of the functions this class offers (w/ input):
    flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w')  
 
    flat_file_intable(file_in, header=False)
-        
+
 '''
 
-# Variable intialization
+# Global object intialization
 
 global ptype_list, ptype_read, ptype_write
 
 ptype_list = ['r','r+','rb','w','w+','wb','wb+','a','ab','a+','ab+']
 ptype_read = ['r','r+','rb']
 ptype_write = ['w','w+','wb','wb+','a','ab','a+','ab+']
-          
+
+printer = check.imprimer()
+
 
 #################################################################
 # Helper functions----------------------------------------------#
 #################################################################
 
-def __dup_check__(array):
-    '''If there is a duplicate in array-like object, True is returned, else False'''    
-    s = set()
-    for i in array:
-        if i in s:
-            return True
-        else:
-            s.add(i)         
-    return False
+def __path_print__(pathmsg, **kwargs):
+    ''' '''
+    if(not isinstance(kwargs.get('header'), str)):
+        kwargs['header'] = "Pathway"
+    printer.errPrint(pathmsg, **kwargs)
+
+def __err_print__(errmsg, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    printer.errPrint(errmsg, **kwargs)
+
+def __not_str_print__(var, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    return not printer.strCheck(var, **kwargs)
+
+def __not_arr_print__(var, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    return not printer.arrayCheck(var, **kwargs)
 
 
-def __attempt_path_print__(filepath, path_name=None, func_name=None, spc='    '):
+def __io_test_fail__(ptype, io, **pkwargs):
 
-    if(isinstance(func_name, str)):
-        print(spc+'['+func_name+']'+"[__attempt_path_print__] Error")
-    else:
-        print(spc+"[__attempt_path_print__] Error:")
-
-    if(not isinstance(filepath, str)):
-        print(spc+"'filepath' is not a string: '"+str(filepath)+"'\n")
-        return False
-
-    if(isinstance(path_name, str)):
-        print(spc+"Given pathway '"+path_name+"': "+str(filepath)+'\n')
-        return True
-    else:
-        print(spc+"Given pathway: "+str(filepath))
-        return True
-
-
-def __io_opt_test__(ptype, io, par=False, count_offset=False):
-    
-    success = True
-
-    if(ptype not in ptype_list):
-        success = False
-        try:            
-            print("[__io_opt_test__] Error: 'ptype', '"+str(ptype)+"' is not a valid 'ptype' option")
-        except:
-            print("[__io_opt_test__] Error: 'ptype', could not be parsed as a valid 'ptype' option string")   
+    success = False
+    msg = None
 
     if(io == 'read'):
         if(ptype not in ptype_read):
-            success = False                            
-            print("[__io_opt_test__] Error: ptype, '"+str(ptype)+"' is not a valid read option")
+            msg = "'"+str(ptype)+"' is not a valid 'ptype' option for reading from a file"
     elif(io == 'write'):
-        if(ptype not in ptype_write):   
-            success = False                         
-            print("[__io_opt_test__] Error: ptype, '"+str(ptype)+"' is not a valid write option")      
+        if(ptype not in ptype_write):
+            msg = "'"+str(ptype)+"' is not a valid 'ptype' option for writing to a file"
     else:
-        success = False
-        print("[__io_opt_test__] Error: option 'io' must be either 'read' or 'write'")
-    
-    test = check.type_test_print(par,bool,'par','__io_opt_test__') 
-    if(not test):
-        success = False 
-         
-    test = check.type_test_print(count_offset,bool,'count_offset','__io_opt_test__') 
-    if(not test):
-        success = False 
-              
+        msg = "'"+str(io)+"' is not a valid 'io' option"
+
+    if(isinstance(msg, str)):
+        __err_print__(msg, **pkwargs)
+        success = True
+
     return success
 
 
-def __grab_list_test__(grab_list, n, m,repeat = False, change_list = None):
+def __grab_list_fail__(grab_list, m, repeat=False, change_list=None, **pkwargs):
 
-    test = check.type_test_print(grab_list,list,'grab_list','__grab_list_test__')
-    if(not test):
-        return False
+    if(__not_arr_print__(grab_list, **pkwargs)):
+        return True
+    if(change_list != None):
+        if(__not_arr_print__(change_list, **pkwargs)):
+            return True
 
-    if(n>0):
-        for i in range(n):
-            test = check.type_test_print(grab_list[i],int,'grab_list['+str(i)+']','__grab_list_test__') 
-            if(not test):
-                return False 
+    n = len(grab_list)
+
+    # Checks that each entry in 'change_list' is a string
+    if(change_list != None):
+        for i,entry in enumerate(change_list):
+            if(not isinstance(entry, str)):
+                pkwargs["varName"] = "change_list"
+                __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+                return True
 
     if(repeat):
         saut = grab_list[1:-1]
-        test = __dup_check__(saut)
-        if(test):
-            print("[__grab_list_test__] Error: 'saut' values must be unique")
-            return False            
+        if(strl.array_duplicate_check(saut)):
+            pkwargs["varName"] = "saut"
+            __err_print__("values must be unique", **pkwargs)
+            return True
     else:
-        test = __dup_check__(grab_list)
-        if(test):
-            print("[__grab_list_test__] Error: 'grab_list' values must be unique")
-            return False
+        if(strl.array_duplicate_check(grab_list)):
+            pkwargs["varName"] = "grab_list"
+            __err_print__("values must be unique", **pkwargs)
+            return True
 
-        
     if(n>m):
-        print("[__grab_list_test__] Error: 'grab_list' is longer than the number of file lines")
-        return False
-    if(m < (max(grab_list)+1)):
-        print("[__grab_list_test__] Error: replacement line number greater than the max number of files lines")
-        return False
+        pkwargs["varName"] = "grab_list"
+        __err_print__("has more values than the number of lines found in input file", **pkwargs)
+        return True
+    if(m<(max(grab_list)+1)):
+        pkwargs["varName"] = "grab_list"
+        __err_print__("; index of line(s) to be selected is greater than the number of lines in input files", **pkwargs)
+        return True
 
     if(change_list != None):
-        if(len(grab_list) != len(change_list)):  
-            print("[__grab_list_test__] Error: 'grab_list' and 'change_list' must have the same length")
-            return False
-  
-        for i in range(len(change_list)):
-            test = check.type_test_print(change_list[i],str,'change_list['+str(i)+']','flat_file_replace') 
-            if(not test):
-                return False        
-    return True
+        if(n != len(change_list)):
+            pkwargs["varName"] = "grab_list"
+            __err_print__("; number of replacement lines is greater than the number of lines to be changed 'change_list'", **pkwargs)
+            return True
+    return False
 
 
-def __list_repeat__(grab_list,file_lines,scrub):
-    '''   
-    
+def __list_repeat__(grab_list, file_lines, scrub, **pkwargs):
+    '''
+
     variables:
 
-    grab_list : list (int), list of ints for formatting according to 'repeat'
-    file_lines : list (str), list of strs which are selected according to 'repeat'
-    scrub : True to remove end line and carriage return
-    
-    rules for the 'repeat' format for 'grab_list':
+        grab_list : list (int), list of ints for formatting according to 'repeat'
 
-    1) The first value of the grab_list is 'bnd' (bind): corrosponding 
-       to the spacing (binding) the grouped lines togeather: grab_list[0]
-    
-    2) The next values of the grab_list are 'saut' (sauter): the first repeat 
-       instances to be selected from, according to line number: grab_list[1:-1] 
+        file_lines : list (str), list of strs which are selected according to 'repeat'
 
-    3) The last value of grab_list is 'n' (number): the number of groups to be 
-       generated. Spacing between groups corrosponds to 'bnd', while 
-       the grouped values start from the 'saut' line values.  
+        scrub : True to remove end line and carriage return
 
-    ''' 
+        rules for the 'repeat' format for 'grab_list':
+
+    Rules for "repeat": 
+
+        1) The first value of the grab_list is 'bnd' (bind): corrosponding
+           to the spacing (binding) the grouped lines togeather: grab_list[0]
+
+        2) The next values of the grab_list are 'saut' (sauter): the first repeat
+           instances to be selected from, according to line number: grab_list[1:-1]
+
+        3) The last value of grab_list is 'n' (number): the number of groups to be
+           generated. Spacing between groups corrosponds to 'bnd', while
+           the grouped values start from the 'saut' line values.
+
+    '''
     if(len(grab_list)<3):
-        print("[__list_repeat__] Error: 'grab_list' must have at least 3 entries when 'repeat' is True")
-        return False        
-
-    raw_lines = []          
-    
-    lim = len(file_lines)        
-
-    bnd = grab_list[0]+1        
-    saut = grab_list[1:-1]
-    n = grab_list[-1]+1
-     
-    if(bnd < 1):
-        print("[__list_repeat__] Error: 'bnd' (first value of 'grab_list') must be 1 or greater") 
-        return False 
-    if(len(saut)> lim):
-        print("[__list_repeat__] IndexError: there are more lines to be grabed than file_lines")
-        return False 
-    for i in saut:
-        if(i<0):
-            print("[__list_repeat__] Error: 'saut' (grab_list[1:-1]) value should not be negative")
-    if(lim < max(saut)+bnd*(n-1)):
-        print("[__list_repeat__] IndexError: grab_list evaluation exceeds length of file_lines") 
+        pkwargs["varName"] = "grab_list"
+        __err_print__("must have at least 3 entries when 'repeat' is True: "+str(len(grab_list)), **pkwargs)
         return False
 
+    lim = len(file_lines)
+
+    bnd = grab_list[0]+1
+    saut = grab_list[1:-1]
+    n = grab_list[-1]+1
+
+    if(bnd < 1):
+        pkwargs["varName"] = "bnd"
+        __err_print__(" (first value of 'grab_list'), must be equal to or greater than 1: "+str(bnd), **pkwargs)
+        return False
+    if(len(saut) > lim):
+        pkwargs["varName"] = "saut"
+        __err_print__("(grab_list[1:-1]), must be fewer than the number of file lines"+str(len(saut)), **pkwargs)
+        return False
+    for i in saut:
+        if(i<0):
+            pkwargs["varName"] = "saut"
+            __err_print__("(grab_list[1:-1]) value should not be negative"+str(i), **pkwargs)
+    if(lim < max(saut)+bnd*(n-1)):
+        pkwargs["varName"] = "grab_list"
+        __err_print__("evaluated through 'repeat', exceeds the length of the input file", **pkwargs)
+        return False
+
+    raw_lines = []
     for i in range(n):
-        for j in range(len(saut)):
-            line_tag = saut[j]+bnd*i
+        for j in saut:
+            line_tag = j+bnd*i
             if(scrub):
-                file_lines[line_tag] = file_lines[line_tag].strip("\n").strip("\r")  
-            raw_lines.append(file_lines[line_tag])    
+                raw_lines.append(file_lines[line_tag].rstrip())
+            else:
+                raw_lines.append(file_lines[line_tag])
     return raw_lines
 
 
@@ -205,10 +198,8 @@ def __list_repeat__(grab_list,file_lines,scrub):
 #---IOParse functions---#
 #########################
 
-def flat_file_read(file_in, ptype='r'):
+def flat_file_read(file_in, ptype='r', **pkwargs):
     '''
-    flat_file_read(file_in, ptype='r')
-
     Description: Writes a list of strings (1 line per string) from an input file, various options for parsing
 
     (e.g.) :
@@ -217,20 +208,23 @@ def flat_file_read(file_in, ptype='r'):
 
     Variables:
 
-        'file_in': file string pathway, if only a single node is given, current (path) directory is assumed
+        'file_in': (str) file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'ptype': [*] a string in found in the 'ptype_read list'.
+        'ptype': (str)['r'] a string corrosponding to a read 'ptype' option, found in the 'ptype_read' list
 
-    Output: List of Strings; Output: Success Boolean
+    Output: List of strings corrosponding to lines of 'file_in', False if error occurs
 
     '''
 
-    test = __io_opt_test__(ptype, 'read')
-    if(not test):
-        return False
+    newFuncName = printer.addFuncName("flat_file_read", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_read"
 
-    test = check.type_test_print(file_in, str, 'file_in', 'flat_file_read')
-    if(not test):
+    if(__io_test_fail__(ptype, 'read', **pkwargs)):
+        return False
+    if(__not_str_print__(file_in, varID="file_in",**pkwargs)):
         return False
 
     try:
@@ -238,15 +232,14 @@ def flat_file_read(file_in, ptype='r'):
             file_lines = file_in.readlines()
         return file_lines
     except:
-        print("[flat_file_read] Error: File could not be read")
-        __attempt_path_print__(file_in, func_name='flat_file_read')
+        if(not isinstance(pkwargs.get("varName"), str)):
+            pkwargs["varName"] = "file_in"
+        __err_print__(["could not be read","Filepath : '"+file_in+"'"], **pkwargs)
         return False
 
 
-def flat_file_write(file_out, add_list=[], par=False, ptype='w+'):
+def flat_file_write(file_out, add_list=[], par=False, ptype="w+", **pkwargs):
     '''
-    flat_file_write(file_out, add_list=[], par=False, ptype='w')
-
     Description: Writes a list of strings to an output file, various options for parsing
 
     (e.g.)
@@ -257,104 +250,118 @@ def flat_file_write(file_out, add_list=[], par=False, ptype='w+'):
 
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'add_list': [*] list of strings, each string is a separate line, order denoted by the index.
+        'add_list': (array)[[]] list of strings, each string is a separate line, order denoted by the index.
                     if the 'add_list' is empty then an empty file is created
 
-        'ptype': [*] a string in found in the ptype_write list.
+        'par': (bool)[False] True if endline character is to be added to each output string, else False.
 
-        'par': [*] True if endline character is to be added to each output string, else False.
+        'ptype': (str)['r'] a string corrosponding to a write 'ptype' option, found in the 'ptype_write' list
 
     Output: Success Boolean
-    ''' 
+    '''
 
-    # Testing proper variable types
-    test = __io_opt_test__(ptype,'write', par=par)
-    if(not test):
-        return False         
+    newFuncName = printer.addFuncName("flat_file_write", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_write"
 
-    test = check.type_test_print(file_out, str, 'file_out', 'flat_file_write') 
-    if(not test):
+    if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
-    test = check.type_test_print(add_list, list, 'add_list', 'flat_file_write') 
-    if(not test):
+    if(__not_str_print__(file_out, varID="file_out", **pkwargs)):
+        return False
+    if(__not_arr_print__(add_list, varID="add_list", **pkwargs)):
         return False
 
-    n=len(add_list)
-    for i in xrange(n):
-        test = check.type_test_print(add_list[i], str, 'add_list['+str(i)+']', 'flat_file_write')
-        if(not test):
+    #if(not all([isinstance(entry, str) for entry in add_list]):
+    #    return False
+
+    # Checks that each entry in 'add_list' is a string
+    for i,entry in enumerate(add_list):
+        if(not isinstance(entry, str)):
+            pkwargs["varName"] = "add_list"
+            __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
             return False
 
     # Print content to file
     try:
         with open(file_out, ptype) as fout:
-            for i in add_list:
+            for entry in add_list:
                 if(par):
-                    fout.write(i+"\n")
+                    fout.write(entry+"\n")
                 else:
-                    fout.write(i)
+                    fout.write(entry)
         return True
     except:
-        print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-        __attempt_path_print__(file_out, path_name='file_out', func_name='flat_file_write')
+        if(not isinstance(pkwargs.get("varName"), str)):
+            pkwargs["varName"] = "file_out"
+        __err_print__(["could not be written to using entries in 'add_list'","Filepath : '"+file_out+"'"], **pkwargs)
         return False
 
 
-def flat_file_append(file_out, add_list, par=False):
+def flat_file_append(file_out, add_list, par=False, newline=True, **pkwargs):
     '''
-    flat_file_append(file_out, add_list, par=False)
-
-    Description: Appends a list of strings to an output file
+    Description: Appends a list of strings to the end of an output file
 
     (e.g.)
 
-        flat_file_write('file.in',["\n","This is the second to last line!","This is the last line!"])
+        flat_file_append('file.in', ["\n","This is the second to last line!", "This is the last line!"])
 
     Variables:
-    
+
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'add_list': list of strings, each string is a separate line, order denoted by the index. 
+        'add_list': (array) list of strings, each string is a separate line, order denoted by the index.
 
-        'ptype': [*] a string in found in the ptype_write list.         
+        'par': (bool)[False] True if endline character is to be added to each output string, else False.
 
-        'par': [*] True if endline character is to be added to each output string, else False. 
-
-    Output: Success Boolean         
-
+    Output: Success Boolean
     ''' 
 
     ptype = 'a+'
-    # Testing proper variable types
-    test = check.type_test_print(file_out,str,'file_out','flat_file_append') 
-    if(not test):
+
+    newFuncName = printer.addFuncName("flat_file_append", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_append"
+
+    if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
-    test = check.type_test_print(add_list,'arr','add_list','flat_file_append') 
-    if(not test):
+    if(__not_str_print__(file_out, varID="file_out", **pkwargs)):
         return False
-    
-    n=len(add_list)
-    for i in range(n):
-        test = check.type_test_print(add_list[i],str,'add_list['+str(i)+']','flat_file_append')
-        if(not test):
-            return False           
-        
-    # Print content to file   
-    try: 
+    if(__not_arr_print__(add_list, varID="add_list", **pkwargs)):
+        return False
+
+    #if(not all([isinstance(entry, str) for entry in add_list]):
+    #    return False
+
+    # Checks that each entry in 'add_list' is a string
+    for i,entry in enumerate(add_list):
+        if(not isinstance(entry, str)):
+            pkwargs["varName"] = "add_list"
+            __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+            return False
+    if(newline):
+        add_list = ["\n"]+add_list
+
+    # Print content to file
+    try:
         with open(file_out,ptype) as fout:
-            for i in add_list: 
+            for entry in add_list:
                 if(par):
-                    fout.write(i+"\n")
+                    fout.write(entry+"\n")
                 else:
-                    fout.write(i) 
-        return True 
-    except: 
-        print("[flat_file_write] Error: 'add_list' lines could not be printed to file")
-        __attempt_path_print__(file_out, path_name='file_out', func_name='flat_file_append')
-        return False         
-     
-     
-def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=False, ptype='w'):
+                    fout.write(entry)
+        return True
+    except:
+        if(not isinstance(pkwargs.get("varName"), str)):
+            pkwargs["varName"] = "file_out"
+        __err_print__(["could not be written to using entries in 'add_list'","Filepath : '"+file_out+"'"], **pkwargs)
+        return False
+
+
+def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=False, ptype='w', **pkwargs):
     '''
     Description: In the file 'file_out', the lines in 'grab_list' are replaced with the strings in 'change_list'
 
@@ -378,45 +385,61 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
 
     Output: Success Boolean   
     '''
-    spc = '    '
-    # Testing proper variable types
-    test = __io_opt_test__(ptype, 'write', par=par, count_offset=count_offset)
-    if(not test):
+
+    newFuncName = printer.addFuncName("flat_file_replace", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_replace"
+
+    if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
-    test = check.type_test_print(file_out,str,'file_out','flat_file_replace') 
-    if(not test):
+    if(__not_str_print__(file_out, varID="file_out", **pkwargs)):
         return False
+
+    for i,entry in enumerate(grab_list):
+        if(not isinstance(entry, int)):
+            pkwargs["varName"] = "grab_list"
+            __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+            return False
 
     # Accounts for the difference between line number (starting at 1) and python indexing (starting at 0)
-    if(count_offset):      
+    if(count_offset):
         grab_list = [x-1 for x in grab_list]
 
+    #if(not all([isinstance(entry, int) for entry in grab_list]):
+    #    return False
+    #if(not all([isinstance(entry, str) for entry in change_list]):
+    #    return False
+
     # Read in file
-    file_lines = flat_file_read(file_out)
-    m = len(file_lines)   
-    
-    # Testing the lengths of variable arrays 
-    n = len(grab_list)
-    test = __grab_list_test__(grab_list, n, m,repeat = False, change_list = change_list)
-    if(not test):
+    file_lines = flat_file_read(file_out, **pkwargs)
+    if(file_lines == False):
         return False
-        
-    # Make modifications 
+    else:
+        m = len(file_lines)
+
+    # Checking "grab_list" and "change_list" for errors
+    if(__grab_list_fail__(grab_list, m, repeat=False, change_list=change_list, **pkwargs)):
+        return False
+
+    # Make modifications
     for i in grab_list:
         j = grab_list.index(i)
         if(par):
             file_lines[i] = change_list[j]+"\n"
         else:
             file_lines[i] = change_list[j]
-    
-    # Print modifications to file 
+
+    # Write modifications to file
     result = flat_file_write(file_out, file_lines, ptype=ptype)
     if(result == False):
-        print(spc+"[flat_file_replace] Error: failure to replace files\n")
+        pkwargs["varName"] = "add_list"
+        __err_print__("couldn't write replacement lines to"+str(file_out), **pkwargs)
     return result
-    
-    
-def flat_file_grab(file_in, grab_list = [], scrub=False, repeat=False, count_offset=True, ptype='r'):
+
+
+def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offset=True, ptype='r', **pkwargs):
     '''
     Description: Grabs the lines in 'grab_list' as strings from the file 'file_in'
 
@@ -426,7 +449,7 @@ def flat_file_grab(file_in, grab_list = [], scrub=False, repeat=False, count_off
 
     Variables:
     
-        'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
+        'file_in': file string pathway, if only a single node is given, current (path) directory is assumed
 
         'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
 
@@ -440,100 +463,108 @@ def flat_file_grab(file_in, grab_list = [], scrub=False, repeat=False, count_off
 
     Output: List of Strings; Output: Success Boolean  
     '''
-            
+    newFuncName = printer.addFuncName("flat_file_grab", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_grab"
+
     # Testing proper variable types
-    test = __io_opt_test__(ptype,'read',count_offset=count_offset)
-    if(not test):
+    if(__io_test_fail__(ptype, 'read', **pkwargs)):
         return False
-    test = check.type_test_print(file_in,str,'file_in','flat_file_grab') 
-    if(not test):
+    if(__not_str_print__(file_in, varID="file_in", **pkwargs)):
         return False
+
+    for i,entry in enumerate(grab_list):
+        if(not isinstance(entry, int)):
+            pkwargs["varName"] = "grab_list"
+            __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+            return False
 
     # Accounts for the difference between line number (starting at 1) and python indexing (starting at 0)
-    if(count_offset):      
+    if(count_offset):
         grab_list = [x-1 for x in grab_list]
-    n = len(grab_list)
 
     # Read in file
-    file_lines = flat_file_read(file_in)
-    if(n == 0):
-        if(scrub == True):
-            for i in range(len(file_lines)):
-                file_lines[i] = file_lines[i].strip('\n').strip('\r')
-            return file_lines   
-        else:
-            return file_lines     
-    m = len(file_lines)  
-    
-    # Testing the grab_list                
-    test = __grab_list_test__(grab_list, n, m, repeat = repeat)
-    if(not test):
+    file_lines = flat_file_read(file_in, **pkwargs)
+    if(file_lines == False):
         return False
-    
-    # Parse and return file_lines through 'repeat' option:                
-    out_lines = [] 
-                                                         
-    if(repeat):  
-        out_lines = __list_repeat__(grab_list,file_lines,scrub)  
+    else:
+        if(scrub == True):
+            for i,entry in enumerate(file_lines):
+                file_lines[i] = entry.rstrip()
+    if(grab_list == []):
+        return file_lines
+    m = len(file_lines)
+
+    # Testing the grab_list
+    if(__grab_list_fail__(grab_list, m, repeat=repeat, **pkwargs)):
+        return False
+
+    # Parse and return file_lines through 'repeat' option:
+    out_lines = []
+
+    if(repeat):
+        out_lines = __list_repeat__(grab_list, file_lines, scrub, **pkwargs)
         if(out_lines == False):
             return False
-    else:                
-        for i in range(n):
-            out_lines.append(file_lines[grab_list[i]])     
-            if(scrub == True):
-                out_lines[i] = out_lines[i].strip("\n").strip("\r")
-    return out_lines                  
+    else:
+        for index in grab_list:
+            if(scrub):
+                out_lines.append(file_lines[index].rstrip())
+            else:
+                out_lines.append(file_lines[index])
+    return out_lines
 
 
-def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w'):
+def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, count_offset=True, ptype='w', **pkwargs):
     '''
     Description: Grabs the lines in 'grab_list' as strings from the file 'file_in'
-                 the lines in grab_list are then printed to file_out 
+                 the lines in grab_list are then printed to file_out
 
    (e.g.) 
-   
-       flat_file_replace('file.in', [1,2], ["This is the first line!","This is line #2!"])
+
+       flat_file_copy('file.in', 'file.out', [1,2], ["This is the first line!","This is line #2!"])
 
     Variables:
-    
+
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start
 
-        'scrub': [bool] (False), Removes end and return line characters from each grabbed string  
+        'scrub': [bool] (False), Removes end and return line characters from each grabbed string
 
         'repeat': [bool] (False), if True, then 'grouping' formatting is used
 
         'count_offset': [bool] (True), shifts 'grab_list' values by 1 to align line numbers with python indices
 
-        'ptype': [string] ('r'), reading mode          
+        'ptype': [string] ('w'), writing mode
 
-    Output: List of Strings; Output: Success Boolean  
+    Output: List of Strings; Output: Success Boolean
     '''
+    newFuncName = printer.addFuncName("flat_file_copy", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_copy"
 
-    # basic dummy check of variables 'file_out' and 'group'
-    test = check.type_test_print(file_out,str,'file_out','flat_file_copy') 
-    if(not test):
-        return False         
-    test = check.type_test_print(group,int,'group','flat_file_copy') 
-    if(not test):
-        return False  
-    if(group < 0):
-        print("[] Error: 'group' must be a non-negative integer")
+    # Testing proper variable types
+    if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
-     
-    # Grab appropriate lines (as specified from grab_list and repeat) from 'file_in' 
-    lines = flat_file_grab(file_in,grab_list,scrub=False,repeat=repeat)
-    if(lines == False):
-        print("[flat_file_copy] Error: retrieving data from 'file_in' failed")
-        try: 
-            print("'file_in' pathway: "+file_in)
-            return False
-        except:
-            print("'file_in' pathway could not be parsed, check the pathway for errors")
-            return False 
+    if(__not_str_print__(file_in, varID="file_in", **pkwargs)):
+        return False
+    if(__not_str_print__(file_out, varID="file_out", **pkwargs)):
+        return False
+    if(not isinstance(group,int)):
+        pkwargs["varName"] = "group"
+        __err_print__("must be an interger: "+str(type(group)), **pkwargs)
 
-    # Parse and return 'out_list' through 'repeat' and 'group' options  
+    # Grab appropriate lines (as specified from grab_list and repeat) from 'file_in'
+    lines = flat_file_grab(file_in, grab_list, scrub=False, repeat=repeat, count_offset=True, **pkwargs)
+    if(lines == False):
+            return False
+
+    # Parse and return 'out_list' through 'repeat' and 'group' options
     if(repeat):
         nlines = len(lines)
         out_list = []
@@ -548,13 +579,13 @@ def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, ptype='w
             out_list.append(lines[i])
             if(i>0 and (i+1)%group == 0):
                 out_list.append("\n")
-     
-    result = flat_file_write(file_out, out_list, ptype=ptype) 
+
+    result = flat_file_write(file_out, out_list, ptype=ptype, **pkwargs)
     return result
-     
-     
-def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=float):
-    ''' 
+
+
+def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=float, **pkwargs):
+    '''
 
     Purpose: To read in a well constrained table from a text file. 
 
@@ -562,17 +593,23 @@ def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=f
     Inputs:
 
         file_in : python string, corrosponding to a file pathway
-        
-        header  : If True, the first string in the file is treated as a header string 
-          
-        entete  : If True and header is True, then the header values are included in the output 
-        
+
+        header  : If True, the first string in the file is treated as a header string
+
+        entete  : If True and header is True, then the header values are included in the output
+
         columns : If True, lists of the data value are returned by column, else data values are returned by row
 
         genre   : The variable type of the entries in the table
-     
-    '''  
-    table_lines = flat_file_grab(file_in, scrub = True)
+
+    '''
+    newFuncName = printer.addFuncName("flat_file_intable", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_intable"
+
+    table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
     return table_num
 
@@ -589,7 +626,8 @@ def flat_file_skewtable(file_in,
                         nantup = (True,True,True),
                         spc = ' ',
                         genre = float,
-                        debug = True):
+                        debug = True,
+                        **pkwargs):
     '''
     Purpose: To read in a skewed table from a text file. 
 
@@ -599,8 +637,13 @@ def flat_file_skewtable(file_in,
 
         see 'table_str_to_fill_numeric' in the pinax.py file for details on the options
     '''
+    newFuncName = printer.addFuncName("flat_file_skewtable", pkwargs.get('funcName'))
+    if(check.isArray(newFuncName)):
+        pkwargs["funcName"] = newFuncName
+    else:
+        pkwargs["funcName"] = "flat_file_skewtable"
 
-    table_lines = flat_file_grab(file_in, scrub = True)
+    table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_fill_numeric(table_lines, 
                                              space = space,
                                              fill = fill, 
@@ -614,19 +657,19 @@ def flat_file_skewtable(file_in,
                                              genre = genre,
                                              debug = True)
     return table_num
-     
+
 
 def iop_help(string):
     '''
-    
+
     '''
     if(not isinstance(string,str)):
-        print("Error: Input must be a string, to view a list of valid inputs, input 'help'") 
+        print("Error: Input must be a string, to view a list of valid inputs, input 'help'")
         return None
 
     string = string.lower()
     string = strl.str_filter(string,' ')
-       
+
     help_list = ['help',
                  'flat_file_read',
                  'flat_file_write',
@@ -666,8 +709,8 @@ def iop_help(string):
                    "(Input: file_in; header = False)\n"+                        
                    "Reads in values from a text file, attempts to formate the results\n"+
                    "as a 'pinax' table.\n"
-                   ]         
-    
+                   ]
+
     help_dict = dict(zip(help_list, help_action))
 
     if(string == 'help'):
