@@ -148,91 +148,281 @@ def isType_print(var, sort, var_name=None, func_name='', print_bool=True):
         return type_bool
 
 
-
 class imprimer(object):
 
-    def __init__(self, space='    ', endline=True):
-        self.space = space
-        self.endline = endline
+    def __init__(self, space="    ", endline="\n", modName=None, failPrint=True):
+        self.modName = modName
+
+        if(isinstance(space, str)):
+            self.space = space
+            self.doubleSpace = space+space
+        else:
+            self.space = '    '
+            self.doubleSpace = space+space
+
+        if(isinstance(endline, str)):
+            self.endline = endline
+        else:
+            self.endline = "\n"
+
+        if(failPrint):
+            self.failPrint = True
+        else:
+            self.failPrint = False
+
+    def __kwarg__(self, kwarg):
+        if(kwarg != None):
+            return True
+        else:
+            return False
 
     def __funcName__(self, funcName):
+        outString = ''
         if(isinstance(funcName,str)):
             outString = "["+funcName+"]"
-            return outString
         elif(isinstance(funcName,(list,tuple))):
             outString = ''
             for entry in funcName:
                 outString = outString+"["+str(entry)+"]"
-            return outString
         else:
             return None
+        outString = outString+" "
+        if(isinstance(self.modName, str)):
+            outString = "["+self.modName+"]"+outString
+        return outString
 
-    def __stringParse__(self, msg, funcName=None, varName=None, warning=False, lnum=None, failPrint=True):
+    def __stringParse__(self, msg, **kwargs):
+        '''
+        Description: Parses 'msg' input message(s) into string output
 
-        outString = self.space
+        kwarg list:
 
-        funcNameStr = self.__funcName__(funcName)
+            failPrint : (bool)[True], determines if the output strings are printed (True) or not (False)
+
+            space : (str)(bool)['    '], determines the string which appears at the beginning of the message,
+                                         nothing is added for False
+
+            endline : (bool)[False], determines if the endline character is added to the end of each string (True) or not (False)
+
+            funcName : (str)(None)[None], determines the function id strings to be added to the beginning of each string (str),
+                                          if None, or not a string then nothing is added
+
+            header : (str)(bool)[" Error"], determines the string to be added which identifies the message (str),
+                                            if True, the string " 'Error'" is added, else if False, nothing is added
+
+            varName : (str)(bool)[False], determines the string to be added which identifies a specific variable (str),
+                                        if True, the string " 'variable'" is added, else if False, nothing is added
+
+            lnum : (str)(int)(None)[None], determines the strings to be added for identifying the line for which the message
+                                           applies (str)(int), if None then nothing is added
+
+            blankLine : (bool)[True], determines if an extra blank line is to added between the heading and following lines
+                                       if 'msg' input is an array of strings. The blank line is not added if False
+
+            doubleSpace : (bool)[True], determines if an extra 'space' spacing string is to added to the beginning of each
+                                        line if the 'msg' input is an array of strings. The spacing defaults to that which is
+                                        determined by 'space' if False.
+
+            finalSpace : (bool)[True],
+        '''
+
+        if(kwargs.get('failPrint') == None):
+            failPrint = self.failPrint
+        else:
+            failPrint
+
+        newSpace = kwargs.get('space')
+        if(isinstance(newSpace, str)):
+            outString = newSpace
+            doubleSpace = newSpace+newSpace 
+        elif(newSpace == False):
+            newSpace = ''
+            outString = newSpace
+            doubleSpace = newSpace+newSpace 
+        else:
+            newSpace = self.space
+            outString = self.space
+            doubleSpace = newSpace+newSpace 
+
+        finalSpace = kwargs.get('finalSpace')
+        if(finalSpace != False):
+            finalSpace = True
+        else:
+            finalSpace = False
+
+        endlineVal = ''
+        if(isinstance(kwargs.get('endline'), str)):
+            endlineAdd = True
+            endlineVal = kwargs.get('endline')
+        elif(kwargs.get('endline')):
+            endlineAdd = True
+            endlineVal = self.endline
+        else:
+            endlineAdd = False
+
+        funcNameStr = self.__funcName__(kwargs.get('funcName'))
         if(isinstance(funcNameStr,str)):
             outString = outString+funcNameStr
 
-        if(warning):
-            outString = outString+" Warning: "
-        else:
-            outString = outString+" Error: "
+        if(self.__kwarg__(kwargs.get('header'))):
+            if(isinstance(kwargs.get('header'), str)):
+                outString = outString+kwargs.get('header')+":"
+            elif(kwargs.get('header') != False):
+                outString = outString+"Error:"
+            else:
+                pass
 
-        if(isinstance(varName,str)):
-            outString = outString+"'"+varName+"' "
-        elif(varName):
-            outString = outString+"'variable' "
-        else:
-            pass
+        if(self.__kwarg__(kwargs.get('varName'))):
+            if(isinstance(kwargs.get('varName'),str)):
+                outString = outString+" '"+kwargs.get('varName')+"'"
+            elif(kwargs.get('varName')):
+                outString = outString+" 'variable'"
+            else:
+                pass
 
-        if(isinstance(lnum,(str,int))):
-            outString = outString+" on line-num. "+str(lnum)+", "
-        outString = outString+msg+"\n"
+        lnum_kwarg = kwargs.get('lnum')
+        if(isinstance(lnum_kwarg, int) or isinstance(lnum_kwarg, str)):
+            outString = outString+" on line-num. "+str(kwargs.get('lnum'))+")"
+
+        outStrings = []
+        if(isinstance(msg, str)):
+            outString = outString+" "+msg
+            if(endlineAdd):
+                outString = outString+endlineVal
+        elif(isArray(msg)):
+
+            if(len(msg) == 0):
+                if(endlineAdd):
+                    outString = outString+endlineVal
+            elif(len(msg) == 1):
+                if(endlineAdd):
+                    outString = outString+" "+msg[0]+endlineVal
+                else:
+                    outString = outString+" "+msg[0]
+            else:
+                first = msg[0]
+                rest = msg[1:]
+
+                outString = outString+" "+first
+                if(endlineAdd):
+                    outString = outString+endlineVal
+                outStrings.append(outString)
+
+                if(kwargs.get('blankLine') != False):
+                    if(endlineAdd):
+                        outStrings.append(" "+endlineVal)
+                    else:
+                        outStrings.append(" ")
+
+                if(kwargs.get('doubleSpace') != False):
+                    startString = doubleSpace
+                else:
+                    startString = newSpace
+
+                for entry in rest:
+                    if(isinstance(entry, str)):
+                        entryString = startString+entry
+                    else:
+                        continue
+
+                    if(endlineAdd):
+                        entryString = entryString+endlineVal
+                    outStrings.append(entryString)
+        else:
+            return False
 
         if(failPrint):
-            print(outString)
+            if(len(outStrings) > 0):
+                for string in outStrings:
+                    print(string)
+                if(finalSpace):
+                    print(" ")
+                return outStrings
+            else:
+                print(outString)
+                if(finalSpace):
+                    print(" ")
+                return outString
+        else:
+            if(outStrings > 0):
+                return outStrings
+            else:
+                return outString
+
+    def funcNameStr2list(self, funcNameStr):
+        try:
+            arr = [j[0] for j in filter(None, [filter(None,i.split('[')) for i in filter(None, funcNameStr.split(']'))])]
+            return arr
+        except:
+            return False
+
+    def addFuncName(self, newName, funcNameObj):
+        if(isinstance(funcNameObj,str)):
+            oldfn = self.funcNameStr2list(funcNameObj)
+            if(oldfn == False):
+                return False
+        elif(isArray(funcNameObj)):
+            oldfn = list(funcNameObj)
+        else:
+            return False
+
+        if(isinstance(newName, str)):
+            newfn = self.funcNameStr2list(newName)
+            if(newfn == False):
+                return False
+        elif(isArray(newName)):
+            newfn = newName
+        else:
+            return False
+
+        for entry in newfn:
+            oldfn.append(entry)
+        return oldfn
+
+    def errPrint(self, msg, **kwargs):
+        if(not isinstance(kwargs.get('header'), str)):
+            kwargs['header'] = "Error"
+        outString = self.__stringParse__(msg, **kwargs)
         return outString
 
 
-    def errPrint(self, printmsg, funcName=None, varName=None, warning=False, lnum=None, failPrint=True):
-        if(isinstance(printmsg, str)):
-            outString = self.__stringParse__(printmsg, funcName, varName, warning, lnum, failPrint)
-            return outString
-        else:
-            outString = self.space+"Print Error: Error occured, message unresolved\n"
-            if(failPrint):
-                print(outString)
-            return outString
-
-
-    def arrayCheck(self, var, funcName=None, varName=True, warning=False, lnum=None, failPrint=True):
+    def arrayCheck(self, var, **kwargs):
         isArray = isinstance(var,(list,tuple))
-        if(isArray == False and failPrint):
+
+        if(not isinstance(kwargs.get('varName'), str)):
+            kwargs['varName'] = True
+
+        if(isArray == False):
             printString = "should be an array (tuple or list), not: "+str(type(var))
-            self.__stringParse__(printString, funcName, varName, warning, lnum, failPrint)
+            self.__stringParse__(printString, **kwargs)
             return isArray
         else:
             return isArray
 
 
-    def numCheck(self, var, funcName=None, varName=True, warning=False, lnum=None, failPrint=True):
-        isArray = isinstance(var,(int,float,long))
-        if(isArray == False and failPrint):
+    def numCheck(self, var, **kwargs):
+        isNumeric = isinstance(var,(int,float,long))
+
+        if(not isinstance(kwargs.get('varName'), str)):
+            kwargs['varName'] = True
+
+        if(isNumeric == False):
             printString = "should be a numeric (int, float or long), not: "+str(type(var))
-            self.__stringParse__(printString, funcName, varName, warning, lnum, failPrint)
-            return isArray
+            self.__stringParse__(printString, **kwargs)
+            return isNumeric
         else:
-            return isArray
+            return isNumeric
 
 
-    def strCheck(self, var, funcName=None, varName=True, warning=False, lnum=None, failPrint=True):
-        isArray = isinstance(var,(str))
-        if(isArray == False and failPrint):
+    def strCheck(self, var, **kwargs):
+        isString = isinstance(var, str)
+
+        if(not isinstance(kwargs.get('varName'), str)):
+            kwargs['varName'] = True
+
+        if(isString == False):
             printString = "should be a string, not: "+str(type(var))
-            self.__stringParse__(printString, funcName, varName, warning, lnum, failPrint)
-            return isArray
+            self.__stringParse__(printString, **kwargs)
+            return isString
         else:
-            return isArray
-
+            return isString
