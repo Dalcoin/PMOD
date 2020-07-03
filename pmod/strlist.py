@@ -15,11 +15,10 @@ function list:
     array_duplicate_check(array)
     array_duplicates(array, inverse = False)
 
-    array_filter_yield(array, match, reverse = False)
-    array_filter(array, match, reverse = False)
-    array_filter_spaces(array, filter_none = True)
+    array_filter(array, match, reverse=False)
+    array_filter_spaces(array, filter_none=True)
 
-    array_to_str(array, spc = ' ', print_bool = True)
+    array_to_str(array, spc = ' ', print_bool=True)
     array_matrix_to_array_str(array, spc = '  ')
 
     array_nth_index(array, n, inverse_filter = False,list_form = True)
@@ -118,9 +117,9 @@ def array_duplicates(array, inverse=False, count=False, index=False):
                 3: [4, 5, 6],
                 4: [3]}
 
-    counts = {1: 1, 
-              2: 2, 
-              3: 3, 
+    counts = {1: 1,
+              2: 2,
+              3: 3,
               4: 1}
     '''
     if(not __isArray__(array)):
@@ -342,16 +341,39 @@ def array_matrix_to_array_str(array, spc='  ', endline=False, front_spacing='', 
     return outArray
 
 
-def array_nth_index(array, n, inverse=False, print_bool=True, space='    ', endline=True):
+def array_nth_index(array, n, inverse=False, print_bool=True, space='    '):
     '''
     Description: Takes an input array and outputs a list corrosponding 
                  to the value found at every nth index of input array
-    '''
 
+    Input:
+
+        array : (list or tuple), the array for entries to be selected by index
+
+        n : (int), the integer corrosponding to the modulus determining which
+            index values are selected from 'array'
+
+        inverese : (bool) [False], If true then the all values of 'array' are
+                   returned except for those at each 'n'th value of the index.
+
+    Return:
+        out_array : A list of strs if success, False if failure
+    '''
     if(not __isArray__(array)):
         if(print_bool):
             print(space+"[array_nth_index] Error: input 'array' must be an array: '"+str(type(array))+"'\n")
         return False
+    array_len = len(array)
+
+    if(not isinstance(n, int)):
+        if(print_bool):
+            print(space+"[array_nth_index] Error: input 'n' must be an integer: '"+str(type(n))+"'\n")
+        return False
+    else:
+        if(n <= 1 or n>(array_len/2)):
+            if(print_bool):
+                print(space+"[array_nth_index] Error: input 'n' is only valid for 1 < n <= (len('array')/2): "+str(n)+"'\n")
+            return False
 
     try:
         if(inverse):
@@ -369,6 +391,8 @@ def array_nth_index(array, n, inverse=False, print_bool=True, space='    ', endl
 
 def array_flatten(array, safety=True):
     '''
+    Warning: this function uses 'exec' and is inherently insecure if input is allowed from the user.
+
     Description: Attempts to flatten (reduce dimension by one) input array.
 
     Inputs:
@@ -376,6 +400,9 @@ def array_flatten(array, safety=True):
         safety   : Boolean, if True then all arrays are compatable, else array must be 2D
         out_type : Type, type of output, must be an iterable
     '''
+    if(not __isArray__(array)):
+        return False
+
     try:
         if(safety):
             new_array = str_filter(str(array), [' ','[',']'])
@@ -394,26 +421,28 @@ def array_flatten(array, safety=True):
 
 # string content
 
-def str_space_check(string, none_bool=False, print_bool=True, space='    ', endline=True):
-    ''' 
+def str_space_check(string, none_bool=False, print_bool=True, space='    '):
+    '''
     Description: checks if a string is all empty spaces (endline characters included)
     '''
     if(not isinstance(string, (str, type(None)))):
-        
+        if(print_bool):
+            print("[str_space_check] Error: input 'string', is not a string\n")
         return False
+    else:
+        if(none_bool and string==None):
+            return True
 
     try:
-        if(none_bool): 
-            checker = string.isspace() or string == '' or string == None
-        else:
-            checker = string.isspace() or string == ''
+        checker = string.isspace() or string == ''
         return checker
     except:
         if(print_bool):
-            print("[str_space_check] Error: internal error, input may not be a string")      
-        
-      
-def str_to_list(string, spc = ' ', filtre = False, cut = None):
+            print("[str_space_check] Error: internal error\n")
+        return False
+
+
+def str_to_list(string, spc = ' ', filtre = False, cut = None, print_bool=True):
     '''
     Description: parses input string into a list, default demarcation is by single spacing
     '''
@@ -424,46 +453,51 @@ def str_to_list(string, spc = ' ', filtre = False, cut = None):
 
     try:
         if(filtre):
-            return filter(cut,mod_string.split(spc))
+            return filter(cut, mod_string.split(spc))
         else:
             return mod_string.split(spc)
     except:
-        print("[str_to_list] Error: input could not be split")
+        if(print_bool):
+            print("[str_to_list] Error: input could not be split")
         return False
 
 
-def str_to_fill_list(string, lngspc = '    ', fill = 'NaN', nval = False, spc = ' ', numeric = False):
+def str_to_fill_list(string, 
+                     lngspc='    ',
+                     fill='NaN',
+                     nval=False,
+                     spc=' ',
+                     numeric=False):
     '''
-    Purpose : To turn python string, 'string', into a list of numeric characters, with support 
-              for blank entries, input options allow for compatability with multiple 
-              formatting situations and scenarios  
+    Purpose : To turn python string, 'string', into a list of numeric characters, with support
+              for blank entries, input options allow for compatability with multiple
+              formatting situations and scenarios
 
-    Inputs: 
+    Inputs:
 
-        string : a python 'str' object 
+        string : a python 'str' object
 
         lngspc : a python 'str' object, intended to be the number of blank spaces denoting a blank entry
                  default : '    ', 4 blank spaces
 
-        fill   : a python 'str' object, intended to be the filler value for blank entries 
-                 default : 'NaN', Not a Number string 
+        fill   : a python 'str' object, intended to be the filler value for blank entries
+                 default : 'NaN', Not a Number string
          
-        nval   : either boolean False, or an integer greater than zero, intended to be 
-                 the number of numeric and blank entries in 'string', also the length of the 
+        nval   : either boolean False, or an integer greater than zero, intended to be
+                 the number of numeric and blank entries in 'string', also the length of the
                  array into which the function will attempt to coerce the string
-                 default : False, boolean False 
+                 default : False, boolean False
 
-        spc    : a python string object, intended to be the value for which the seperated entries within  
-                 'string' are determined, possibly a delimiter character, note that non-entry empty spaces 
+        spc    : a python string object, intended to be the value for which the seperated entries within
+                 'string' are determined, possibly a delimiter character, note that non-entry empty spaces
                  are deleted upon splitting 'string'
-                 default : ' ', a single space character 
+                 default : ' ', a single space character
 
-        numeric: a python 'bool' or python 'str' object, If True then non-filled spaces are mapped to floats 
-                 If 'numeric' is a string, it must corrospond to the type to which non-filled entries are 
+        numeric: a python 'bool' or python 'str' object, If True then non-filled spaces are mapped to floats
+                 If 'numeric' is a string, it must corrospond to the type to which non-filled entries are
                  coerced into, valid options are 'str', 'int' and 'float'
-                 default : False 
+                 default : False
     '''
-
     def __cut__(arr, n, fill):
 
         cut = True 
@@ -526,7 +560,7 @@ def str_to_fill_list(string, lngspc = '    ', fill = 'NaN', nval = False, spc = 
     return flatarr
 
 
-def str_filter(string, filtre, inverse = False, print_bool = True):
+def str_filter(string, filtre, inverse=False, print_bool=True):
     '''
     Description: Filters 'filtre' string out of 'string' string, if 
                  'inverse' then the instances of 'filtre' are returned
@@ -573,7 +607,7 @@ def str_clean(string):
             print(s4+"[str_clean] Error: 'string' input is not a string\n")
         return False
 
-    array = str_to_list(string.rstrip(), filtre = True)
+    array = str_to_list(string.rstrip(), filtre=True)
     out_string = array_to_str(array, spc = '')
     return out_string
 
