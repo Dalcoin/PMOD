@@ -22,7 +22,14 @@ function list:
 
 class list:
 
-    imprimer
+    imprimer:
+
+        funcNameStr2list : converts 'funcName' object to list
+        addFuncName : adds 'funcName' object to 'funcName'
+        errPrint : prints error message
+        arrayCheck : check if input object is python array (list or tuple), prints error message if not
+        numCheck : check if input object is python numeric object (int, float or long), prints error message if not
+        strCheck : check if input object is python string object, prints error message if not
 
 '''
 

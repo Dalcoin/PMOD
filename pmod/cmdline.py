@@ -84,7 +84,7 @@ class PathParse(object):
     varPath : corrosponds to the string pointing to the current (path) directory
               *Style note: all addition current (path) pathway information is
               indicated by the addition of and underscore and a descriptive word
-              starting with a capital letter (e.g. files in the current (path) 
+              starting with a capital letter (e.g. files in the current (path)
               directory are stored as a list of strings with the variable: varPath_Files)
     '''
 
@@ -1824,6 +1824,7 @@ class PathParse(object):
             success = True
             cmdInst, file_list, destStr = tup
 
+            self.__updatePath__(self.varPath)
             new_file_list = []
 
             values = self.__find__(file_list)
@@ -1857,6 +1858,7 @@ class PathParse(object):
             success = True
             value = None
             cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
 
             if(destStr == '..'):
                 if(headCheck()):
@@ -1939,6 +1941,7 @@ class PathParse(object):
             dpath_list = []
 
             cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
 
             # parsing destination in list format
             if(destStr == '..'):
@@ -1988,7 +1991,8 @@ class PathParse(object):
                       
             success = True            
             value = None
-            cmdInst, file_list, destStr = tup 
+            cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
             
             # Format
             
@@ -2035,6 +2039,7 @@ class PathParse(object):
             success = True
             value = None
             cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
 
             if(destStr == '.'):
 
@@ -2091,7 +2096,8 @@ class PathParse(object):
             
             success = True            
             value = None
-            cmdInst, file_list, destStr = tup      
+            cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
             
             for i in file_list:
                 file_path_str = self.joinNode(self.varPath,i)
@@ -2108,7 +2114,8 @@ class PathParse(object):
 
             success = True            
             value = None
-            cmdInst, file_list, destStr = tup   
+            cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
             
             for i in file_list: 
                 if(i in self.varPath_Contains):
@@ -2149,7 +2156,8 @@ class PathParse(object):
             # cmd_cpdir MAIN   
             success = True            
             value = None
-            cmdInst, file_list, destStr = tup 
+            cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
           
             if(destStr == '.'):
                         
@@ -2201,6 +2209,7 @@ class PathParse(object):
             success = True
             value = None
             cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
 
             found_dict = self.__find__(file_list)
             if(found_dict == False):
@@ -2224,6 +2233,7 @@ class PathParse(object):
             success = True
             value = None
             cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
 
             match_dict = self.__match__(file_list)
             if(match_dict == False):
@@ -2246,7 +2256,8 @@ class PathParse(object):
 
             success = True            
             value = None
-            cmdInst, file_list, destStr = tup 
+            cmdInst, file_list, destStr = tup
+            self.__updatePath__(self.varPath)
 
             if(len(file_list) > 1):
                 if(self.debug):

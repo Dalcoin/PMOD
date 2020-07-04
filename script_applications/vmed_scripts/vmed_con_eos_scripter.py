@@ -69,7 +69,6 @@ if(demarc.rstrip() != "end param."):
     print("[vmed_con_eos_scripter] Warning: the end line in 'sample_input.txt' is not 'end param.'")
 
 sum_failure = False
-    
 
 lines_list = lines_list[:-1]
 
@@ -94,7 +93,7 @@ for i, entry in enumerate(ngroup):
 
     subp.call("./xtest", shell=True)
 
-   # 
+    # Get select E/A values generated from the partial waves 
     values = vf.partial_eos(file_name = 'test1.txt')
 
     try:
@@ -147,6 +146,7 @@ for i, entry in enumerate(ngroup):
 
 
     # Consolidating Files
+    cml.cmd('ls')
     cml.cmd('mv test.txt;test1.txt vincp')
     cml.cmd('cd vincp')
     new_fold_name = 'run_'+str(i)

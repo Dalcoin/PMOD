@@ -12,33 +12,38 @@ import cmdline as cml
     | vmed |
     --------
 
-    Note: 'vmed.py' must be added to the pmod package for 
-          vmed scripts to function. 'vmed.py' is not a 
+    Note: 'vmed.py' must be added to the pmod package for
+          vmed scripts to function. 'vmed.py' is not a
           standard pmod module
 
-    Usage: Aids in scripting nuclear matter potential and EoS 
+    Usage: Aids in scripting nuclear matter potential and EoS
            programs given by the following fortran functions:
 
-               Nuclear potential: 
+               Nuclear potential:
 
-                   effn3lo3nf.f 
-                   cpot.f 
-                     
+                   effn3lo3nf.f
+                   cpot.f
+
                Nuclear Matter EoS:
 
-                   n2lo450new.f                
-                   n2lo500new.f 
-                   n3lo450new.f                
-                   n3lo500new.f 
-                   n4lo450new.f                
-                   n4lo500new.f 
-                   matter.f 
-                   nnsum_2015.f
-               
+                -  Potential Matrix:
 
-    A list of relevent functions and constants to optimize working with 
-    the effective 3NF nuclear potential pipeline. Optimized for working 
-    at the third order of the chiral expansion.
+                       n2lo450new.f
+                       n2lo500new.f
+                       n3lo450new.f
+                       n3lo500new.f
+                       n4lo450new.f
+                       n4lo500new.f
+
+                -   In Medium:
+
+                       matter.f
+                       nnsum_2015.f
+                       nnsum_2015_opti.f
+
+
+    A list of relevent functions and constants to optimize working with
+    the effective 3NF nuclear potential pipeline.
 
     list of functions:
 
@@ -660,24 +665,23 @@ def mat_parline_parse(par_Lines):
             cde_Find = cde_Line.findall(line)[0]
             cde_ln = i+1
             cde_Found = True
-         
-    if(not mat_Found):
-        print("[mat_parline_parse] Error: 'mat' not found") 
-    if(not kfs_Found):
-        print("[mat_parline_parse] Error: 'kfs' not found") 
-    if(not sel_Found):
-        print("[mat_parline_parse] Error: 'sel' not found") 
-    if(not cis_Found):
-        print("[mat_parline_parse] Error: 'cis' not found") 
-    if(not cde_Found):
-        print("[mat_parline_parse] Error: 'cde' not found") 
 
-     
+    if(not mat_Found):
+        print("[mat_parline_parse] Error: 'mat' not found")
+    if(not kfs_Found):
+        print("[mat_parline_parse] Error: 'kfs' not found")
+    if(not sel_Found):
+        print("[mat_parline_parse] Error: 'sel' not found")
+    if(not cis_Found):
+        print("[mat_parline_parse] Error: 'cis' not found")
+    if(not cde_Found):
+        print("[mat_parline_parse] Error: 'cde' not found")
+
     mat_obj = int(mat_Find)
-    kfs_obj = [tuple([float(j) for j in i]) for i in kfs_Finds] 
+    kfs_obj = [tuple([float(j) for j in i]) for i in kfs_Finds]
     sel_obj = int(sel_Find)
-    cis_obj = [float(i) for i in cis_Find] 
-    cde_obj = [float(i) for i in cde_Find] 
+    cis_obj = [float(i) for i in cis_Find]
+    cde_obj = [float(i) for i in cde_Find]
 
     parline_Dict = {
                   'mat':mat_obj,
@@ -694,8 +698,8 @@ def mat_parline_parse(par_Lines):
                   'cis':cis_ln,
                   'cde':cde_ln
                    }
-                     
-    return (parline_Dict, numline_Dict)  
+
+    return (parline_Dict, numline_Dict)
 
 
 partial_wave_dict = {
