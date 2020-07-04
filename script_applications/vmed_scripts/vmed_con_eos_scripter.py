@@ -22,6 +22,28 @@ def exit_func():
     print("[vmed_con_eos_scripter] Exit: Error detected, see previous msg for details...exiting script")
     sys.exit()
 
+################
+#              #
+#   Controls   #
+#              #
+################
+
+group_by_vmeds = False
+group_by_vgrps = False
+
+if(group_by_vmeds and group_by_vgrps):
+    print("Warning: both v-lines and v-groups have been selected, v-group takes precedent")
+
+if(not group_by_vmeds and not group_by_vgrps):
+    print("Error: neither v-lines, nor v-groups have been selected, exited now...")
+    exit_func
+  
+########################
+#                      #
+#   Ends of Controls   #
+#                      #
+########################
+
 tstart = time.time()
 
 cml = cmv.PathParse('Linux')
@@ -35,17 +57,23 @@ else:
     cml.cmd('mkdir vincp')
     exist = True
 
-### Group V contribs 
-numgroup, ngroup = vf.v_group()
-n = len(ngroup)
-if(ngroup == False or n == []):
-    if(n == []):
-        print("[vmed_con_eos_scripter] Error: no contributions could be parsed from 'contribs.txt'")
-    else:
-        print("[vmed_con_eos_scripter] Error: failure to parse contributions from 'contribs.txt'")
+### Group V contribs
+if(group_by_vgrps):
+    numgroup, ngroup = vf.v_group()
+elif(group_by_vmeds):
+    numgroup, ngroup = vf.v_lines(True)
+else:
     exit_func()
-    
-    
+
+if(isinstance(ngroup,(list,tuple))):
+    n = len(ngroup)
+    if(n == 0):
+        print("[vmed_con_eos_scripter] Error: no contributions could be parsed from 'contribs.txt'")
+        exit_func()
+else:
+    print("[vmed_con_eos_scripter] Error: failure to parse contributions from 'contribs.txt'")
+    exit_func()
+
 # Go back to working directory and grab input file data
 success, in_path_list = cml.cmd("dir sample_input.txt")
 if(success == False):
@@ -53,7 +81,6 @@ if(success == False):
     exit_func()
 
 in_path = in_path_list[0]
-
 lines_list = iop.flat_file_grab(in_path)
 
 # set the demarcation line, removes empty lines at end of file
@@ -80,14 +107,22 @@ output_lines.append("\n")
 output_lines.append("         Basic   Part    Tot      Final e   vspread  n\n")
 output_lines.append("\n")
 
-for i, entry in enumerate(ngroup):
+for i,entry in enumerate(ngroup):
 
     # Add new V-vals generator
     new_lines = list(lines_list)
-    for ventry in entry:
-        for vm in ventry:
-            val = vm+'\n'
-            new_lines.append(val)
+
+    if(group_by_vgrps):
+        for ventry in entry:
+            for vm in ventry:
+                val = vm+'\n'
+                new_lines.append(val)
+    elif(group_by_vmeds):
+        for ventry in entry:
+            new_lines.append(ventry+"\n")
+    else:
+        exit_func()
+
     new_lines.append(demarc)
     iop.flat_file_write(in_path, new_lines)
 
@@ -101,33 +136,33 @@ for i, entry in enumerate(ngroup):
         for j in range(len(values)):
             values[j] = strl.str_to_list(values[j], filtre = True)
 
-        v1 = values[-1][-1] 
-        v2 = values[-2][-1] 
-        v3 = values[-3][-1] 
+        v1 = values[-1][-1]
+        v2 = values[-2][-1]
+        v3 = values[-3][-1]
         v5 = values[-5][-1]
         v8 = values[-8][-1]
-         
-        v12 = abs(float(v1)-float(v2)) 
-        v13 = abs(float(v2)-float(v3)) 
-        v15 = abs(float(v3)-float(v5))  
-        v18 = abs(float(v5)-float(v8)) 
 
-        vspread = round((v12+v13+v15)/3.0,4) 
-              
+        v12 = abs(float(v1)-float(v2))
+        v13 = abs(float(v2)-float(v3))
+        v15 = abs(float(v3)-float(v5))
+        v18 = abs(float(v5)-float(v8))
+
+        vspread = round((v12+v13+v15)/3.0,4)
+
         if(v18 >= v15 and v15 >= v13 and v13 >= v12):
             totconv = 'True '
-        else: 
+        else:
             totconv = 'False'
-	    
+
         if(v18 >= v15 and v15 >= v12):
             partconv = 'True '
         else:
             partconv = 'False'
-	    
+
         if(v18 >= v12):
             basconv = 'True '
         else:
-            basconv = 'False'   
+            basconv = 'False'
 
         test_line_seq = ["   ",
                          str(basconv),
@@ -135,32 +170,29 @@ for i, entry in enumerate(ngroup):
                          str(totconv),
                          str(v1),
                          str(vspread),
-                         str(i)+'\n']
+                         str(numgroup[i])+'\n']
 
     except:
         sum_failure = True
         print("[vmed_con_eos_scripter] Error: error occured when attempting to perform convergence tests")
-        test_line_seq = ["   ","Failed","Failed","Failed","Failed","Failed",str(i)+"\n"]      
+        test_line_seq = ["   ","Failed","Failed","Failed","Failed","Failed",str(i)+"\n"]
 
-    output_lines.append(strl.array_to_str(test_line_seq, spc = '   '))   
-
+    output_lines.append(strl.array_to_str(test_line_seq, spc = '   '))
 
     # Consolidating Files
     cml.cmd('ls')
     cml.cmd('mv test.txt;test1.txt vincp')
     cml.cmd('cd vincp')
-    new_fold_name = 'run_'+str(i)
+    new_fold_name = 'run_'+str(numgroup[i])
     cml.cmd('mkdir '+new_fold_name)
     cml.cmd('mv test.txt;test1.txt '+new_fold_name)
     cml.cmd('cd ..')
 
-
-
-lines_list.append(demarc)              
+lines_list.append(demarc)
 iop.flat_file_write(in_path, lines_list)
 
 try:
-    iop.flat_file_write('sum_test.txt', output_lines) 
+    iop.flat_file_write('sum_test.txt', output_lines)
 except:
     sum_failure = True
     line1 = "[vmed_con_eos_scripter] Error: an error occured when attempting "

@@ -108,6 +108,16 @@ For j = 1
 match = '(-?\d\.\d*D.\d{2})'
 v_line = re.compile(match)
 
+vnline = '\D+\s+v\d+\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
+vnline_vinst = '(\D+)\s+(v\d+)\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
+vnlinec = re.compile(vnline)
+vnline_vinstc = re.compile(vnline_vinst)
+
+vgline = '\D+\s+v(\d+\d*)\s+'
+vglinec = re.compile(vgline)
+
+cmv = cml.PathParse('linux')
+
 def jsl_entry(j,p1,p2,t):
     '''
     jsl_entry
@@ -144,8 +154,7 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
                 for k in range(len(temp)):
                     jsl_val = jsl_codes[k]
                     jsl_inst = (j_val,xy_val,jsl_val)
-                    yield jsl_inst, float(temp[k])    
-        
+                    yield jsl_inst, float(temp[k])
 
     jsl_codes = {0:'singlet',1:'triplet',2:'V++',3:'V--',4:'V+-',5:'V-+'}
       
@@ -171,10 +180,19 @@ def grab_jsl(file_text, list_jsl_match, round_form, round_length=None):
      
     return finalvals
 
+def parse_vid(vline):
+    if(isinstance(vline,(list,tuple))):
+        if(len(vline)):
+            vid_tup = vnline_vinstc.findall(vline[0])
+            try:
+                vid = vid_tup[0][1]+" - "+vid_tup[0][0]
+                return vid
+            except:
+                return False
+    else:
+        return False
 
 def get_contribs():
-
-    cmv = cml.PathParse('linux')
     
     # Get path of file storing the contribs
     success, file_path_list = cmv.cmd("dir contribs.txt")
@@ -194,11 +212,11 @@ def ventry(dictval, vlist):
     vkey = ['force','v','factor','zero','pion','tensor','prop']
     vval = strl.str_to_list(vlist[0], filtre=True)
 
-    funs = vlist[1:] 
-    funlist = []       
+    funs = vlist[1:]
+    funlist = []
     for i in funs:
         funlist.append(strl.str_to_list(i,filtre=True)[-1])
-   
+
     nfuns = len(funs)
     fval = [nfuns, funlist]
 
@@ -216,25 +234,20 @@ def ventry(dictval, vlist):
     else:
         print("[vmed][ventry] Error: "+str(dictval)+" is not a valid entry")
         return False
-      
-      
 
 
-def v_lines():
-
-    vnline = '\D+\s+v\d+\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
-    vnlinec = re.compile(vnline)
+def v_lines(tags=False):
 
     lines = get_contribs()
     if(lines == False):
         return False
-    
+
     vinst = []
     vlineslist = []
     n = len(lines)
     i = 0
-    group = False 
-    
+    group = False
+
     while(i<n):    
         if(len(vnlinec.findall(lines[i])) != 0):
             group = True
@@ -248,16 +261,28 @@ def v_lines():
         i+=1
         if(i==n):
             vlineslist.append(vinst)    
-    
+
     if(len(vlineslist) <= 0):
-        print("[vmed][v_lines] Warning: no V lines could be parsed from 'contribs.txt'")  
-    return vlineslist
+        print("[vmed][v_lines] Warning: no V lines could be parsed from 'contribs.txt'")
+
+    if(tags):
+        vids = []
+        for i,entry in enumerate(vlineslist):
+            if(isinstance(entry, (list, tuple))):
+                vid = parse_vid(entry)
+                if(isinstance(vid, str)):
+                    vids.append(vid)
+                else:
+                    vids.append("vid-"+str(i))
+            else:
+                vids.append("vid-"+str(i))
+                continue
+        return (vids, vlineslist)
+    else:
+        return vlineslist
 
 
 def v_group():
-
-    vnline = '\D+\s+v(\d+\d*)\s+'
-    vnlinec = re.compile(vnline)
 
     # Get contrib lines as group
     lines_list = v_lines()
@@ -271,7 +296,7 @@ def v_group():
 
     setn = -1
     for line in lines_list:
-        vn = vnlinec.findall(line[0])[0]
+        vn = vglinec.findall(line[0])[0]
         vn = int(vn)
         if(setn == vn):
             lngroup.append(line)
