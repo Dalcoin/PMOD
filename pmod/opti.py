@@ -1,5 +1,4 @@
-# Mini : contains a class to facilitate optimization of external executables 
-
+#!/usr/bin/env python
 '''
 
 Contains : 'minimize'

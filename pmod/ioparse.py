@@ -1,10 +1,5 @@
-import tcheck as check
-import pinax as px
-import strlist as strl
-
-
+#!/usr/bin/env python
 '''
-
 Description: Functions for performing basic IO functions on flat (text) files.
 
 
@@ -24,8 +19,11 @@ Below is a list of the functions this class offers (w/ input):
 
 '''
 
-# Global object intialization
+import tcheck as check
+import pinax as px
+import strlist as strl
 
+# Global object intialization
 global ptype_list, ptype_read, ptype_write
 
 ptype_list = ['r','r+','rb','w','w+','wb','wb+','a','ab','a+','ab+']
@@ -99,6 +97,16 @@ def __grab_list_fail__(grab_list, m, repeat=False, change_list=None, **pkwargs):
                 pkwargs["varName"] = "change_list"
                 __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
                 return True
+        ngrab = len(change_list)
+        nchng = len(change_list)
+        if(len(grab_list) != len(change_list)):
+            pkwargs["varName"] = "change_list"
+            __err_print__("input must be equal in length to 'grab_list'", **pkwargs)
+            return True
+        if(nchng <= 0):
+            pkwargs["varName"] = "change_list"
+            __err_print__("no lines selected for change", **pkwargs)
+            return True
 
     if(repeat):
         saut = grab_list[1:-1]
@@ -216,11 +224,18 @@ def flat_file_read(file_in, ptype='r', **pkwargs):
 
     '''
 
-    newFuncName = printer.addFuncName("flat_file_read", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_read"
     else:
-        pkwargs["funcName"] = "flat_file_read"
+        newFuncName = printer.addFuncName("flat_file_read", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_read"
+
 
     if(__io_test_fail__(ptype, 'read', **pkwargs)):
         return False
@@ -238,7 +253,7 @@ def flat_file_read(file_in, ptype='r', **pkwargs):
         return False
 
 
-def flat_file_write(file_out, add_list=[], par=False, ptype="w+", **pkwargs):
+def flat_file_write(file_out, add_list=[], par=False, ptype="w+", checkall_addlist=False, **pkwargs):
     '''
     Description: Writes a list of strings to an output file, various options for parsing
 
@@ -253,18 +268,24 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", **pkwargs):
         'add_list': (array)[[]] list of strings, each string is a separate line, order denoted by the index.
                     if the 'add_list' is empty then an empty file is created
 
-        'par': (bool)[False] True if endline character is to be added to each output string, else False.
+        'par': (bool)[False] True if endline character is to be added to each output string, execpt the last one, else False.
 
         'ptype': (str)['r'] a string corrosponding to a write 'ptype' option, found in the 'ptype_write' list
 
     Output: Success Boolean
     '''
 
-    newFuncName = printer.addFuncName("flat_file_write", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_write"
     else:
-        pkwargs["funcName"] = "flat_file_write"
+        newFuncName = printer.addFuncName("flat_file_write", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_write"
 
     if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
@@ -272,23 +293,28 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", **pkwargs):
         return False
     if(__not_arr_print__(add_list, varID="add_list", **pkwargs)):
         return False
+    n = len(add_list)
 
     #if(not all([isinstance(entry, str) for entry in add_list]):
     #    return False
 
-    # Checks that each entry in 'add_list' is a string
-    for i,entry in enumerate(add_list):
-        if(not isinstance(entry, str)):
-            pkwargs["varName"] = "add_list"
-            __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
-            return False
-
-    # Print content to file
+    # Write content to file
     try:
         with open(file_out, ptype) as fout:
-            for entry in add_list:
+            for i,entry in enumerate(add_list):
+                # Checks that each entry in 'add_list' is a string
+                if(not isinstance(entry, str)):
+                    pkwargs["varName"] = "add_list"
+                    __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+                    if(checkall_addlist):
+                        continue
+                    else:
+                        return False
                 if(par):
-                    fout.write(entry+"\n")
+                    if(i < n-1):
+                        fout.write(entry+"\n")
+                    else:
+                        fout.write(entry)
                 else:
                     fout.write(entry)
         return True
@@ -299,7 +325,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", **pkwargs):
         return False
 
 
-def flat_file_append(file_out, add_list, par=False, newline=True, **pkwargs):
+def flat_file_append(file_out, add_list, par=False, newline=True, checkall_addlist=False, **pkwargs):
     '''
     Description: Appends a list of strings to the end of an output file
 
@@ -320,11 +346,17 @@ def flat_file_append(file_out, add_list, par=False, newline=True, **pkwargs):
 
     ptype = 'a+'
 
-    newFuncName = printer.addFuncName("flat_file_append", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_append"
     else:
-        pkwargs["funcName"] = "flat_file_append"
+        newFuncName = printer.addFuncName("flat_file_append", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_append"
 
     if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
@@ -336,21 +368,30 @@ def flat_file_append(file_out, add_list, par=False, newline=True, **pkwargs):
     #if(not all([isinstance(entry, str) for entry in add_list]):
     #    return False
 
-    # Checks that each entry in 'add_list' is a string
-    for i,entry in enumerate(add_list):
-        if(not isinstance(entry, str)):
-            pkwargs["varName"] = "add_list"
-            __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
-            return False
     if(newline):
         add_list = ["\n"]+add_list
+    n = len(add_list)
 
     # Print content to file
     try:
-        with open(file_out,ptype) as fout:
-            for entry in add_list:
+        with open(file_out, ptype) as fout:
+            for i,entry in enumerate(add_list):
+                # Checks that each entry in 'add_list' is a string
+                if(not isinstance(entry, str)):
+                    pkwargs["varName"] = "add_list"
+                    __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+                    if(checkall_addlist):
+                        continue
+                    else:
+                        return False
                 if(par):
-                    fout.write(entry+"\n")
+                    if(i < n-1):
+                        if(newline and i==0):
+                            fout.write(entry)
+                        else:
+                            fout.write(entry+"\n")
+                    else:
+                        fout.write(entry)
                 else:
                     fout.write(entry)
         return True
@@ -361,36 +402,49 @@ def flat_file_append(file_out, add_list, par=False, newline=True, **pkwargs):
         return False
 
 
-def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=False, ptype='w', **pkwargs):
+def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=False, **pkwargs):
     '''
     Description: In the file 'file_out', the lines in 'grab_list' are replaced with the strings in 'change_list'
 
-   (e.g.) 
-   
+   (e.g.)
+
        flat_file_replace('file.in', [1,2], ["This is the first line!","This is line #2!"])
 
     Variables:
-    
+
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start
 
         'change_list': list of strings, each string is a separate line
 
-        'par': [*] True if endline character is to be added to each output string, else False. 
+        'par': [*] True if endline character is to be added to each output string, else False.
 
         'count_offset': [*] True if values in grab_list corrospond to line numbers, else values corrospond to list index
 
-        'ptype': [*] a string in found in the ptype_write list.         
+        'ptype': [*] a string in found in the ptype_write list.
 
-    Output: Success Boolean   
+    Output: Success Boolean
     '''
 
-    newFuncName = printer.addFuncName("flat_file_replace", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+    ptype='w'
+
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_replace"
     else:
-        pkwargs["funcName"] = "flat_file_replace"
+        newFuncName = printer.addFuncName("flat_file_replace", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_replace"
+
+    if(pkwargs.get("fullErrorPath")):
+        pkwargs["nonewFuncName"] = False
+    else:
+        pkwargs["nonewFuncName"] = True
 
     if(__io_test_fail__(ptype, 'write', **pkwargs)):
         return False
@@ -432,7 +486,7 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
             file_lines[i] = change_list[j]
 
     # Write modifications to file
-    result = flat_file_write(file_out, file_lines, ptype=ptype)
+    result = flat_file_write(file_out, file_lines, ptype=ptype, **pkwargs)
     if(result == False):
         pkwargs["varName"] = "add_list"
         __err_print__("couldn't write replacement lines to"+str(file_out), **pkwargs)
@@ -443,31 +497,43 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
     '''
     Description: Grabs the lines in 'grab_list' as strings from the file 'file_in'
 
-   (e.g.) 
-   
+   (e.g.)
+
        flat_file_replace('file.in', [1,2], ["This is the first line!","This is line #2!"])
 
     Variables:
-    
+
         'file_in': file string pathway, if only a single node is given, current (path) directory is assumed
 
-        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start 
+        'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start
 
-        'scrub': [bool] (False), Removes end and return line characters from each grabbed string  
+        'scrub': [bool] (False), Removes end and return line characters from each grabbed string
 
         'repeat': [bool] (False), if True, then 'grouping' formatting is used
 
         'count_offset': [bool] (True), shifts 'grab_list' values by 1 to align line numbers with python indices
 
-        'ptype': [string] ('r'), reading mode          
+        'ptype': [string] ('r'), reading mode
 
-    Output: List of Strings; Output: Success Boolean  
+    Output: List of Strings; Output: Success Boolean
     '''
-    newFuncName = printer.addFuncName("flat_file_grab", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_grab"
     else:
-        pkwargs["funcName"] = "flat_file_grab"
+        newFuncName = printer.addFuncName("flat_file_grab", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_grab"
+
+    if(pkwargs.get("fullErrorPath")):
+        pkwargs["nonewFuncName"] = False
+    else:
+        pkwargs["nonewFuncName"] = True
 
     # Testing proper variable types
     if(__io_test_fail__(ptype, 'read', **pkwargs)):
@@ -517,22 +583,20 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
     return out_lines
 
 
-def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, count_offset=True, ptype='w', **pkwargs):
+def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count_offset=True, ptype='w', **pkwargs):
     '''
     Description: Grabs the lines in 'grab_list' as strings from the file 'file_in'
                  the lines in grab_list are then printed to file_out
 
    (e.g.) 
 
-       flat_file_copy('file.in', 'file.out', [1,2], ["This is the first line!","This is line #2!"])
+       flat_file_copy('file.in', 'file.out', [1,2])
 
     Variables:
 
         'file_out': file string pathway, if only a single node is given, current (path) directory is assumed
 
         'grab_list': list of integers, each integer corrosponds to a line number, options for 0 or 1 index start
-
-        'scrub': [bool] (False), Removes end and return line characters from each grabbed string
 
         'repeat': [bool] (False), if True, then 'grouping' formatting is used
 
@@ -542,11 +606,23 @@ def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, count_of
 
     Output: List of Strings; Output: Success Boolean
     '''
-    newFuncName = printer.addFuncName("flat_file_copy", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_copy"
     else:
-        pkwargs["funcName"] = "flat_file_copy"
+        newFuncName = printer.addFuncName("flat_file_copy", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_copy"
+
+    if(pkwargs.get("fullErrorPath")):
+        pkwargs["nonewFuncName"] = False
+    else:
+        pkwargs["nonewFuncName"] = True
 
     # Testing proper variable types
     if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -564,29 +640,22 @@ def flat_file_copy(file_in, file_out, grab_list, repeat=False, group=0, count_of
     if(lines == False):
             return False
 
-    # Parse and return 'out_list' through 'repeat' and 'group' options
-    if(repeat):
-        nlines = len(lines)
-        out_list = []
-
-        if(group>0):
-            for i in range(nlines):
-                out_list.append(lines[i])
-                if(i>0 and (i+1)%group == 0):
-                    out_list.append("\n")
-    else:
-        if(group>0):
-            out_list.append(lines[i])
+    # Parse and return 'out_lines' through 'repeat' and 'group' options
+    out_lines = []
+    if(group>0):
+        for i,entry in enumerate(lines):
+            out_lines.append(entry)
             if(i>0 and (i+1)%group == 0):
-                out_list.append("\n")
+                out_lines.append("\n")
+    else:
+        out_lines = lines
 
-    result = flat_file_write(file_out, out_list, ptype=ptype, **pkwargs)
+    result = flat_file_write(file_out, out_lines, ptype=ptype, **pkwargs)
     return result
 
 
 def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=float, **pkwargs):
     '''
-
     Purpose: To read in a well constrained table from a text file. 
 
 
@@ -603,11 +672,22 @@ def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=f
         genre   : The variable type of the entries in the table
 
     '''
-    newFuncName = printer.addFuncName("flat_file_intable", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_intable"
     else:
-        pkwargs["funcName"] = "flat_file_intable"
+        newFuncName = printer.addFuncName("flat_file_intable", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_intable"
+
+    if(pkwargs.get("fullErrorPath")):
+        pkwargs["nonewFuncName"] = False
+    else:
+        pkwargs["nonewFuncName"] = True
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
@@ -637,11 +717,23 @@ def flat_file_skewtable(file_in,
 
         see 'table_str_to_fill_numeric' in the pinax.py file for details on the options
     '''
-    newFuncName = printer.addFuncName("flat_file_skewtable", pkwargs.get('funcName'))
-    if(check.isArray(newFuncName)):
-        pkwargs["funcName"] = newFuncName
+
+    if(pkwargs.get("nonewFuncName")):
+        if(pkwargs.get('funcName') != None):
+            pkwargs["funcName"] = pkwargs.get('funcName')
+        else:
+            pkwargs["funcName"] = "flat_file_skewtable"
     else:
-        pkwargs["funcName"] = "flat_file_skewtable"
+        newFuncName = printer.addFuncName("flat_file_skewtable", pkwargs.get('funcName'))
+        if(check.isArray(newFuncName)):
+            pkwargs["funcName"] = newFuncName
+        else:
+            pkwargs["funcName"] = "flat_file_skewtable"
+
+    if(pkwargs.get("fullErrorPath")):
+        pkwargs["nonewFuncName"] = False
+    else:
+        pkwargs["nonewFuncName"] = True
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_fill_numeric(table_lines, 

@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 '''
 'tcheck' module:
 
@@ -81,7 +81,7 @@ def __fail_print__(success, var_name=None, correct_type="valid type", func_name=
     '''
     if(print_bool):
         if(isinstance(correct_type,str)):
-            correct_type = correct_type 
+            correct_type = correct_type
         else:
             try:
                 correct_type = str(correct_type)
@@ -89,7 +89,7 @@ def __fail_print__(success, var_name=None, correct_type="valid type", func_name=
                 print("[__fail_print__] Error: 'correct_type' must be a string or type object")
                 return False
         if(not success and var_name != None):
-            if(func_name == ''): 
+            if(func_name == ''):
                 print("TypeError: the variable '"+var_name+"' is not a "+correct_type)
             else:
                 print("["+func_name+"]"+" TypeError: the variable '"+var_name+"' is not a "+correct_type)
@@ -236,7 +236,7 @@ class imprimer(object):
         if(kwargs.get('failPrint') == None):
             failPrint = self.failPrint
         else:
-            failPrint
+            failPrint = kwargs.get('failPrint')
 
         newSpace = kwargs.get('space')
         if(isinstance(newSpace, str)):
