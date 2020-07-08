@@ -1,22 +1,50 @@
-import re 
+import re
 
-import strlist as __strl__ 
-import tcheck as __check__ 
+import strlist as strl
+import tcheck as check
 
 global re_space
- 
+
+global nan_list, inf_list, null_list, truth, nil, truth_dict, match_dict
+
+nan_list = ['nan', 'NaN', 'NAN', '-nan', '-NaN', '-NAN']
+inf_list = ['inf', 'Inf', 'INF', '-inf', '-Inf', '-INF']
+null_list = ['null', 'Null', 'NULL', '-null', '-Null', '-NULL']
+
+truth = ('nan','inf','null')
+nil = (nan_list, inf_list, null_list)
+
+match_dict = dict(zip(truth,nil))
 
 re_space = re.compile("^\s+$")
 
-#######################
-#  General Functions  #
-#######################
+printer = check.imprimer()
 
-def __error_print__(msg):
-    print(msg)
-    return False
+#################################################################
+# Helper functions----------------------------------------------#
+#################################################################
 
-####################                         #################### 
+def __err_print__(errmsg, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    printer.errPrint(errmsg, **kwargs)
+
+def __not_str_print__(var, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    return not printer.strCheck(var, **kwargs)
+
+def __not_arr_print__(var, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    return not printer.arrayCheck(var, **kwargs)
+
+def __not_num_print__(var, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    return not printer.numCheck(var, **kwargs)
+
+####################                         ####################
 #  line functions  ###########################  line functions  #
 ####################                         ####################
 
@@ -24,63 +52,45 @@ def __error_print__(msg):
 #  NAN functions  #
 ###################
 
-
-def __bool_tester__(obj, array_of_arrays):
-    bul = False 
-    for i in array_of_arrays:
-        bul = bul or (obj in i)
-    return bul  
-
-def __nan_func__(check):
-    
-    nan_list = ['nan', 'NaN', 'NAN', '-nan', '-NaN', '-NAN']
-    inf_list = ['inf', 'Inf', 'INF', '-inf', '-Inf', '-INF']
-    null_list = ['null', 'Null', 'NULL', '-null', '-Null', '-NULL']
-
-    truth = ('nan','inf','null')
-
-    nil = (nan_list, inf_list, null_list)
-
-    truth_dict = dict(zip(truth,check))
-    match_dict = dict(zip(truth,nil))
-
+def __nan_func__(check_list):
     check_type = []
-    
+    truth_dict = dict(zip(truth,check_list))
     for i in truth:
         if(truth_dict[i]):
-            check_type.append(match_dict[i]) 
-
+            check_type.append(match_dict[i])
     return check_type
 
-def nan_check(string, nan = True, inf = True, null = True):
 
-    if(not isinstance(string,str)):
+def nan_check(string, nan=True, inf=True, null=True, **pkwargs):
+
+    if(not isinstance(string, str)):
         try:
             string = str(string)
         except:
-            print("[nan_check] TypeError: 'string' is not castable to a python 'str'")
-            return False  
+            pkwargs["varName"] = "string"
+            __err_print__("is not castable to a python 'str'", **pkwargs)
+            return False
 
-    check = (nan,inf,null) 
-    check_type = __nan_func__(check)
+    check_list = (nan, inf, null)
+    check_type = __nan_func__(check_list)
 
-    if(__bool_tester__(string, check_type)):
-        return True 
+    if(string in check_type):
+        return True
     else:
         return False
 
-def line_nan_check(array, nan = True, inf = True, null = True):
 
-    if(not __check__.array_test(array)):
-        print("[line_nan_check] TypeError: 'array' is not a python array")
-        return False  
+def line_nan_check(array, nan=True, inf=True, null=True, **pkwargs):
 
-    check = (nan,inf,null) 
-    check_type = __nan_func__(check)
-            
+    if(__not_arr_print__(array, varID="array", **pkwargs)):
+        return False
+
+    check_list = (nan,inf,null)
+    check_type = __nan_func__(check_list)
+
     index_list = []
     for i in range(len(array)):
-        if(__bool_tester__(array[i],check_type)):
+        if(array[i] in check_type):
             index_list.append(i)
         else:
             pass
@@ -89,147 +99,152 @@ def line_nan_check(array, nan = True, inf = True, null = True):
         return index_list
     else:
         return False
-          
-            
-###################                           ################### 
-# table functions ############################# table functions #
-###################                           ################### 
 
-# Table (pinax) functions 
+
+###################                           ###################
+# table functions ############################# table functions #
+###################                           ###################
+
+# Table (pinax) functions
 # These functions are the main function to be used on matrix arrays.
 
 # Format:
 #
 # The format for tables takes the following basic form: [[],[]]
-# 
-# Functions: 
-# 
-# table_trans  ([[1,2,3],[4,5,6]])  =>  [[1,4],[2,5],[3,6]]  
+#
+# Functions:
+#
+# table_trans  ([[1,2,3],[4,5,6]])  =>  [[1,4],[2,5],[3,6]]
 
 
-def ismatrix(n, numeric = False):
+def ismatrix(n, numeric=False, string=False, matrixName=None, **pkwargs):
 
-    p1 = 'Below is invalid content found in the '
-    p2 = " entry of 'n'" 
+    pkwargs = printer.update_funcName("ismatrix", **pkwargs)
 
-    if(not __check__.array_test(n)):
-        return __error_print__("[ismatrix] Error: input 'n' is not a python array")
-      
-    index_err = []
-    err = False
-    length_err = False
-    lang = 0
-
-    for i in range(len(n)):
-        if(not __check__.array_test(n[i])):
-            print("[ismatrix] Error: the "+__strl__.print_ordinal(i+1)+" entry in 'n' is not a python array")
-            err = True
-        else:      
-            if(i == 0):
-                lang = len(n[i])
-            if(numeric):
-                err_arr = [j for j in n[i] if not __check__.numeric_test(j)]
-            else:
-                err_arr = [j for j in n[i] if not __check__.numeric_test(j) and not isinstance(j,str)]
-            if(len(err_arr)>0):
-                err = True
-                __strl__.format_fancy(err_arr,header=p1+__strl__.print_ordinal(i+1)+p2)            
-            if(len(n[i]) != lang):
-                err = True
-                length_err = True
-    if(err):
-        if(length_err):
-            print("[ismatrix] Error: lengths of the enteries of 'n' are not all equal")
-        return False 
+    mID=''
+    if(isinstance(matrixName, str)):
+        mID = matrixName
     else:
-        return True
+        mID = "n"
+
+    if(__not_arr_print__(n, varID=mID, **pkwargs)):
+        return False
+
+    lang = 0
+    for i,entry in enumerate(n):
+        if(__not_arr_print__(entry, varID=mID+" entry with index "+str(i), **pkwargs)):
+            err = True
+            return False
+        else:
+            if(i == 0):
+                lang = len(entry)
+
+            if(numeric):
+                err_arr = [str(j) for j in entry if not check.isNumeric(j)]
+            elif(string):
+                err_arr = [str(j) for j in entry if not isinstance(j, str)]
+            else:
+                err_arr = [str(j) for j in entry if not check.isNumeric(j) and not isinstance(j, str)]
+
+            if(len(err_arr)>0):
+                __err_print__(["Below is the invalid content in the "+strl.print_ordinal(i+1)+" entry of "+mID+":"]+err_arr, **pkwargs)
+                return False
+            if(len(entry) != lang):
+                errString_p1 = "length of the "+strl.print_ordinal(i+1)+" entry of '"+mID
+                __err_print__(errString_p1+"' doesn't match the length of the first entry", **pkwargs)
+                return False
+    return True
 
 
-def coerce_to_matrix(n, fill = 'NULL'):
-     
-    if(not __check__.array_test(n)):
-        text = "[coerce_to_matrix] Error: input 'n' is not a python array; could not coerce to matrix"
-        return __error_print__(text)             
-        
+def coerce_to_matrix(n, fill="NULL", matrixName=None, **pkwargs):
+
+    mID=''
+    if(isinstance(matrixName, str)):
+        mID = matrixName
+    else:
+        mID = "n"
+
+    pkwargs = printer.update_funcName("coerce_to_matrix", **pkwargs)
+
+    if(__not_arr_print__(n, varID=mID, **pkwargs)):
+        return False
+
     newn = list(n)
-     
     maxl = 0
-    for i in range(len(newn)):
-        if(not __check__.array_test(newn[i])):
-            text = "[coerce_to_matrix] Error: the "+__strl__.print_ordinal(i+1)+" entry in 'n' is not a python array"
-            return __error_print__(text)        
-        if(len(newn[i])>maxl):
-            maxl = len(newn[i])
-         
-    for i in range(len(newn)):
-        if(len(newn[i]) < maxl):
+
+    for i,entry in enumerate(newn):
+        if(__not_arr_print__(entry, varID=strl.print_ordinal(i+1)+" entry of matrix "+mID), **pkwargs):
+            return False
+        if(len(entry) > maxl):
+            maxl = len(entry)
+
+    for i,entry in enumerate(newn):
+        if(len(entry) < maxl):
             while(len(newn[i]) < maxl):
                 newn[i].append(fill)
     return newn
-                 
-                 
-                
 
-def table_trans(n, test_table=True, coerce=False, numeric=False, fill = 'NULL', cleanup = False):
 
-    matrix_value = True
-    if(test_table):
-        matrix_value = ismatrix(n, numeric = numeric)   
-    
-    if(coerce and matrix_value == False):
-        try:
-            n = coerce_to_matrix(n, fill = fill)
-            if(n == False):
-                return __error_print__("[table_trans] Error: attempt to coerce 'n' to a matrix failed")
-            contrive = True
-        except:
-            return __error_print__("[table_trans] Error: error occured while attempting to coerce 'n' into a matrix")
+def table_trans(n, test_matrix=True, coerce=False, numeric=False, string=False, fill='NULL', matrixName=None, **pkwargs):
+
+    pkwargs = printer.update_funcName("coerce_to_matrix", **pkwargs)
+
+    matrix_assert = True
+    if(test_matrix):
+        if(coerce):
+            if(not isinstance(pkwargs.get("failPrint"), bool)):
+                pkwargs["failPrint"] = False
+                oldval=None
+            else:
+                pkwargs["failPrint"] = False
+                oldval=pkwargs["failPrint"]
+        if(not ismatrix(n, numeric=numeric, string=string, matrixName=matrixName, **pkwargs)):
+            matrix_assert = False
+        if(coerce):
+            pkwargs["failPrint"] = oldval
+
+    if(coerce and not matrix_assert):
+        n = coerce_to_matrix(n, fill=fill, matrixName=matrixName, **pkwargs)
+        if(n == False):
             return False
-    elif(matrix_value == False):
-        print("[table_trans] Error: 'n' did not pass the matrix test")
+    elif(not matrix_assert):
         return False
     else:
         pass
 
     nrow = len(n[0])
     new_matrix, new_row = [],[]
-    
-    try:           
-        for k in range(nrow):
-            for i in n:
-                new_row.append(i[k])
-            new_matrix.append(new_row)
-            new_row=[]
-    except: 
-        err = __error_print__("[table_trans] Error: input could not be cast into a translated matrix")
-        return err           
 
-    if(cleanup):
-        pass
+    for k in range(nrow):
+        for i in n:
+            new_row.append(i[k])
+        new_matrix.append(new_row)
+        new_row=[]
 
     return new_matrix
 
 
-def table_str_to_numeric(line_list   , 
-                         header=False, 
-                         entete=False , 
-                         columns=True,
+def table_str_to_numeric(table_list,
+                         header=False,
+                         entete=False ,
+                         transpose=True,
                          nanopt=True,
                          nantup=(True,True,True),
-                         sep=' '     , 
-                         genre=float , 
-                         debug=True   ):
+                         spc=' '     ,
+                         genre=float,
+                         tableName=None,
+                         debug=True,
+                         **pkwargs):
     '''
-
     Input Variables:
 
-        line_list : A python array (list or tuple) of strings which form a numeric table (header option allowed)
+        table_list : A python array (list or tuple) of strings which form a numeric table (header option allowed)
         header    : If True, treats the first line in the input array as a header and not with the data
         entete    : If header, attempts to return the header with the output numeric table
-        columns   : If True, attempts to return each columns of data, rather than input rows found in 'line_list'
+        transpose : If True, attempts to return transposed data parsed from 'table_list'
         nanopt    : If True, 'NaN' values do not return error values 
         nantup    : A tuple in the form (nan,inf,null), each value is true if it is allowed
-        sep       : string, seperator for numeric values in the input table (',' for CSV, space ' ' is default)
+        spc       : string, seperator for numeric values in the input table (',' for CSV, space ' ' is default)
         genre     : A python object function: attempts to coerce object type to 'genre', float is default (str, int)
         debug     : If True, checks performs dummy-check on input data, returns printing of point or location of failure
 
@@ -239,90 +254,109 @@ def table_str_to_numeric(line_list   ,
         Useful if working with formatted data tables
     '''
 
-    nan,inf,null = nantup
-    
+    pkwargs = printer.update_funcName("table_str_to_numeric", **pkwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
-    if(debug):    
-        fail_test = not __check__.array_test(line_list) # True if failed array test
-        if(fail_test):
-            print("[table_str_to_numeric] TypeError: input 'line_list' is not a python array")
+    tableName = ''
+    if(isinstance(table_name, str)):
+        tableID = table_name
+    else:
+        tableID = "table_list"
+
+    try:
+        nan,inf,null = nantup
+    except:
+        __err_print__("incorrectly formatted; should be a tuple of three bools", varID="nantup", **pkwargs)
+        return False
+
+    if(debug):
+        if(__not_arr_print__(table_list, varID=tableID, **pkwargs)):
             return False
-	    
-        for i in range(len(line_list)):   # checking if each object in 'line_list' is a string
-            fail_test = not isinstance(line_list[i],str)  # True if failed string test
-            if(fail_test):
-                print("[table_str_to_numeric] TypeError: non-string object at line "+str(i+1)+"of 'line_list'")        
+
+        for i,entry in table_list:
+            if(__not_str_print__(entry, varID=strl.print_ordinal(i)+" entry of "+tableID, **pkwargs)):
                 return False
 
-    new_line_list = __strl__.array_filter_spaces(list(line_list))
-    n = len(new_line_list)
+        if(not isinstance(genre, type)):
+            genre = float
+
+    new_table_list = strl.array_filter_spaces(table_list)
+    if(new_table_list == False):
+        __err_print__("couldn't be filtered", varID=tableID, **pkwargs)
+        return False
+
+    n = len(new_table_list)
 
     if(header):
-        head = new_line_list[0]
-        new_line_list = new_line_list[1:]
-        n = len(new_line_list)
+        head = new_table_list[0]
+        new_table_list = new_table_list[1:]
+        n = len(new_table_list)
         try:
-            head = __strl__.str_to_list(head, spc = sep, filtre = True)
+            head = strl.str_to_list(head, spc=spc, filtre=True)
             nhead = len(head)
         except:
-            print("[table_str_to_numeric] Error: header could not be parsed]")
+            __err_print__("couldn't be parsed with a header (first) entry; failure to convert to 'list'", varID=tableID, **pkwargs)
             return False
-    
+
     nanopt_test = False
-    for i in range(n):
-        new_line_list[i] = __strl__.str_to_list(new_line_list[i], spc = sep, filtre = True)
-        for j in range(len(new_line_list[i])):
+    for i,entry in new_table_list:
+        new_table_list[i] = strl.str_to_list(entry, spc=spc, filtre=True)
+        if(new_table_list[i] == False):
+            __err_print__(strl.print_ordinal(i)+" table entry; couldn't be converted to list", varID=tableID, **pkwargs)
+            return False
+        for j,value in enumerate(new_table_list[i]):
             try:
                 if(nanopt):
-                    nanopt_test = nan_check(new_line_list[i][j],nan,inf,null) 
-                if((genre == int or genre == long) and nanopt_test == False):
-                    new_line_list[i][j] = genre(float(new_line_list[i][j]))
-                if((genre == float or genre == str) and nanopt_test == False):
-                    new_line_list[i][j] = genre(new_line_list[i][j])
+                    nanopt_test = nan_check(value, nan, inf, null)
+                if((genre == int or genre == long) and not nanopt_test):
+                    new_table_list[i][j] = genre(float(value))
+                if((genre == float or genre == str) and not nanopt_test):
+                    new_table_list[i][j] = genre(value)
             except:
-                print("[table_str_to_numeric] Error: failed attempting to parsing table as numeric array")
+                ordi = strl.print_ordinal(i)
+                ordj = strl.print_ordinal(j)
+                __err_print__(ordi+" table entry, "+ordj+" column; failure to parse", varID=tableID, **pkwargs)
                 return False
 
     if(header and entete):
         try:
-            new_line_list.insert(0,head)
+            new_table_list.insert(0, head)
         except:
-            print("[table_str_to_numeric] Warning: error occured when adding header, returning table without it")
-            pass
-  
-    if(columns):
-        output = table_trans(new_line_list)  
+            __err_print__("failure to incorporate header...", varID=tableID, **pkwargs)
+
+    if(transpose):
+        output = table_trans(new_table_list, test_matrix=False, matrixName=tableID, **pkwargs)
         if(output == False):
-            print("[table_str_to_numeric] Warning: could not translate table, returning as is")
-            return new_line_list
+            return False
         else:
             return output 
     else:
-        return new_line_list
+        return new_table_list
 
 
-def table_str_to_fill_numeric(line_list     , 
+def table_str_to_fill_numeric(table_list,
                               space = '    ',
                               fill  = 'NULL',
                               nval  = False ,
-                              header=False  , 
-                              entete=True   , 
-                              columns=True  ,
-                              nanopt=True  , 
+                              header=False  ,
+                              entete=True   ,
+                              transpose=True  ,
+                              nanopt=True  ,
                               nantup=(True,True,True),
-                              spc=' '       , 
-                              genre=float   , 
+                              spc=' '       ,
+                              genre=float   ,
+                              tableName=None,
                               debug=True   ):
 
     '''
 
     Input Variables:
 
-        line_list : A array (list or tuple) of strings which form a numeric table (header option allowed)
+        table_list : A array (list or tuple) of strings which form a numeric table (header option allowed)
 
         space     : A string of spaces, corrosponds to the number of spaces required for an empty entry
 
-        fill      : A string, corrosponds to the value which will be added in the place of an empty entry 
+        fill      : A string, corrosponds to the value which will be added in the place of an empty entry
 
         nval      : An integer, corrosponds to the number of values in a row, to which the table will be coerced
                     If False, the table is read according to parsed spaces
@@ -331,94 +365,109 @@ def table_str_to_fill_numeric(line_list     ,
 
         entete    : If header is True, attempts to return the header with the output numeric table
 
-        columns   : If True, attempts to return lists of each columns of data, rather than each rows as found in 'line_list'
+        transpose : If True, attempts to return lists of each transpose of data, rather than each rows as found in 'table_list'
 
-        nanopt    : If True, NaN style strings values do not return error values as specified in nantup 
+        nanopt    : If True, NaN style strings values do not return error values as specified in nantup
 
         nantup    : A tuple in the form (nan,inf,null), each value is true if it is allowed
 
         sep       : A string, seperator for numeric values in the input table (',' for CSV, space ' ' is default)
 
-        genre     : A python object function: attempts to coerce object type to 'genre', float is default 
+        genre     : A python object function: attempts to coerce object type to 'genre', float is default
 
         debug     : If True, checks performs dummy-check on input data, returns printing of point or location of failure
 
 
     Purpose:
-    
-        Takes a list of strings and attempts to convert into a table of numeric values 
+
+        Takes a list of strings and attempts to convert into a table of numeric values
         Useful if working with formatted data tables
 
     '''
+    pkwargs = printer.update_funcName("table_str_to_fill_numeric", **pkwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
-    nan,inf,null = nantup
+    tableName = ''
+    if(isinstance(table_name, str)):
+        tableID = table_name
+    else:
+        tableID = "table_list"
+
+    try:
+        nan,inf,null = nantup
+    except:
+        __err_print__("incorrectly formatted; should be a tuple of three bools", varID="nantup", **pkwargs)
+        return False
     null = True
 
-    if(debug):    
-        fail_test = not __check__.array_test(line_list) # True if failed array test
-        if(fail_test):
-            print("[table_str_to_numeric] TypeError: input 'line_list' is not a python array")
+    if(debug):
+        if(__not_arr_print__(table_list, varID=tableID, **pkwargs)):
             return False
-	    
-        for i in range(len(line_list)):   # checking if each object in 'line_list' is a string
-            fail_test = not isinstance(line_list[i],str)  # True if failed string test
-            if(fail_test):
-                print("[table_str_to_numeric] TypeError: non-string object at line "+str(i+1)+"of 'line_list'")        
-                return False    
+
+        for i,entry in table_list:
+            if(__not_str_print__(entry, varID=strl.print_ordinal(i)+" entry of "+tableID, **pkwargs)):
+                return False
+
+        if(not isinstance(genre, type)):
+            genre = float
 
     if(header):
-        head = line_list[0]
-        op_list = line_list[1:]
-        n = len(op_list)
+        head = table_list[0]
+        new_table_list = table_list[1:]
         try:
-            head = __strl__.str_to_list(head, spc = spc, filtre = True)
-            nhead = len(head)
+            head = strl.str_to_list(head, spc=spc, filtre=True)
         except:
-            print("[table_str_to_fill_numeric] Warning: header could not be parsed")
-            header = False
+            __err_print__("couldn't be parsed with a header (first) entry; failure to convert to 'list'", varID=tableID, **pkwargs)
+            return False
     else:
-        op_list = list(line_list)
-    
-    # Parsing list of lines 
-    for i in range(len(op_list)):
-        string = op_list[i]        
-        temp = __strl__.str_to_fill_list(string, lngspc = space, fill = fill, nval = nval, spc = spc, numeric = False)
-          
+        new_table_list = list(table_list)
+
+    # Parsing list of lines
+    for i,entry in enumerate(new_table_list):
+        string = entry
+        temp = strl.str_to_fill_list(string, lngspc=space, fill=fill, nval=nval, spc=spc, numeric=False)
+
         # Parsing numeric values found in each list
-        if(nanopt): 
+        if(nanopt):
             nan_list = line_nan_check(temp,nan=nan,inf=inf,null=null)
             if(nan_list > 0):
-                for j in range(len(temp)):
-                    if(temp[j] not in nan_list and temp[j] != fill):
+                for j,value in enumerate(temp):
+                    if(value not in nan_list and value != fill):
                         try:
                             temp[j] = genre(temp[j])    
                         except:
-                            temp[j] = float(temp[j])
+                            ordi = strl.print_ordinal(i)
+                            ordj = strl.print_ordinal(j)
+                            __err_print__(ordi+" table entry, "+ordj+" column; failure to parse", varID=tableID, **pkwargs)
+                            return False
         else:
-            nan_list = line_nan_check(temp,False,False,True)
+            nan_list = line_nan_check(temp, False, False, True)
             if(nan_list > 0):
-                for j in range(len(temp)):
-                    if(temp[j] not in nan_list and temp[j] != fill):
+                for j,value in enumerate(temp):
+                    if(value not in nan_list and value != fill):
                         try:
                             temp[j] = genre(temp[j])    
                         except:
-                            temp[j] = float(temp[j])
-
-        op_list[i] = temp 
+                            ordi = strl.print_ordinal(i)
+                            ordj = strl.print_ordinal(j)
+                            __err_print__(ordi+" table entry, "+ordj+" column; failure to parse", varID=tableID, **pkwargs)
+                            return False
+        new_table_list[i] = temp
 
     if(header and entete):
-        op_list.insert(0,head)
-         
-    if(columns):
-        output = table_trans(op_list, coerce=True, fill = fill)
-        if(output == False):
-            print("[table_str_to_numeric] Warning: could not transpose table; returning as is")
-            return op_list
-        else:
-            return output 
-    else:
-        return op_list      
+        try:
+            new_table_list.insert(0, head)
+        except:
+            __err_print__("failure to incorporate header...", varID=tableID, **pkwargs)
 
+    if(transpose):
+        output = table_trans(new_table_list, test_matrix=True, coerce=True, matrixName=tableID, **pkwargs)
+        if(output == False):
+            return False
+        else:
+            return output
+    else:
+        return new_table_list
 
 
 def table_array_str(list_lines, split_str = '  ', row=True):

@@ -198,6 +198,40 @@ class imprimer(object):
             outString = "["+self.modName+"]"+outString
         return outString
 
+    def update_funcName(self, function_name, **kwargs):
+
+        if(not isinstance(function_name, str)):
+            return kwargs
+
+        if(kwargs.get("nonewFuncName")):
+            if(kwargs.get('funcName') != None):
+                kwargs["funcName"] = kwargs.get('funcName')
+            else:
+                kwargs["funcName"] = function_name
+        else:
+            newFuncName = printer.addFuncName(function_name, kwargs.get('funcName'))
+            if(check.isArray(newFuncName)):
+                kwargs["funcName"] = newFuncName
+            else:
+                kwargs["funcName"] = function_name
+
+        if(kwargs.get("fullErrorPath")):
+            kwargs["nonewFuncName"] = False
+        else:
+            kwargs["nonewFuncName"] = True
+        return kwargs
+
+    def setstop_funcName(self, inverse=False, **kwargs):
+
+        if(not inverse):
+            if(kwargs.get("nonewFuncName") == None):
+                kwargs["nonewFuncName"] = True
+        else:
+            if(kwargs.get("nonewFuncName") == None):
+                kwargs["nonewFuncName"] = False
+        return kwargs
+
+
     def __stringParse__(self, msg, **kwargs):
         '''
         Description: Parses 'msg' input message(s) into string output
@@ -214,7 +248,7 @@ class imprimer(object):
             funcName : (str)(None)[None], determines the function id strings to be added to the beginning of each string (str),
                                           if None, or not a string then nothing is added
 
-            header : (str)(bool)[" Error"], determines the string to be added which identifies the message (str),
+            heading : (str)(bool)[" Error"], determines the string to be added which identifies the message (str),
                                             if True, the string " 'Error'" is added, else if False, nothing is added
 
             varName : (str)(bool)[False], determines the string to be added which identifies a specific variable (str),
@@ -271,10 +305,10 @@ class imprimer(object):
         if(isinstance(funcNameStr,str)):
             outString = outString+funcNameStr
 
-        if(self.__kwarg__(kwargs.get('header'))):
-            if(isinstance(kwargs.get('header'), str)):
-                outString = outString+kwargs.get('header')+":"
-            elif(kwargs.get('header') != False):
+        if(self.__kwarg__(kwargs.get('heading'))):
+            if(isinstance(kwargs.get('heading'), str)):
+                outString = outString+kwargs.get('heading')+":"
+            elif(kwargs.get('heading') != False):
                 outString = outString+"Error:"
             else:
                 pass
@@ -387,8 +421,8 @@ class imprimer(object):
         return oldfn
 
     def errPrint(self, msg, **kwargs):
-        if(not isinstance(kwargs.get('header'), str)):
-            kwargs['header'] = "Error"
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Error"
         outString = self.__stringParse__(msg, **kwargs)
         return outString
 

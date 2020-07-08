@@ -39,12 +39,6 @@ printer = check.imprimer()
 # Helper functions----------------------------------------------#
 #################################################################
 
-def __path_print__(pathmsg, **kwargs):
-    ''' '''
-    if(not isinstance(kwargs.get('header'), str)):
-        kwargs['header'] = "Pathway"
-    printer.errPrint(pathmsg, **kwargs)
-
 def __err_print__(errmsg, varID=None, **kwargs):
     if(isinstance(varID, str)):
         kwargs["varName"] = varID
@@ -228,17 +222,7 @@ def flat_file_read(file_in, ptype='r', type_test=True, **pkwargs):
 
     '''
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_read"
-    else:
-        newFuncName = printer.addFuncName("flat_file_read", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_read"
+    pkwargs = printer.update_funcName("flat_file_read", **pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'read', **pkwargs)):
@@ -283,17 +267,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", checkall_addli
     Output: Success Boolean
     '''
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_write"
-    else:
-        newFuncName = printer.addFuncName("flat_file_write", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_write"
+    pkwargs = printer.update_funcName("flat_file_write", **pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -357,17 +331,7 @@ def flat_file_append(file_out, add_list, par=False, newline=True, checkall_addli
 
     ptype = 'a+'
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_append"
-    else:
-        newFuncName = printer.addFuncName("flat_file_append", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_append"
+    pkwargs = printer.update_funcName("flat_file_append", **pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -443,29 +407,14 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
 
     ptype='w'
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_replace"
-    else:
-        newFuncName = printer.addFuncName("flat_file_replace", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_replace"
-
-    if(pkwargs.get("fullErrorPath")):
-        pkwargs["nonewFuncName"] = False
-    else:
-        pkwargs["nonewFuncName"] = True
+    pkwargs = printer.update_funcName("flat_file_replace", **pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
             return False
         if(__not_str_print__(file_out, varID="file_out", **pkwargs)):
             return False
-	    
+
         for i,entry in enumerate(grab_list):
             if(not isinstance(entry, int)):
                 pkwargs["varName"] = "grab_list"
@@ -535,22 +484,7 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
     Output: List of Strings; Output: Success Boolean
     '''
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_grab"
-    else:
-        newFuncName = printer.addFuncName("flat_file_grab", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_grab"
-
-    if(pkwargs.get("fullErrorPath")):
-        pkwargs["nonewFuncName"] = False
-    else:
-        pkwargs["nonewFuncName"] = True
+    pkwargs = printer.update_funcName("flat_file_grab", **pkwargs)
 
     # Testing proper variable types
     if(type_test):
@@ -627,22 +561,7 @@ def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count
     Output: List of Strings; Output: Success Boolean
     '''
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_copy"
-    else:
-        newFuncName = printer.addFuncName("flat_file_copy", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_copy"
-
-    if(pkwargs.get("fullErrorPath")):
-        pkwargs["nonewFuncName"] = False
-    else:
-        pkwargs["nonewFuncName"] = True
+    pkwargs = printer.update_funcName("flat_file_copy", **pkwargs)
 
     # Testing proper variable types
     if(type_test):
@@ -698,22 +617,8 @@ def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=f
         genre   : (type)[float] The variable type of the entries in the table
 
     '''
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_intable"
-    else:
-        newFuncName = printer.addFuncName("flat_file_intable", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_intable"
 
-    if(pkwargs.get("fullErrorPath")):
-        pkwargs["nonewFuncName"] = False
-    else:
-        pkwargs["nonewFuncName"] = True
+    pkwargs = printer.update_funcName("flat_file_intable", **pkwargs)
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
@@ -744,22 +649,7 @@ def flat_file_skewtable(file_in,
         see 'table_str_to_fill_numeric' in the pinax.py file for details on the options
     '''
 
-    if(pkwargs.get("nonewFuncName")):
-        if(pkwargs.get('funcName') != None):
-            pkwargs["funcName"] = pkwargs.get('funcName')
-        else:
-            pkwargs["funcName"] = "flat_file_skewtable"
-    else:
-        newFuncName = printer.addFuncName("flat_file_skewtable", pkwargs.get('funcName'))
-        if(check.isArray(newFuncName)):
-            pkwargs["funcName"] = newFuncName
-        else:
-            pkwargs["funcName"] = "flat_file_skewtable"
-
-    if(pkwargs.get("fullErrorPath")):
-        pkwargs["nonewFuncName"] = False
-    else:
-        pkwargs["nonewFuncName"] = True
+    pkwargs = printer.update_funcName("flat_file_skewtable", **pkwargs)
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_fill_numeric(table_lines, 

@@ -239,7 +239,7 @@ def array_filter_spaces(array, none_filter=True, inverse=False):
             if(inverse):
                 spaceList.append(entry)
         else:
-            if(inverse == False):
+            if(not inverse):
                 nonSpaceList.append(entry)
     if(none_filter):
         if(inverse):
