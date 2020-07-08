@@ -64,11 +64,11 @@ def nan_check(string, nan = True, inf = True, null = True):
     check = (nan,inf,null) 
     check_type = __nan_func__(check)
 
-    if(__bool_tester__(string,check_type)):
+    if(__bool_tester__(string, check_type)):
         return True 
     else:
         return False
-     
+
 def line_nan_check(array, nan = True, inf = True, null = True):
 
     if(not __check__.array_test(array)):
