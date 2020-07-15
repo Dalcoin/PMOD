@@ -31,12 +31,27 @@ def exit_func():
 group_by_vmeds = False
 group_by_vgrps = False
 
+run_timeout = False
+
 if(group_by_vmeds and group_by_vgrps):
     print("Warning: both v-lines and v-groups have been selected, v-group takes precedent")
 
 if(not group_by_vmeds and not group_by_vgrps):
-    print("Error: neither v-lines, nor v-groups have been selected, exited now...")
+    print("Error: neither v-lines, nor v-groups have been selected, exiting now...")
     exit_func
+
+if(isinstance(run_timeout, bool)):
+    if(run_timeout):
+        run_timeout = 100000
+    else:
+        run_timeout = False
+elif(isinstance(run_timeout, int)):
+    if(run_timeout > 0):
+        pass
+    else:
+        run_timeout = 100000
+else:
+    run_timeout = False
   
 ########################
 #                      #
@@ -126,7 +141,16 @@ for i,entry in enumerate(ngroup):
     new_lines.append(demarc)
     iop.flat_file_write(in_path, new_lines)
 
-    subp.call("./xtest", shell=True)
+    if(isinstance(run_timeout, int) and not isinstance(run_timeout, bool)):
+        try:
+            subp.call("./xtest", shell=True, timeout=run_timeout)
+        except subp.TimeoutExpired:
+            print("[vmed_con_eos_scripter] Error: run number "+str(1+i)+" runtime exceeded timeout, cycling to next run...")
+            cml.cmd('rm test.txt;test1.txt')
+            continue
+    else:
+        subp.call("./xtest", shell=True)
+#    subp.call("./xtest", shell=True)
 
     # Get select E/A values generated from the partial waves 
     values = vf.partial_eos(file_name = 'test1.txt')
@@ -214,4 +238,3 @@ if(exist):
     print(spc+"The script found an existing 'vincp' directory and overwrote it\n")
 else:
     print(spc+"The script did not find an existing 'vincp' directory; one was created\n")
-     

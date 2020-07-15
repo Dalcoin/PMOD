@@ -175,7 +175,7 @@ def array_duplicates(array, inverse=False, count=False, index=False):
             return ((), dupList)
 
 
-def array_filter(array, match, inverse=False):
+def array_filter(array, match, inverse=False, index=False):
     '''
     Description: returns input array filtered of any values found in 'match'
 
@@ -196,29 +196,43 @@ def array_filter(array, match, inverse=False):
 
     outArray = []
     if(inverse):
-        for entry in array:
-            if(__isArray__(match)):
+        if(__isArray__(match)):
+            for i,entry in enumerate(array):
                 if(entry not in match):
                     continue
                 else:
-                    outArray.append(entry)
-            else:
+                    if(not index):
+                        outArray.append(entry)
+                    else:
+                        outArray.append((i,entry))
+        else:
+            for i,entry in enumerate(array):
                 if(entry != match):
                     continue
                 else:
-                    outArray.append(entry)
+                    if(not index):
+                        outArray.append(entry)
+                    else:
+                        outArray.append((i,entry))
     else:
-        for entry in array:
-            if(__isArray__(match)):
+        if(__isArray__(match)):
+            for i,entry in enumerate(array):
                 if(entry in match):
                     continue
                 else:
-                    outArray.append(entry)
-            else:
+                    if(not index):
+                        outArray.append(entry)
+                    else:
+                        outArray.append((i,entry))
+        else:
+            for i,entry in enumerate(array):
                 if(entry == match):
                     continue
                 else:
-                    outArray.append(entry)
+                    if(not index):
+                        outArray.append(entry)
+                    else:
+                        outArray.append((i,entry))
     return outArray
 
 
@@ -253,7 +267,7 @@ def array_filter_spaces(array, none_filter=True, inverse=False):
             return nonSpaceList
 
 
-def array_to_str(array, spc=' ', endline=False, front_spacing='', print_bool=True):
+def array_to_str(array, spc=' ', endline=False, filtre=False, front_spacing=''):
     '''
     Description: Turns array of string elements into a single string
                  each entry is space by 'spc' spacing value. If
@@ -270,20 +284,18 @@ def array_to_str(array, spc=' ', endline=False, front_spacing='', print_bool=Tru
 
         endline : (bool) [False], If True, a endline character is added to the output string
 
-        print_bool : (bool) [True], If True, any errors that are raised will print an error
-                      message to the console.
-
     Return:
 
         out_str : A string if success, False if failure
     '''
 
     if(not __isArray__(array)):
-        if(print_bool):
-            print("[array_to_str] TypeError: 'array' is not an array : "+str(type(array)))
         return False
 
     out_str = ''
+
+    if(filtre):
+        array = filter(None, array)
 
     for i, entry in enumerate(array):
         if(i == 0):
@@ -299,49 +311,7 @@ def array_to_str(array, spc=' ', endline=False, front_spacing='', print_bool=Tru
     return out_str
 
 
-def array_matrix_to_array_str(array, spc='  ', endline=False, front_spacing='', print_bool=True, string_safety=True):
-    '''
-    Description: Takes a matrix (2-D array of arrays) and returns a 1-D array; 'outArray'
-                 Each entry in 'outArray' is a string corrosponding to the original entry
-                 in 'array' parsed through the function 'array_to_str'
-
-    Input:
-        array   : A 2-D Python array (list or tuple) object
-        spc [*] : A string object, usually spacing
-
-    Return:
-        out_array : A list of strs if success, False if failure
-    '''
-    if(not __isArray__(array)):
-        if(print_bool):
-            print("[array_matrix_to_array_str] TypeError: 'array' is not an array : "+str(type(array)))
-        return False
-    outArray = []
-
-    for i,entry in enumerate(array):
-        if(string_safety):
-            if(isinstance(array, str)):
-                outArray.append(string)
-            else:
-                string = array_to_str(entry, spc, endline, front_spacing, print_bool)
-                if(string == False):
-                    if(print_bool):
-                        msg = "[array_matrix_to_array_str] Warning: the "
-                        print(msg+print_ordinal(i)+" entry is not an array or string: "+str(type(array)))
-                    continue
-                outArray.append(string)
-        else:
-            string = array_to_str(entry, spc, endline, front_spacing, print_bool)
-            if(string == False):
-                if(print_bool):
-                    msg = "[array_matrix_to_array_str] Warning: the "
-                    print(msg+print_ordinal(i)+" entry is not an array : "+str(type(array)))
-                continue
-            outArray.append(string)
-    return outArray
-
-
-def array_nth_index(array, n, inverse=False, print_bool=True, space='    '):
+def array_nth_index(array, n, inverse=False, space='    '):
     '''
     Description: Takes an input array and outputs a list corrosponding 
                  to the value found at every nth index of input array
@@ -360,14 +330,10 @@ def array_nth_index(array, n, inverse=False, print_bool=True, space='    '):
         out_array : A list of strs if success, False if failure
     '''
     if(not __isArray__(array)):
-        if(print_bool):
-            print(space+"[array_nth_index] Error: input 'array' must be an array: '"+str(type(array))+"'\n")
         return False
     array_len = len(array)
 
     if(not isinstance(n, int)):
-        if(print_bool):
-            print(space+"[array_nth_index] Error: input 'n' must be an integer: '"+str(type(n))+"'\n")
         return False
     else:
         if(n <= 1 or n>(array_len/2)):
@@ -389,7 +355,65 @@ def array_nth_index(array, n, inverse=False, print_bool=True, space='    '):
     return out_list
 
 
-def array_flatten(array, safety=True):
+def hack_flatten(array):
+    str_array = str(array)
+    ignore_tup = ('[',']',' ')
+    final_str = ''
+
+    string_str = ''
+    strtrap = True
+    strcount = 0
+    comma=False
+
+    for char in str_array:
+        if(char != "'" and strtrap):
+            if(char not in ignore_tup):
+                if(char == ',' and comma):
+                    continue
+                elif(char != ',' and comma):
+                    comma=False
+                    final_str+=char
+                    continue
+                else:
+                    final_str+=char
+            if(char==","):
+                comma=True
+        else:
+            if(strcount==0):
+                add_str = "'"
+                strtrap = False
+            else:
+                add_str = char
+            string_str += add_str
+            strcount+=1
+            if(add_str == "'" and strcount>1):
+                strtrap = True
+                strcount = 0
+                final_str += string_str
+                string_str = ''
+                comma=False
+    if(len(final_str) > 0):
+        if(final_str[0] == ","):
+            final_str = final_str[1:]
+        if(len(final_str) > 1):
+            if(final_str[-1] == ","):
+                final_str = final_str[:-1]
+    
+    exec("output_array = ["+final_str+"]")
+    return output_array
+
+
+def rec_flatten(array):
+    iterm = iter(array)
+    for item in iterm:
+        if __isArray__(item):
+            for initem in rec_flatten(item):
+                yield initem
+        else:
+            yield item
+
+
+def array_flatten(array, method="hack"):
     '''
     Warning: this function uses 'exec' and is inherently insecure if input is allowed from the user.
 
@@ -397,52 +421,59 @@ def array_flatten(array, safety=True):
 
     Inputs:
 
-        safety   : Boolean, if True then all arrays are compatable, else array must be 2D
-        out_type : Type, type of output, must be an iterable
+        array: (tuple or list), the tuple or list to be flattened
+
+        method: (string)["hack"]
+
+            "hack" : uses a non-standard method for flattening the input array
+
+            "rec" : uses a standard recursive method for flattening the input array
+
+            "twod" : assumes the input array is two-dimensional for simplicity and speed
     '''
+
+    def twod_flatten(array):
+        return [i for j in array for i in j]
+
+    exe_dict = {'hack':hack_flatten, 'rec':rec_flatten, '2d':twod_flatten}
+
     if(not __isArray__(array)):
         return False
 
     try:
-        if(safety):
-            new_array = str_filter(str(array), [' ','[',']'])
-            string_rep = array_to_str(new_array, spc='')
-            exec('out_str = '+'['+string_rep+']')
-            out_list = out_str
-        else:
-            out_list = [i for j in array for i in j]
+        flat_array = exe_dict[method.rstrip().lower()](array)
     except:
         return False
 
-    return out_list
+    return flat_array
 
 
 ### string functions 
 
 # string content
 
-def str_space_check(string, none_bool=False, print_bool=True, space='    '):
+def str_space_check(string, none_bool=False, space='    '):
     '''
     Description: checks if a string is all empty spaces (endline characters included)
     '''
     if(not isinstance(string, (str, type(None)))):
-        if(print_bool):
-            print("[str_space_check] Error: input 'string', is not a string\n")
-        return False
+        return None
     else:
         if(none_bool and string==None):
             return True
+        elif(string==None):
+            return False
+        else:
+            pass
 
     try:
         checker = string.isspace() or string == ''
         return checker
     except:
-        if(print_bool):
-            print("[str_space_check] Error: internal error\n")
-        return False
+        return None
 
 
-def str_to_list(string, spc = ' ', filtre = False, cut = None, print_bool=True):
+def str_to_list(string, spc=' ', filtre=False, cut=None):
     '''
     Description: parses input string into a list, default demarcation is by single spacing
     '''
@@ -457,12 +488,10 @@ def str_to_list(string, spc = ' ', filtre = False, cut = None, print_bool=True):
         else:
             return mod_string.split(spc)
     except:
-        if(print_bool):
-            print("[str_to_list] Error: input could not be split")
         return False
 
 
-def str_to_fill_list(string, 
+def str_to_fill_list(string,
                      lngspc='    ',
                      fill='NaN',
                      nval=False,
@@ -520,58 +549,51 @@ def str_to_fill_list(string,
             return arr
  
     # Function start
-    spc1 = ' ' 
+    spc1 = ' '
 
     if(not isinstance(string,str)):
-        print("[str_to_spc_fill_array] Error: input 'string' is not a python 'str' type")
         return False
 
     # Where all the machinery is
-    newline = string.replace(lngspc,spc1+fill+spc1)  
-    newarr = filter(None,newline.split(spc))         
+    newline = string.replace(lngspc,spc1+fill+spc1)
+    newarr = filter(None,newline.split(spc))
     flatarr = array_flatten(newarr)
 
     if(not isinstance(flatarr,list)):
-        print("[str_to_spc_fill_array] Error: error occured when flattening output array")
         return flatarr
 
     if(isinstance(nval,int)):
         if(nval > 0 and len(flatarr) > nval):
-            flatarr = __cut__(flatarr,nval,fill) 
+            flatarr = __cut__(flatarr, nval, fill)
 
     # conditions bound by the numeric formatter
     if(numeric):
         try:
             flatarr = map(lambda x: float(x) if x != fill else x, flatarr)
         except:
-            print("Warning: Could not coerce output array into a numeric array")
+            flatarr = False
     elif(isinstance(numeric,str)):
         if(numeric.lower() == 'float'):
             try:
                 flatarr = map(lambda x: float(x), flatarr)
             except:
-                print("Warning: Could not coerce output array into a numeric array")
+                flatarr = False
         elif(numeric.lower() == 'int'):
             try:
                 flatarr = map(lambda x: int(x), flatarr)
             except:
-                print("Warning: Could not coerce output array into a numeric array")
-
+                flatarr = False
     return flatarr
 
 
-def str_filter(string, filtre, inverse=False, print_bool=True):
+def str_filter_char(string, filtre, inverse=False):
     '''
-    Description: Filters 'filtre' string out of 'string' string, if 
-                 'inverse' then the instances of 'filtre' are returned
+    Description: Filters single character 'filtre' string(s) out of 'string' 
+                 string, if 'inverse' then the instances of 'filtre' are returned
                  else the entries not equivalent to 'filtre' are returned
     '''
     if(not isinstance(string,str)):
-        try:
-            string = str(string)
-        except:
-            if(print_bool):
-                print("[str_filter] Error: 'string' input could not be cast as a string object")
+        string = str(string)
 
     out_list = []
     if(inverse):
@@ -583,15 +605,16 @@ def str_filter(string, filtre, inverse=False, print_bool=True):
                 if(i == filtre):
                     out_list.append(i)       
     else:
-        for i in string:
-            if(__isArray__(filtre)):
+        if(__isArray__(filtre)):
+            for i in string:
                 if(i not in filtre):
                     out_list.append(i)
-            else:
+        else:
+            for i in string:
                 if(i != filtre):
                     out_list.append(i)
     
-    out_str = array_to_str(out_list, spc = '', print_bool = print_bool)
+    out_str = array_to_str(out_list, spc = '')
     return out_str
 
 
@@ -600,19 +623,17 @@ def str_clean(string):
     Description : Removes all spaces, endline characters and newline characters from string 
     '''
     if(not isinstance(string, str)):
-        s4 = '    '
-        try:
-            print(s4+"[str_clean] Error: 'string' input is not a string: "+str(string)+"\n")
-        except:
-            print(s4+"[str_clean] Error: 'string' input is not a string\n")
         return False
 
     array = str_to_list(string.rstrip(), filtre=True)
+    if(not __isArray__(array)):
+        return False
+
     out_string = array_to_str(array, spc = '')
     return out_string
 
 
-def str_set_spacing(string, space = ' ', print_bool = True):
+def str_set_spacing(string, space = ' '):
     ''' 
     Description: spaces non-space substrings by a set amount
         
@@ -620,11 +641,11 @@ def str_set_spacing(string, space = ' ', print_bool = True):
     '''       
     try:
         array = str_to_list(string, filtre = True)
-        output = array_to_str(array, spc = space, print_bool = print_bool)   
+        if(not __isArray__(array)):
+            return False        
+        output = array_to_str(array, spc = space)   
         return output  
     except:
-        if(print_bool):
-            print("[str_to_list] Error: input could not be split")
         return False           
 
 
@@ -740,22 +761,11 @@ def print_ordinal(n):
         try:
             n = int(float(n))
         except:
-            print("[print_ordinal] Error: input '"+n+"' could not be cast to an integer")
             return False
     else:
-        print("[print_ordinal] Error: input 'n' could not be cast to an integer")
         return False
 
     if(str(n) in chg):
         return str(n)+dictn[str(n)]
     else:
         return str(n)+'th'
-
-
-
-
-
-
-
-
-

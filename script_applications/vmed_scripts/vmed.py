@@ -110,8 +110,11 @@ v_line = re.compile(match)
 
 vnline = '\D+\s+v\d+\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
 vnline_vinst = '(\D+)\s+(v\d+)\s+-*\d.\s+0.0\s+138.04\s+[0-1]+.\s+-*[0-1]+.'
+vnum = 'fun\s+(\d+).'
+
 vnlinec = re.compile(vnline)
 vnline_vinstc = re.compile(vnline_vinst)
+vnumc = re.compile(vnum)
 
 vgline = '\D+\s+v(\d+\d*)\s+'
 vglinec = re.compile(vgline)
@@ -184,8 +187,9 @@ def parse_vid(vline):
     if(isinstance(vline,(list,tuple))):
         if(len(vline)):
             vid_tup = vnline_vinstc.findall(vline[0])
+            fid_tup = vnumc.findall(vline[1])
             try:
-                vid = vid_tup[0][1]+" - "+vid_tup[0][0]
+                vid = vid_tup[0][1].rstrip()+"-"+vid_tup[0][0].rstrip()+"-"+fid_tup[0].rstrip()
                 return vid
             except:
                 return False

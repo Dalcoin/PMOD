@@ -209,8 +209,8 @@ class imprimer(object):
             else:
                 kwargs["funcName"] = function_name
         else:
-            newFuncName = printer.addFuncName(function_name, kwargs.get('funcName'))
-            if(check.isArray(newFuncName)):
+            newFuncName = self.addFuncName(function_name, kwargs.get('funcName'))
+            if(isArray(newFuncName)):
                 kwargs["funcName"] = newFuncName
             else:
                 kwargs["funcName"] = function_name
