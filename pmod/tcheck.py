@@ -2,7 +2,7 @@
 '''
 'tcheck' module:
 
-*Stand-Alone
+*Stand-Alone Module: no dependencies
 
 Description: A selection of functions for aiding with error checking
              by searching for TypeError, each function returns either
@@ -24,13 +24,25 @@ class list:
 
     imprimer:
 
-        funcNameStr2list : converts 'funcName' object to list
-        addFuncName : adds 'funcName' object to 'funcName'
+        update_funcName : adds 'funcName' object to pkwargs
+        update_varName : sets 'varName' object to pkwargs
+        setstop_funcName : sets a stop to adding the function name onto 'funcName' object, overwritten if 'fullErrorPath' is set to True
         errPrint : prints error message
-        arrayCheck : check if input object is python array (list or tuple), prints error message if not
+        arrCheck : check if input object is python array (list or tuple), prints error message if not
         numCheck : check if input object is python numeric object (int, float or long), prints error message if not
         strCheck : check if input object is python string object, prints error message if not
 
+Directions:
+
+    1) at the beginning of each new function:
+        run 'update_funcName' (input name of the new function as a string)
+
+    2):
+        for each major function, run setstop_funcName
+
+    3) for each error message:
+        run 'update_varName' (input name of variable for each error message)
+    
 '''
 
 ### Tester functions: test input against a given object type or object format
@@ -51,6 +63,15 @@ def isArray(obj):
     obj: input, any python object
     '''
     return isinstance(obj, (list, tuple))
+
+
+def isString(obj):
+    '''
+    Description: An string is a python 'str' object
+
+    obj: input, any python object
+    '''
+    return isinstance(obj, str)
 
 
 def isArrayFlat(obj): 
@@ -177,52 +198,83 @@ class imprimer(object):
         else:
             self.failPrint = False
 
-    def __kwarg__(self, kwarg):
+    def __kwarg2bool__(self, kwarg):
         if(kwarg != None):
             return True
         else:
             return False
 
-    def __funcName__(self, funcName):
-        outString = ''
-        if(isinstance(funcName,str)):
-            outString = "["+funcName+"]"
-        elif(isinstance(funcName,(list,tuple))):
-            outString = ''
-            for entry in funcName:
-                outString = outString+"["+str(entry)+"]"
-        else:
-            return None
+    def funcName_list2str(self, funcName):
+        if(not isArray(funcName)):
+            return False
+        outString=''
+        for entry in funcName:
+            outString = outString+"["+str(entry)+"]"
         outString = outString+" "
-        if(isinstance(self.modName, str)):
-            outString = "["+self.modName+"]"+outString
         return outString
 
-    def update_funcName(self, function_name, **kwargs):
+    def funcName_str2list(self, funcName):
+        '''
+        Description: Takes a properly formatted 'funcName' string and turns it into a 'funcName' list
 
-        if(not isinstance(function_name, str)):
+        Rules:
+
+            'funcName' string takes the format: '([\d+])+'
+        '''
+        if(not isString(funcName)):
+            return False
+        try:
+            outArray = map(lambda y: y[:-1], filter(None, funcName.split('[')))
+        except:
+            outArray = False
+        return outArray
+
+
+    def update_funcName(self, funcNameNode, **kwargs):
+        '''
+        Run the 'pkwargs' through this function when parsing through each new function in the chain
+        '''
+        if(not isString(funcNameNode) and not isArray(funcNameNode)):
             return kwargs
-
-        if(kwargs.get("nonewFuncName")):
-            if(kwargs.get('funcName') != None):
-                kwargs["funcName"] = kwargs.get('funcName')
-            else:
-                kwargs["funcName"] = function_name
+        elif(isString(funcNameNode)):
+            if("[" not in funcNameNode and "]" not in funcNameNode):
+                funcNameNode = "["+funcNameNode+"]"
+            funcNameNode = self.funcName_str2list(funcNameNode)
+            if(funcNameNode == False):
+                return False
         else:
-            newFuncName = self.addFuncName(function_name, kwargs.get('funcName'))
-            if(isArray(newFuncName)):
-                kwargs["funcName"] = newFuncName
-            else:
-                kwargs["funcName"] = function_name
+            pass
+
+        funcName = kwargs.get("funcName")
+        if(funcName == None):
+            funcName = []
+
+        nonewFuncName = kwargs.get("nonewFuncName")
 
         if(kwargs.get("fullErrorPath")):
             kwargs["nonewFuncName"] = False
+
+        if(nonewFuncName):
+            if(funcName == None):
+                kwargs["funcName"] = funcNameNode
         else:
-            kwargs["nonewFuncName"] = True
+            kwargs["funcName"] = funcName+funcNameNode
+
         return kwargs
 
-    def setstop_funcName(self, inverse=False, **kwargs):
+    def update_varName(self, varName, **pkwargs):
+        if(not isinstance(pkwargs.get("varName"), str)):
+            pkwargs["varName"] = varName
+        elif(varName == None):
+            pkwargs["varName"] = None
+        else:
+            pass
+        return pkwargs
 
+    def setstop_funcName(self, inverse=False, **kwargs):
+        '''
+        Run this function to halt any adding of new functions names to the chain, 'fullErrorPath' will overwrite this
+        '''
         if(not inverse):
             if(kwargs.get("nonewFuncName") == None):
                 kwargs["nonewFuncName"] = True
@@ -240,7 +292,7 @@ class imprimer(object):
 
             failPrint : (bool)[True], determines if the output strings are printed (True) or not (False)
 
-            space : (str)(bool)['    '], determines the string which appears at the beginning of the message,
+            newSpace : (str)(bool)['    '], determines the string which appears at the beginning of the message,
                                          nothing is added for False
 
             endline : (bool)[False], determines if the endline character is added to the end of each string (True) or not (False)
@@ -264,7 +316,7 @@ class imprimer(object):
                                         line if the 'msg' input is an array of strings. The spacing defaults to that which is
                                         determined by 'space' if False.
 
-            finalSpace : (bool)[True],
+            parSpace : (bool)[True],
         '''
 
         if(kwargs.get('failPrint') == None):
@@ -272,7 +324,7 @@ class imprimer(object):
         else:
             failPrint = kwargs.get('failPrint')
 
-        newSpace = kwargs.get('space')
+        newSpace = kwargs.get('newSpace')
         if(isinstance(newSpace, str)):
             outString = newSpace
             doubleSpace = newSpace+newSpace 
@@ -285,11 +337,11 @@ class imprimer(object):
             outString = self.space
             doubleSpace = newSpace+newSpace 
 
-        finalSpace = kwargs.get('finalSpace')
-        if(finalSpace != False):
-            finalSpace = True
+        parSpace = kwargs.get('parSpace')
+        if(parSpace != False):
+            parSpace = True
         else:
-            finalSpace = False
+            parSpace = False
 
         endlineVal = ''
         if(isinstance(kwargs.get('endline'), str)):
@@ -301,19 +353,21 @@ class imprimer(object):
         else:
             endlineAdd = False
 
-        funcNameStr = self.__funcName__(kwargs.get('funcName'))
+        funcNameStr = self.funcName_list2str(kwargs.get('funcName'))
         if(isinstance(funcNameStr,str)):
             outString = outString+funcNameStr
 
-        if(self.__kwarg__(kwargs.get('heading'))):
+        if(self.__kwarg2bool__(kwargs.get('heading'))):
             if(isinstance(kwargs.get('heading'), str)):
                 outString = outString+kwargs.get('heading')+":"
             elif(kwargs.get('heading') != False):
                 outString = outString+"Error:"
             else:
                 pass
+        else:
+            outString = outString+":"
 
-        if(self.__kwarg__(kwargs.get('varName'))):
+        if(self.__kwarg2bool__(kwargs.get('varName'))):
             if(isinstance(kwargs.get('varName'),str)):
                 outString = outString+" '"+kwargs.get('varName')+"'"
             elif(kwargs.get('varName')):
@@ -376,12 +430,12 @@ class imprimer(object):
             if(len(outStrings) > 0):
                 for string in outStrings:
                     print(string)
-                if(finalSpace):
+                if(parSpace):
                     print(" ")
                 return outStrings
             else:
                 print(outString)
-                if(finalSpace):
+                if(parSpace):
                     print(" ")
                 return outString
         else:
@@ -390,35 +444,6 @@ class imprimer(object):
             else:
                 return outString
 
-    def funcNameStr2list(self, funcNameStr):
-        try:
-            arr = [j[0] for j in filter(None, [filter(None,i.split('[')) for i in filter(None, funcNameStr.split(']'))])]
-            return arr
-        except:
-            return False
-
-    def addFuncName(self, newName, funcNameObj):
-        if(isinstance(funcNameObj,str)):
-            oldfn = self.funcNameStr2list(funcNameObj)
-            if(oldfn == False):
-                return False
-        elif(isArray(funcNameObj)):
-            oldfn = list(funcNameObj)
-        else:
-            return False
-
-        if(isinstance(newName, str)):
-            newfn = self.funcNameStr2list(newName)
-            if(newfn == False):
-                return False
-        elif(isArray(newName)):
-            newfn = newName
-        else:
-            return False
-
-        for entry in newfn:
-            oldfn.append(entry)
-        return oldfn
 
     def errPrint(self, msg, **kwargs):
         if(not isinstance(kwargs.get('heading'), str)):
@@ -426,29 +451,67 @@ class imprimer(object):
         outString = self.__stringParse__(msg, **kwargs)
         return outString
 
+    def warnPrint(self, msg, **kwargs):
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Warning"
+        outString = self.__stringParse__(msg, **kwargs)
+        return outString
 
-    def arrayCheck(self, var, **kwargs):
-        isArray = isinstance(var,(list,tuple))
+    def arrCheck(self, var, style=None, **kwargs):
+
+        if(style == None):
+            isArray = isinstance(var,(list,tuple))
+            typeText = "array (tuple or list)"
+        elif(style == "list"):
+            isArray = isinstance(var, list)
+            typeText = "mutable array (list)"
+        elif(style == "tuple"):
+            isArray = isinstance(var, tuple)
+            typeText = "immutable array (tuple)"
+        else:
+            isArray = isinstance(var,(list,tuple))
+            typeText = "array (tuple or list)"
+
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Error"
 
         if(not isinstance(kwargs.get('varName'), str)):
             kwargs['varName'] = True
 
         if(isArray == False):
-            printString = "should be an array (tuple or list), not: "+str(type(var))
+            printString = "should be a(n) "+typeText+", not: "+str(type(var))
             self.__stringParse__(printString, **kwargs)
             return isArray
         else:
             return isArray
 
 
-    def numCheck(self, var, **kwargs):
-        isNumeric = isinstance(var,(int,float,long))
+    def numCheck(self, var, style=None, **kwargs):
+
+        if(style == None):
+            isNumeric = isinstance(var,(int,float,long))
+            typeText = "numeric (int, float or long)"
+        elif(style == 'int'):
+            isNumeric = isinstance(var, int)
+            typeText = "integer (int)"
+        elif(style == 'float'):
+            isNumeric = isinstance(var, float)
+            typeText = "floating point (float)"
+        elif(style == 'long'):
+            isNumeric = isinstance(var, long)
+            typeText = "long integer (long)"
+        else:
+            isNumeric = isinstance(var,(int,float,long))
+            typeText = "numeric (int, float or long)"
+
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Error"
 
         if(not isinstance(kwargs.get('varName'), str)):
             kwargs['varName'] = True
 
         if(isNumeric == False):
-            printString = "should be a numeric (int, float or long), not: "+str(type(var))
+            printString = "should be a "+typeText+", not: "+str(type(var))
             self.__stringParse__(printString, **kwargs)
             return isNumeric
         else:
@@ -457,6 +520,9 @@ class imprimer(object):
 
     def strCheck(self, var, **kwargs):
         isString = isinstance(var, str)
+
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Error"
 
         if(not isinstance(kwargs.get('varName'), str)):
             kwargs['varName'] = True

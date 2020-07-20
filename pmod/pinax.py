@@ -37,7 +37,7 @@ def __not_str_print__(var, varID=None, **kwargs):
 def __not_arr_print__(var, varID=None, **kwargs):
     if(isinstance(varID, str)):
         kwargs["varName"] = varID
-    return not printer.arrayCheck(var, **kwargs)
+    return not printer.arrCheck(var, **kwargs)
 
 def __not_num_print__(var, varID=None, **kwargs):
     if(isinstance(varID, str)):
@@ -235,7 +235,7 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
 
 def table_trans(n, test_matrix=True, coerce=False, numeric=False, string=False, fill='NULL', matrixName=None, **pkwargs):
 
-    pkwargs = printer.update_funcName("coerce_to_matrix", **pkwargs)
+    pkwargs = printer.update_funcName("table_trans", **pkwargs)
 
     matrix_assert = True
     if(test_matrix):
@@ -272,6 +272,35 @@ def table_trans(n, test_matrix=True, coerce=False, numeric=False, string=False, 
     return new_matrix
 
 
+def table_from_str_array(table_list, test_matrix=True, spc=' ', transpose=True, matrixName=None, **pkwargs):
+
+    mID=''
+    if(isinstance(matrixName, str)):
+        mID = matrixName
+    else:
+        mID = "table_list"
+
+    pkwargs = printer.update_funcName("table_from_str_array", **pkwargs)
+
+    if(test_matrix):
+        if(not ismatrix(table_list, numeric=False, string=string, matrixName=matrixName, **pkwargs)):
+            return False
+
+    for i,entry in enumerate(table_list):
+        try:
+            table_list[i] = filter(None, entry.split(spc))
+        except:
+            __err_print__(strl.print_ordinal(i+1)+" entry, is not an array", varID=mID, **pkwargs)
+            return False
+        if(len(table_list[i]) == 0 or (len(table_list[i]) == 1 and table_list[i][0].isspace())):
+            del table_list[i]
+
+    if(transpose):
+        return table_trans(table_list, **pkwargs)
+    else:
+        return table_list
+
+
 def table_str_to_numeric(table_list,
                          header=False,
                          entete=False ,
@@ -280,7 +309,7 @@ def table_str_to_numeric(table_list,
                          nantup=(True,True,True),
                          spc=' ',
                          genre=float,
-                         tableName=None,
+                         matrixName=None,
                          debug=True,
                          **pkwargs):
     '''
@@ -305,8 +334,8 @@ def table_str_to_numeric(table_list,
     pkwargs = printer.update_funcName("table_str_to_numeric", **pkwargs)
     pkwargs = printer.setstop_funcName(**pkwargs)
 
-    if(isinstance(tableName, str)):
-        tableID = tableName
+    if(isinstance(matrixName, str)):
+        tableID = matrixName
     else:
         tableID = "table_list"
 
@@ -374,11 +403,7 @@ def table_str_to_numeric(table_list,
             __err_print__("failure to incorporate header...", varID=tableID, **pkwargs)
 
     if(transpose):
-        output = table_trans(new_table_list, test_matrix=False, matrixName=tableID, **pkwargs)
-        if(output == False):
-            return False
-        else:
-            return output 
+        return table_trans(new_table_list, test_matrix=False, matrixName=tableID, **pkwargs)
     else:
         return new_table_list
 
@@ -394,7 +419,7 @@ def table_str_to_fill_numeric(table_list,
                               nantup=(True,True,True),
                               spc=' ',
                               genre=float,
-                              tableName=None,
+                              matrixName=None,
                               debug=True,
                               **pkwargs):
 
@@ -435,8 +460,8 @@ def table_str_to_fill_numeric(table_list,
     pkwargs = printer.update_funcName("table_str_to_fill_numeric", **pkwargs)
     pkwargs = printer.setstop_funcName(**pkwargs)
 
-    if(isinstance(tableName, str)):
-        tableID = tableName
+    if(isinstance(matrixName, str)):
+        tableID = matrixName
     else:
         tableID = "table_list"
 
@@ -513,28 +538,6 @@ def table_str_to_fill_numeric(table_list,
             return output
     else:
         return new_table_list
-
-
-def table_from_str_array(list_lines, split_str = '  ', row=True):
- 
-    lines = list(list_lines)
-
-    for i in range(len(lines)):
-        lines[i] = filter(None,lines[i].split(split_str))
-
-    n = len(lines)
-    for i in range(n):
-        if(len(lines[i]) == 0):
-            del lines[i]
-            n=n-1
-        if(len(lines[i]) == 1 and lines[i][0].isspace()):
-            del lines[i]
-            n=n-1
-
-    if(row):
-        return lines
-    else:
-        return table_trans(lines)
 
 
 def skew_str_table_to_matrix(array, header = False, split_str = '  '):

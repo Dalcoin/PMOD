@@ -1,5 +1,7 @@
 import itertools
 
+import tcheck as check
+
 '''
 A python module which faciliates working with list, lists of strings and strings
 
@@ -31,6 +33,36 @@ function list:
 
 '''
 
+#################################################################
+# Error Printing Helper functions-------------------------------#
+#################################################################
+
+printer = check.imprimer()
+
+def __err_print__(errmsg, varID=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    printer.errPrint(errmsg, **pkwargs)
+
+def __not_str_print__(var, varID=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.strCheck(var, **pkwargs)
+
+def __not_arr_print__(var, varID=None, style=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.arrCheck(var, style, **pkwargs)
+
+def __not_num_print__(var, varID=None, style=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.numCheck(var, style, **pkwargs)
+
+def __printHelper__(newFuncName, **pkwargs):
+    pkwargs = printer.update_funcName(newFuncName, **pkwargs)
+    return pkwargs
+
 ### Internal Helper Functions
 
 def __isArray__(array):
@@ -45,7 +77,7 @@ def __isNumeric__(num):
 
 # checking and modifying arrays by content:
 
-def array_duplicate_check(array):
+def array_duplicate_check(array, varID=None, **pkwargs):
     '''
     Description: Checks for duplicates in an array-like object
                  If duplicates are found, True is returned
@@ -57,18 +89,20 @@ def array_duplicate_check(array):
         'array' : a list or tuple to be checked for duplicates
 
     '''
-    if(not __isArray__(array)):
+    pkwargs = __printHelper__("array_duplicate_check", **pkwargs)
+    if(__not_arr_print__(array, varID, **pkwargs)):
         return None
-    s = []
-    for i in array:
-        if i in s:
+
+    collection = []
+    for entry in array:
+        if entry in collection:
             return True
         else:
-            s.append(i)
+            collection.append(entry)
     return False
 
 
-def array_duplicates(array, inverse=False, count=False, index=False):
+def array_duplicates(array, varID=None, inverse=False, count=False, index=False, **pkwargs):
     '''
     Description: Checks for duplicates in an array-like object
                  If duplicates are found, a list of the duplicate values is returned
@@ -122,7 +156,9 @@ def array_duplicates(array, inverse=False, count=False, index=False):
               3: 3,
               4: 1}
     '''
-    if(not __isArray__(array)):
+
+    pkwargs = __printHelper__("array_duplicates", **pkwargs)
+    if(__not_arr_print__(array, varID, **pkwargs)):
         return False
 
     s = []
@@ -175,7 +211,7 @@ def array_duplicates(array, inverse=False, count=False, index=False):
             return ((), dupList)
 
 
-def array_filter(array, match, inverse=False, index=False):
+def array_filter(array, match, varID=None, inverse=False, index=False, **pkwargs):
     '''
     Description: returns input array filtered of any values found in 'match'
 
@@ -191,7 +227,8 @@ def array_filter(array, match, inverse=False, index=False):
                   is filtered from the array
     '''
 
-    if(not __isArray__(array)):
+    pkwargs = __printHelper__("array_filter", **pkwargs)
+    if(__not_arr_print__(array, varID, **pkwargs)):
         return False
 
     outArray = []
@@ -236,13 +273,14 @@ def array_filter(array, match, inverse=False, index=False):
     return outArray
 
 
-def array_filter_spaces(array, none_filter=True, inverse=False):
+def array_filter_spaces(array, varID=None, none_filter=True, inverse=False, **pkwargs):
     '''
     Description: Returns non-space string elements of 'array', in 'inverse'
                  is True, only space-string elements of 'array' are returned
     '''
 
-    if(not __isArray__(array)):
+    pkwargs = __printHelper__("array_filter_spaces", **pkwargs)
+    if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
 
     nonSpaceList = []
@@ -267,7 +305,7 @@ def array_filter_spaces(array, none_filter=True, inverse=False):
             return nonSpaceList
 
 
-def array_to_str(array, spc=' ', endline=False, filtre=False, front_spacing=''):
+def array_to_str(array, varID=None, spc=' ', endline=False, filtre=False, front_spacing='', **pkwargs):
     '''
     Description: Turns array of string elements into a single string
                  each entry is space by 'spc' spacing value. If
@@ -289,7 +327,8 @@ def array_to_str(array, spc=' ', endline=False, filtre=False, front_spacing=''):
         out_str : A string if success, False if failure
     '''
 
-    if(not __isArray__(array)):
+    pkwargs = __printHelper__("array_to_str", **pkwargs)
+    if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
 
     out_str = ''
@@ -311,7 +350,7 @@ def array_to_str(array, spc=' ', endline=False, filtre=False, front_spacing=''):
     return out_str
 
 
-def array_nth_index(array, n, inverse=False, space='    '):
+def array_nth_index(array, n, inverse=False, space='    ', **pkwargs):
     '''
     Description: Takes an input array and outputs a list corrosponding 
                  to the value found at every nth index of input array
@@ -329,16 +368,18 @@ def array_nth_index(array, n, inverse=False, space='    '):
     Return:
         out_array : A list of strs if success, False if failure
     '''
-    if(not __isArray__(array)):
+
+    pkwargs = __printHelper__("array_nth_index", **pkwargs)
+    if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
+
     array_len = len(array)
 
-    if(not isinstance(n, int)):
+    if(not __not_num_print__(n, varID="n", style='int', **pkwargs)):
         return False
     else:
         if(n <= 1 or n>(array_len/2)):
-            if(print_bool):
-                print(space+"[array_nth_index] Error: input 'n' is only valid for 1 < n <= (len('array')/2): "+str(n)+"'\n")
+            __err_print__("is only valid for 1 < n < len('array')/2: "+str(n), varID="n", **pkwargs)
             return False
 
     try:
@@ -347,8 +388,7 @@ def array_nth_index(array, n, inverse=False, space='    '):
         else:
             out_object = itertools.ifilterfalse(lambda x: array.index(x)%n, array)
     except:
-        if(print_bool):
-            print(space+"[array_nth_index] Error: failure to filter array\n")
+        __err_print__("could not be filtered", varID="array", **pkwargs)
         return False
 
     out_list = [entry for entry in out_object]
@@ -413,7 +453,7 @@ def rec_flatten(array):
             yield item
 
 
-def array_flatten(array, method="hack"):
+def array_flatten(array, varID=None, method="hack", **pkwargs):
     '''
     Warning: this function uses 'exec' and is inherently insecure if input is allowed from the user.
 
@@ -437,12 +477,14 @@ def array_flatten(array, method="hack"):
 
     exe_dict = {'hack':hack_flatten, 'rec':rec_flatten, '2d':twod_flatten}
 
-    if(not __isArray__(array)):
+    pkwargs = __printHelper__("array_flatten", **pkwargs)
+    if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
 
     try:
         flat_array = exe_dict[method.rstrip().lower()](array)
     except:
+        __err_print__("could not be flattened, method: "+str(method), varID="array", **pkwargs)
         return False
 
     return flat_array
@@ -452,17 +494,20 @@ def array_flatten(array, method="hack"):
 
 # string content
 
-def str_space_check(string, none_bool=False, space='    '):
+def str_space_check(string, varID=None, none_bool=False, space='    ', **pkwargs):
     '''
     Description: checks if a string is all empty spaces (endline characters included)
     '''
+    pkwargs = __printHelper__("str_space_check", **pkwargs)
+
     if(not isinstance(string, (str, type(None)))):
+        __err_print__("should be string type, None type is allowed if 'none_bool' option : "+str(type(string)), varID="string", **pkwargs)
         return None
     else:
         if(none_bool and string==None):
             return True
         elif(string==None):
-            return False
+            return None
         else:
             pass
 
@@ -473,10 +518,12 @@ def str_space_check(string, none_bool=False, space='    '):
         return None
 
 
-def str_to_list(string, spc=' ', filtre=False, cut=None):
+def str_to_list(string, spc=' ', filtre=False, cut=None, **pkwargs):
     '''
     Description: parses input string into a list, default demarcation is by single spacing
     '''
+    pkwargs = __printHelper__("str_to_list", **pkwargs)
+
     if(not isinstance(string, str)):
         mod_string = str(string)
     else:
@@ -488,6 +535,7 @@ def str_to_list(string, spc=' ', filtre=False, cut=None):
         else:
             return mod_string.split(spc)
     except:
+        __err_print__("could not be converted (split -> filtered) to list", varID="string", **pkwargs)
         return False
 
 
@@ -496,7 +544,8 @@ def str_to_fill_list(string,
                      fill='NaN',
                      nval=False,
                      spc=' ',
-                     numeric=False):
+                     numeric=False,
+                     **pkwargs):
     '''
     Purpose : To turn python string, 'string', into a list of numeric characters, with support
               for blank entries, input options allow for compatability with multiple
@@ -511,7 +560,7 @@ def str_to_fill_list(string,
 
         fill   : a python 'str' object, intended to be the filler value for blank entries
                  default : 'NaN', Not a Number string
-         
+
         nval   : either boolean False, or an integer greater than zero, intended to be
                  the number of numeric and blank entries in 'string', also the length of the
                  array into which the function will attempt to coerce the string
@@ -547,17 +596,30 @@ def str_to_fill_list(string,
         else:
             print("Warning, output array could not be coerced into 'nval' number of entries")
             return arr
- 
+
     # Function start
     spc1 = ' '
 
-    if(not isinstance(string,str)):
+    if(__not_str_print__(string, varID="string", **pkwargs)):
         return False
 
     # Where all the machinery is
-    newline = string.replace(lngspc,spc1+fill+spc1)
-    newarr = filter(None,newline.split(spc))
-    flatarr = array_flatten(newarr)
+    replace_value = spc1+str(fill)+spc1
+    try:
+        newline = string.replace(lngspc,replace_value)
+    except:
+        __err_print__("failure to replace '"+str(lngspc)+"' with '"+replace_value+"'", varID="string", **pkwargs)
+        return False
+
+    try:
+        newarr = filter(None, newline.split(spc))
+    except:
+        __err_print__("failure to filter 'None' values from'"+str(newline)+"'", varID="string:newline", **pkwargs)
+        return False
+
+    flatarr = array_flatten(newarr, varID="newarr", **pkwargs)
+    if(flatarr == False):
+        return False
 
     if(not isinstance(flatarr,list)):
         return flatarr
@@ -572,7 +634,7 @@ def str_to_fill_list(string,
             flatarr = map(lambda x: float(x) if x != fill else x, flatarr)
         except:
             flatarr = False
-    elif(isinstance(numeric,str)):
+    elif(isinstance(numeric, str)):
         if(numeric.lower() == 'float'):
             try:
                 flatarr = map(lambda x: float(x), flatarr)

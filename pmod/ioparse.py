@@ -44,6 +44,11 @@ def __err_print__(errmsg, varID=None, **kwargs):
         kwargs["varName"] = varID
     printer.errPrint(errmsg, **kwargs)
 
+def __warn_print__(errmsg, varID=None, **kwargs):
+    if(isinstance(varID, str)):
+        kwargs["varName"] = varID
+    printer.warnPrint(errmsg, **kwargs)
+
 def __not_str_print__(var, varID=None, **kwargs):
     if(isinstance(varID, str)):
         kwargs["varName"] = varID
@@ -52,10 +57,15 @@ def __not_str_print__(var, varID=None, **kwargs):
 def __not_arr_print__(var, varID=None, **kwargs):
     if(isinstance(varID, str)):
         kwargs["varName"] = varID
-    return not printer.arrayCheck(var, **kwargs)
+    return not printer.arrCheck(var, **kwargs)
+
+def __update_varName__(varName, **pkwargs):
+    return printer.update_varName(varName, **pkwargs)
 
 
 def __io_test_fail__(ptype, io, **pkwargs):
+
+    pkwargs = printer.update_funcName("__io_test_fail__", **pkwargs)
 
     success = False
     msg = None
@@ -78,6 +88,8 @@ def __io_test_fail__(ptype, io, **pkwargs):
 
 def __grab_list_fail__(grab_list, m, repeat=False, change_list=None, **pkwargs):
 
+    pkwargs = printer.update_funcName("__grab_list_fail__", **pkwargs)
+
     if(__not_arr_print__(grab_list, **pkwargs)):
         return True
     if(change_list != None):
@@ -91,7 +103,7 @@ def __grab_list_fail__(grab_list, m, repeat=False, change_list=None, **pkwargs):
         for i,entry in enumerate(change_list):
             if(not isinstance(entry, str)):
                 pkwargs["varName"] = "change_list"
-                __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
+                __err_print__("input is not a string for array index, "+str(i)+" : "+str(type(entry)), **pkwargs)
                 return True
         ngrab = len(change_list)
         nchng = len(change_list)
@@ -108,7 +120,7 @@ def __grab_list_fail__(grab_list, m, repeat=False, change_list=None, **pkwargs):
         saut = grab_list[1:-1]
         if(strl.array_duplicate_check(saut)):
             pkwargs["varName"] = "saut"
-            __err_print__("values must be unique", **pkwargs)
+            __err_print__("values must be unique; see 'help for 'repeat' option details", **pkwargs)
             return True
     else:
         if(strl.array_duplicate_check(grab_list)):
@@ -118,17 +130,17 @@ def __grab_list_fail__(grab_list, m, repeat=False, change_list=None, **pkwargs):
 
     if(n>m):
         pkwargs["varName"] = "grab_list"
-        __err_print__("has more values than the number of lines found in input file", **pkwargs)
+        __err_print__("has more values than the number of lines found in the input file", **pkwargs)
         return True
     if(m<(max(grab_list)+1)):
         pkwargs["varName"] = "grab_list"
-        __err_print__("; index of line(s) to be selected is greater than the number of lines in input files", **pkwargs)
+        __err_print__(": number of line(s) index selected is greater than the number of lines in input files", **pkwargs)
         return True
 
     if(change_list != None):
         if(n != len(change_list)):
             pkwargs["varName"] = "grab_list"
-            __err_print__("; number of replacement lines is greater than the number of lines to be changed 'change_list'", **pkwargs)
+            __err_print__("; number of replacement lines must be equal to number of lines found in 'change_list'", **pkwargs)
             return True
     return False
 
@@ -159,9 +171,12 @@ def __list_repeat__(grab_list, file_lines, scrub, **pkwargs):
            the grouped values start from the 'saut' line values.
 
     '''
+
+    pkwargs = printer.update_funcName("__list_repeat__", **pkwargs)
+
     if(len(grab_list)<3):
         pkwargs["varName"] = "grab_list"
-        __err_print__("must have at least 3 entries when 'repeat' is True: "+str(len(grab_list)), **pkwargs)
+        __err_print__("must have at least 3 entries when using 'repeat' option: "+str(len(grab_list)), **pkwargs)
         return False
 
     lim = len(file_lines)
@@ -181,10 +196,10 @@ def __list_repeat__(grab_list, file_lines, scrub, **pkwargs):
     for i in saut:
         if(i<0):
             pkwargs["varName"] = "saut"
-            __err_print__("(grab_list[1:-1]) value should not be negative"+str(i), **pkwargs)
+            __err_print__("(grab_list[1:-1]) values should not be negative"+str(i), **pkwargs)
     if(lim < max(saut)+bnd*(n-1)):
         pkwargs["varName"] = "grab_list"
-        __err_print__("evaluated through 'repeat', exceeds the length of the input file", **pkwargs)
+        __err_print__("evaluated with 'repeat' option, exceeds the length of the input file", **pkwargs)
         return False
 
     raw_lines = []
@@ -223,6 +238,7 @@ def flat_file_read(file_in, ptype='r', type_test=True, **pkwargs):
     '''
 
     pkwargs = printer.update_funcName("flat_file_read", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'read', **pkwargs)):
@@ -235,8 +251,7 @@ def flat_file_read(file_in, ptype='r', type_test=True, **pkwargs):
             file_lines = file_in.readlines()
         return file_lines
     except:
-        if(not isinstance(pkwargs.get("varName"), str)):
-            pkwargs["varName"] = "file_in"
+        pkwargs = __update_varName__("file_in", **pkwargs)
         __err_print__(["could not be read","Filepath : '"+file_in+"'"], **pkwargs)
         return False
 
@@ -268,6 +283,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", checkall_addli
     '''
 
     pkwargs = printer.update_funcName("flat_file_write", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -287,7 +303,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", checkall_addli
             for i,entry in enumerate(add_list):
                 # Checks that each entry in 'add_list' is a string
                 if(not isinstance(entry, str)):
-                    pkwargs["varName"] = "add_list"
+                    pkwargs = __update_varName__("add_list", **pkwargs)
                     __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
                     if(checkall_addlist):
                         continue
@@ -302,8 +318,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", checkall_addli
                     fout.write(entry)
         return True
     except:
-        if(not isinstance(pkwargs.get("varName"), str)):
-            pkwargs["varName"] = "file_out"
+        pkwargs = __update_varName__("file_out", **pkwargs)
         __err_print__(["could not be written to using entries in 'add_list'","Filepath : '"+file_out+"'"], **pkwargs)
         return False
 
@@ -332,6 +347,7 @@ def flat_file_append(file_out, add_list, par=False, newline=True, checkall_addli
     ptype = 'a+'
 
     pkwargs = printer.update_funcName("flat_file_append", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -354,7 +370,7 @@ def flat_file_append(file_out, add_list, par=False, newline=True, checkall_addli
             for i,entry in enumerate(add_list):
                 # Checks that each entry in 'add_list' is a string
                 if(not isinstance(entry, str)):
-                    pkwargs["varName"] = "add_list"
+                    pkwargs = __update_varName__("add_list", **pkwargs)
                     __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
                     if(checkall_addlist):
                         continue
@@ -372,8 +388,7 @@ def flat_file_append(file_out, add_list, par=False, newline=True, checkall_addli
                     fout.write(entry)
         return True
     except:
-        if(not isinstance(pkwargs.get("varName"), str)):
-            pkwargs["varName"] = "file_out"
+        pkwargs = __update_varName__("file_out", **pkwargs)
         __err_print__(["could not be written to using entries in 'add_list'","Filepath : '"+file_out+"'"], **pkwargs)
         return False
 
@@ -408,6 +423,7 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
     ptype='w'
 
     pkwargs = printer.update_funcName("flat_file_replace", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -417,7 +433,7 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
 
         for i,entry in enumerate(grab_list):
             if(not isinstance(entry, int)):
-                pkwargs["varName"] = "grab_list"
+                pkwargs = __update_varName__("grab_list", **pkwargs)
                 __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)), **pkwargs)
                 return False
 
@@ -452,7 +468,7 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
     # Write modifications to file
     result = flat_file_write(file_out, file_lines, ptype=ptype, type_test=False, **pkwargs)
     if(result == False):
-        pkwargs["varName"] = "add_list"
+        pkwargs = __update_varName__("add_list", **pkwargs)
         __err_print__("couldn't write replacement lines to"+str(file_out), **pkwargs)
     return result
 
@@ -485,6 +501,7 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
     '''
 
     pkwargs = printer.update_funcName("flat_file_grab", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     # Testing proper variable types
     if(type_test):
@@ -495,7 +512,7 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
 
         for i,entry in enumerate(grab_list):
             if(not isinstance(entry, int)):
-                pkwargs["varName"] = "grab_list"
+                pkwargs = __update_varName__("grab_list", **pkwargs)
                 __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)) , **pkwargs)
                 return False
 
@@ -562,6 +579,7 @@ def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count
     '''
 
     pkwargs = printer.update_funcName("flat_file_copy", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     # Testing proper variable types
     if(type_test):
@@ -572,12 +590,12 @@ def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count
         if(__not_str_print__(file_out, varID="file_out", **pkwargs)):
             return False
         if(not isinstance(group,int)):
-            pkwargs["varName"] = "group"
+            pkwargs = __update_varName__("group", **pkwargs)
             __err_print__("must be an interger: "+str(type(group)), **pkwargs)
 
         for i,entry in enumerate(grab_list):
             if(not isinstance(entry, int)):
-                pkwargs["varName"] = "grab_list"
+                pkwargs = __update_varName__("grab_list", **pkwargs)
                 __err_print__("input is not a string for array index, "+str(i)+" :"+str(type(entry)), **pkwargs)
                 return False
 
@@ -619,6 +637,7 @@ def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=f
     '''
 
     pkwargs = printer.update_funcName("flat_file_intable", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
@@ -650,6 +669,7 @@ def flat_file_skewtable(file_in,
     '''
 
     pkwargs = printer.update_funcName("flat_file_skewtable", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
     table_num = px.table_str_to_fill_numeric(table_lines, 
@@ -667,16 +687,17 @@ def flat_file_skewtable(file_in,
     return table_num
 
 
-def iop_help(string):
+def iop_help(string, **pkwargs):
     '''
 
     '''
-    if(not isinstance(string,str)):
-        print("Error: Input must be a string, to view a list of valid inputs, input 'help'")
+    pkwargs = printer.update_funcName("iop_help", **pkwargs)
+    pkwargs = printer.setstop_funcName(**kwargs)
+
+    if(__not_str_print__(string, varID='string')):
         return None
 
-    string = string.lower()
-    string = strl.str_filter(string,' ')
+    string = strl.str_filter(string.lower()," ")
 
     help_list = ['help',
                  'flat_file_read',
