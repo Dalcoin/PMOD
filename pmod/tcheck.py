@@ -316,7 +316,12 @@ class imprimer(object):
                                         line if the 'msg' input is an array of strings. The spacing defaults to that which is
                                         determined by 'space' if False.
 
-            parSpace : (bool)[True],
+            parSpace : (bool)[True], adds extra line to space out printing list of strings
+
+            nonewFuncName : (bool)[False], prevents referenced functions from added their name to the 'funcName' list
+
+            fullErrorPath : (bool)[False], overrides any existing blocks which might prevent nested function from adding
+                                           their name to 'funcName' list
         '''
 
         if(kwargs.get('failPrint') == None):
@@ -461,13 +466,13 @@ class imprimer(object):
 
         if(style == None):
             isArray = isinstance(var,(list,tuple))
-            typeText = "array (tuple or list)"
+            typeText = "array [tuple or list]"
         elif(style == "list"):
             isArray = isinstance(var, list)
-            typeText = "mutable array (list)"
+            typeText = "mutable array [list]"
         elif(style == "tuple"):
             isArray = isinstance(var, tuple)
-            typeText = "immutable array (tuple)"
+            typeText = "immutable array [tuple]"
         else:
             isArray = isinstance(var,(list,tuple))
             typeText = "array (tuple or list)"
@@ -490,19 +495,19 @@ class imprimer(object):
 
         if(style == None):
             isNumeric = isinstance(var,(int,float,long))
-            typeText = "numeric (int, float or long)"
+            typeText = "numeric [int, float or long]"
         elif(style == 'int'):
             isNumeric = isinstance(var, int)
-            typeText = "integer (int)"
+            typeText = "integer [int]"
         elif(style == 'float'):
             isNumeric = isinstance(var, float)
-            typeText = "floating point (float)"
+            typeText = "floating point [float]"
         elif(style == 'long'):
             isNumeric = isinstance(var, long)
-            typeText = "long integer (long)"
+            typeText = "long integer [long]"
         else:
             isNumeric = isinstance(var,(int,float,long))
-            typeText = "numeric (int, float or long)"
+            typeText = "numeric [int, float or long]"
 
         if(not isinstance(kwargs.get('heading'), str)):
             kwargs['heading'] = "Error"

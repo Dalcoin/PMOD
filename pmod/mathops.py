@@ -6,34 +6,67 @@ from scipy.interpolate import splint as __integ__
 
 from scipy.integrate import quad as __definteg__
 
-import tcheck as __check__
-import strlist as strl
+import pmod.tcheck as check
+import pmod.strlist as strl
 
 '''
 Functions useful for mathmatical operations and plotting, fills a void found in math and numpy
 ''' 
-            
 
-# Rounding functions 
+#################################################################
+# Error Printing Helper functions-------------------------------#
+#################################################################
 
-def round_decimal(num, deci, string=True):
-    
-    # round_decimal(30.112,1,True)
-    
-    # x: input file string
-    # d: non-zero integer
+printer = check.imprimer()
+
+def __err_print__(errmsg, varID=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    printer.errPrint(errmsg, **pkwargs)
+
+def __not_str_print__(var, varID=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.strCheck(var, **pkwargs)
+
+def __not_arr_print__(var, varID=None, style=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.arrCheck(var, style, **pkwargs)
+
+def __not_num_print__(var, varID=None, style=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.numCheck(var, style, **pkwargs)
+
+def __update_funcName__(newFuncName, **pkwargs):
+    pkwargs = printer.update_funcName(newFuncName, **pkwargs)
+    return pkwargs
+
+
+#################################################################
+# Rounding functions -------------------------------------------#
+#################################################################
+
+
+def round_decimal(num, decimal, string=True):
+
+    # round_decimal(30.112, 1, True)
+
+    # num: input file string
+    # decimal: non-zero integer
     # string: boolean, String if True, Float if false
 
-    test = __check__.type_test_print(num,'num','num','round_decimal')
+    test = check.type_test_print(num, 'num', 'num', 'round_decimal')
     if(not test):
         return test 
-    test = __check__.type_test_print(deci,int,'deci','round_decimal')
+    test = check.type_test_print(decimal, int, 'decimal','round_decimal')
     if(not test):
         return test 
-    test = __check__.type_test_print(string,bool,'string','round_decimal') 
+    test = check.type_test_print(string,bool,'string','round_decimal') 
     if(not test):
         return test 
-    
+
     if(deci < 0):
         print("[round_decimal] Error: 'deci' decimal value must be non-negative")
         return False
@@ -64,13 +97,13 @@ def round_scientific(num, digi, pyver = '2.7', string = True):
     # num: input file string
     # d: a non-negative integer signifying the number of significant digits
 
-    test = __check__.type_test_print(num,'num','num','round_scientific') 
+    test = check.type_test_print(num,'num','num','round_scientific') 
     if(not test):
         return test 
-    test = __check__.type_test_print(digi,int,'digi','round_scientific')
+    test = check.type_test_print(digi,int,'digi','round_scientific')
     if(not test):
         return test 
-    test = __check__.type_test_print(string,bool,'string','round_scientific') 
+    test = check.type_test_print(string,bool,'string','round_scientific') 
     if(not test):
         return test 
     
@@ -97,7 +130,7 @@ def round_scientific(num, digi, pyver = '2.7', string = True):
 
 def round_uniform(num, pyver = '2.7'):
     
-    test = __check__.type_test_print(num,'num','num','round_uniform') 
+    test = check.type_test_print(num,'num','num','round_uniform') 
     if(not test):
         return test 
 
@@ -149,7 +182,7 @@ def round_format(num, dec):
         else:
             pass
            
-    if(__check__.numeric_test(num)):
+    if(check.numeric_test(num)):
         pass
     else:
         try:
@@ -312,7 +345,7 @@ def span_vec(xvec, nspan):
         False       : if an error is detected  
     '''
 
-    test = __check__.array_test(xvec)
+    test = check.array_test(xvec)
     if(not test):
         print("[span_vec] TypeError: 'xvec' must be a python array")
         return False 
@@ -341,7 +374,7 @@ def span_vec(xvec, nspan):
     else:
         pass
      
-    test = __check__.numeric_test(xl) and __check__.numeric_test(xu)
+    test = check.numeric_test(xl) and check.numeric_test(xu)
     if(not test or xl == xu): 
         print("[span_vec] TypeError: 'xvec' should be an array of unique numeric values")
      
@@ -411,16 +444,16 @@ class spline:
 
     def spln_obj(self, x_arr, y_arr, type = 'spline', sort = 'cubic'):
 
-        test = __check__.type_test_print(x_arr,'arr','x_arr','spln_obj')
+        test = check.type_test_print(x_arr,'arr','x_arr','spln_obj')
         if(not test):
             return test 
-        test = __check__.type_test_print(y_arr,'arr','y_arr','spln_obj')
+        test = check.type_test_print(y_arr,'arr','y_arr','spln_obj')
         if(not test):
             return test 
-        test = __check__.type_test_print(type,str,'type','spln_obj')   
+        test = check.type_test_print(type,str,'type','spln_obj')   
         if(not test):
             return test 
-        test = __check__.type_test_print(sort,str,'sort','spln_obj')  
+        test = check.type_test_print(sort,str,'sort','spln_obj')  
         if(not test):
             return test 
 
@@ -471,10 +504,10 @@ class spline:
 
     def spln_val(self, spline, xvals_arr):
 
-        test = __check__.type_test_print(spline,__spln__,'spline','spln_val') 
+        test = check.type_test_print(spline,__spln__,'spline','spln_val') 
         if(not test):
             return test 
-        test = __check__.type_test_print(xvals_arr,'arr','xvals_arr','spln_val') 
+        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spln_val') 
         if(not test):
             return test 
 
@@ -487,13 +520,13 @@ class spline:
 
     def spln_der(self, bspline, xvals_arr, der = 1):
 
-        test = __check__.type_test_print(bspline,__bspln__,'spline','spln_der') 
+        test = check.type_test_print(bspline,__bspln__,'spline','spln_der') 
         if(not test):
             return test 
-        test = __check__.type_test_print(xvals_arr,'arr','xvals_arr','spln_der') 
+        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spln_der') 
         if(not test):
             return test 
-        test = __check__.type_test_print(der,int,'der','spln_der') 
+        test = check.type_test_print(der,int,'der','spln_der') 
         if(not test):
             return test 
 
@@ -506,13 +539,13 @@ class spline:
 
     def spln_integ(self, bspline, a, b):
 
-        test = __check__.type_test_print(bspline,__bspln__,'spline','spln_integ') 
+        test = check.type_test_print(bspline,__bspln__,'spline','spln_integ') 
         if(not test):
             return test 
-        test = __check__.type_test_print(a,'num','a','spln_integ')
+        test = check.type_test_print(a,'num','a','spln_integ')
         if(not test):
             return test 
-        test = __check__.type_test_print(b,'num','b','spln_integ') 
+        test = check.type_test_print(b,'num','b','spln_integ') 
         if(not test):
             return test 
 
@@ -583,7 +616,7 @@ class spline:
             try: 
                 self.a = a 
                 self.b = b 
-                if(not __check__.numeric_test(a) or not __check__.numeric_test(b,'')):
+                if(not check.numeric_test(a) or not check.numeric_test(b,'')):
                     print("[get_integ] Error: check that the limits of integration are numeric types")
                     return False    
                 result = self.spln_integ(self, self.bspline_inst, self.a, self.b)
@@ -598,10 +631,10 @@ class spline:
 
     def spline_val_scos(self, xvals_arr, x_arr, y_arr, der = 0 , type = 'cubic'):
 
-        test = __check__.type_test_print(xvals_arr,'arr','xvals_arr','spline_val_scon')     
+        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spline_val_scon')     
         if(not test):
             return test 
-        test = __check__.type_test_print(der,int,'der','spline_val_scon')    
+        test = check.type_test_print(der,int,'der','spline_val_scon')    
         if(not test):
             return test 
         
@@ -629,22 +662,22 @@ class spline:
  
     def spline_integ_scos(self, x_arr, y_arr, a, b, tol = 0.000001, nlim = 1000):
         
-        test = __check__.type_test_print(x_arr,'arr','x_arr','spline_integ')
+        test = check.type_test_print(x_arr,'arr','x_arr','spline_integ')
         if(not test):
             return test 
-        test = __check__.type_test_print(y_arr,'arr','y_arr','spline_integ')            
+        test = check.type_test_print(y_arr,'arr','y_arr','spline_integ')            
         if(not test):
             return test 
-        test = __check__.type_test_print(a,'num','a','spline_integ')
+        test = check.type_test_print(a,'num','a','spline_integ')
         if(not test):
             return test 
-        test = __check__.type_test_print(b,'num','b','spline_integ')          
+        test = check.type_test_print(b,'num','b','spline_integ')          
         if(not test):
             return test 
-        test = __check__.type_test_print(tol,float,'tol','spline_integ')
+        test = check.type_test_print(tol,float,'tol','spline_integ')
         if(not test):
             return test 
-        test = __check__.type_test_print(nlim,int,'nlim','spline_integ') 
+        test = check.type_test_print(nlim,int,'nlim','spline_integ') 
         if(not test):
             return test         
 

@@ -11,7 +11,7 @@ import cmdline as cml
 import mathops as mops
 
 
-class benv:
+class benv(object):
 
     def __init__(self, initialize = True, kernel = 'linux'):
 

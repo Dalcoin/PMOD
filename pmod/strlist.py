@@ -1,4 +1,5 @@
 import itertools
+import collections
 
 import tcheck as check
 
@@ -59,7 +60,7 @@ def __not_num_print__(var, varID=None, style=None, **pkwargs):
         pkwargs["varName"] = varID
     return not printer.numCheck(var, style, **pkwargs)
 
-def __printHelper__(newFuncName, **pkwargs):
+def __update_funcName__(newFuncName, **pkwargs):
     pkwargs = printer.update_funcName(newFuncName, **pkwargs)
     return pkwargs
 
@@ -89,7 +90,7 @@ def array_duplicate_check(array, varID=None, **pkwargs):
         'array' : a list or tuple to be checked for duplicates
 
     '''
-    pkwargs = __printHelper__("array_duplicate_check", **pkwargs)
+    pkwargs = __update_funcName__("array_duplicate_check", **pkwargs)
     if(__not_arr_print__(array, varID, **pkwargs)):
         return None
 
@@ -107,6 +108,8 @@ def array_duplicates(array, varID=None, inverse=False, count=False, index=False,
     Description: Checks for duplicates in an array-like object
                  If duplicates are found, a list of the duplicate values is returned
                  Else an empty list is returned
+
+    Warnings: Unhashable types are excluded
 
     Inputs:
 
@@ -157,7 +160,7 @@ def array_duplicates(array, varID=None, inverse=False, count=False, index=False,
               4: 1}
     '''
 
-    pkwargs = __printHelper__("array_duplicates", **pkwargs)
+    pkwargs = __update_funcName__("array_duplicates", **pkwargs)
     if(__not_arr_print__(array, varID, **pkwargs)):
         return False
 
@@ -169,6 +172,8 @@ def array_duplicates(array, varID=None, inverse=False, count=False, index=False,
     indexDict = {}
 
     for i,entry in enumerate(array):
+        if(not isinstance(entry, collections.Hashable)):
+            continue
         if entry in s:
             if(entry not in dupList):
                 dupList.append(entry)
@@ -184,6 +189,8 @@ def array_duplicates(array, varID=None, inverse=False, count=False, index=False,
                 indexDict[entry] = [i]
     if(inverse):
         for i,entry in enumerate(array):
+            if(not isinstance(entry, collections.Hashable)):
+                continue
             if(entry in s and entry not in dupList):
                 inv.append(entry)
                 if(count):
@@ -227,7 +234,7 @@ def array_filter(array, match, varID=None, inverse=False, index=False, **pkwargs
                   is filtered from the array
     '''
 
-    pkwargs = __printHelper__("array_filter", **pkwargs)
+    pkwargs = __update_funcName__("array_filter", **pkwargs)
     if(__not_arr_print__(array, varID, **pkwargs)):
         return False
 
@@ -279,7 +286,7 @@ def array_filter_spaces(array, varID=None, none_filter=True, inverse=False, **pk
                  is True, only space-string elements of 'array' are returned
     '''
 
-    pkwargs = __printHelper__("array_filter_spaces", **pkwargs)
+    pkwargs = __update_funcName__("array_filter_spaces", **pkwargs)
     if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
 
@@ -327,7 +334,7 @@ def array_to_str(array, varID=None, spc=' ', endline=False, filtre=False, front_
         out_str : A string if success, False if failure
     '''
 
-    pkwargs = __printHelper__("array_to_str", **pkwargs)
+    pkwargs = __update_funcName__("array_to_str", **pkwargs)
     if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
 
@@ -350,7 +357,7 @@ def array_to_str(array, varID=None, spc=' ', endline=False, filtre=False, front_
     return out_str
 
 
-def array_nth_index(array, n, inverse=False, space='    ', **pkwargs):
+def array_nth_index(array, n, varID=None, inverse=False, byCount=False, **pkwargs):
     '''
     Description: Takes an input array and outputs a list corrosponding 
                  to the value found at every nth index of input array
@@ -360,7 +367,9 @@ def array_nth_index(array, n, inverse=False, space='    ', **pkwargs):
         array : (list or tuple), the array for entries to be selected by index
 
         n : (int), the integer corrosponding to the modulus determining which
-            index values are selected from 'array'
+            index values are selected from 'array'. Default includes the first
+            entry in the array and then includes every nth value thereafter
+            if "byCount" is True, every nth value in the list is returned
 
         inverese : (bool) [False], If true then the all values of 'array' are
                    returned except for those at each 'n'th value of the index.
@@ -369,13 +378,13 @@ def array_nth_index(array, n, inverse=False, space='    ', **pkwargs):
         out_array : A list of strs if success, False if failure
     '''
 
-    pkwargs = __printHelper__("array_nth_index", **pkwargs)
+    pkwargs = __update_funcName__("array_nth_index", **pkwargs)
     if(__not_arr_print__(array, varID=varID, **pkwargs)):
         return False
 
     array_len = len(array)
 
-    if(not __not_num_print__(n, varID="n", style='int', **pkwargs)):
+    if(__not_num_print__(n, varID="n", style='int', **pkwargs)):
         return False
     else:
         if(n <= 1 or n>(array_len/2)):
@@ -384,11 +393,17 @@ def array_nth_index(array, n, inverse=False, space='    ', **pkwargs):
 
     try:
         if(inverse):
-            out_object = itertools.ifilter(lambda x: array.index(x)%n, array)
+            if(byCount):
+                out_object = [entry for i,entry in enumerate(array) if (i+1)%n==0]
+            else:
+                out_object = itertools.ifilter(lambda x: array.index(x)%n, array)
         else:
-            out_object = itertools.ifilterfalse(lambda x: array.index(x)%n, array)
+            if(byCount):
+                out_object = [entry for i,entry in enumerate(array) if (i+1)%n==0]
+            else:
+                out_object = itertools.ifilterfalse(lambda x: array.index(x)%n, array)
     except:
-        __err_print__("could not be filtered", varID="array", **pkwargs)
+        __err_print__("could not be filtered", varID=varID, **pkwargs)
         return False
 
     out_list = [entry for entry in out_object]
@@ -475,11 +490,11 @@ def array_flatten(array, varID=None, method="hack", **pkwargs):
     def twod_flatten(array):
         return [i for j in array for i in j]
 
-    exe_dict = {'hack':hack_flatten, 'rec':rec_flatten, '2d':twod_flatten}
-
-    pkwargs = __printHelper__("array_flatten", **pkwargs)
-    if(__not_arr_print__(array, varID=varID, **pkwargs)):
+    pkwargs = __update_funcName__("array_flatten", **pkwargs)
+    if(__not_arr_print__(array, **pkwargs)):
         return False
+
+    exe_dict = {'hack':hack_flatten, 'rec':rec_flatten, '2d':twod_flatten}
 
     try:
         flat_array = exe_dict[method.rstrip().lower()](array)
@@ -498,7 +513,7 @@ def str_space_check(string, varID=None, none_bool=False, space='    ', **pkwargs
     '''
     Description: checks if a string is all empty spaces (endline characters included)
     '''
-    pkwargs = __printHelper__("str_space_check", **pkwargs)
+    pkwargs = __update_funcName__("str_space_check", **pkwargs)
 
     if(not isinstance(string, (str, type(None)))):
         __err_print__("should be string type, None type is allowed if 'none_bool' option : "+str(type(string)), varID="string", **pkwargs)
@@ -507,6 +522,7 @@ def str_space_check(string, varID=None, none_bool=False, space='    ', **pkwargs
         if(none_bool and string==None):
             return True
         elif(string==None):
+            __err_print__("should be string type, None type only allowed if 'none_bool' option : "+str(type(string)), varID="string", **pkwargs)
             return None
         else:
             pass
@@ -522,7 +538,7 @@ def str_to_list(string, spc=' ', filtre=False, cut=None, **pkwargs):
     '''
     Description: parses input string into a list, default demarcation is by single spacing
     '''
-    pkwargs = __printHelper__("str_to_list", **pkwargs)
+    pkwargs = __update_funcName__("str_to_list", **pkwargs)
 
     if(not isinstance(string, str)):
         mod_string = str(string)
@@ -600,6 +616,8 @@ def str_to_fill_list(string,
     # Function start
     spc1 = ' '
 
+    pkwargs = __update_funcName__("str_to_fill_list", **pkwargs)
+
     if(__not_str_print__(string, varID="string", **pkwargs)):
         return False
 
@@ -648,14 +666,16 @@ def str_to_fill_list(string,
     return flatarr
 
 
-def str_filter_char(string, filtre, inverse=False):
+def str_filter_char(string, filtre, inverse=False, **pkwargs):
     '''
     Description: Filters single character 'filtre' string(s) out of 'string' 
                  string, if 'inverse' then the instances of 'filtre' are returned
                  else the entries not equivalent to 'filtre' are returned
     '''
-    if(not isinstance(string,str)):
-        string = str(string)
+    pkwargs = __update_funcName__("str_filter_char", **pkwargs)
+
+    if(__not_str_print__(string, varID='string', **pkwargs)):
+        return False
 
     out_list = []
     if(inverse):
@@ -675,45 +695,53 @@ def str_filter_char(string, filtre, inverse=False):
             for i in string:
                 if(i != filtre):
                     out_list.append(i)
-    
-    out_str = array_to_str(out_list, spc = '')
+
+    out_str = array_to_str(out_list, spc = '', **pkwargs)
     return out_str
 
 
 def str_clean(string):
     '''
-    Description : Removes all spaces, endline characters and newline characters from string 
+    Description : Removes all spaces, endline characters and newline characters from string
     '''
-    if(not isinstance(string, str)):
+    pkwargs = __update_funcName__("str_clean", **pkwargs)
+
+    if(__not_str_print__(string, varID='string', **pkwargs)):
         return False
 
-    array = str_to_list(string.rstrip(), filtre=True)
-    if(not __isArray__(array)):
+    array = str_to_list(string.rstrip(), filtre=True, **pkwargs)
+    if(__not_arr_print__(string, varID="array", **pkwargs)):
         return False
 
-    out_string = array_to_str(array, spc = '')
+    out_string = array_to_str(array, spc = '', **pkwargs)
     return out_string
 
 
-def str_set_spacing(string, space = ' '):
-    ''' 
+def str_set_spacing(string, space=' ', **pkwargs):
+    '''
     Description: spaces non-space substrings by a set amount
-        
-    (e.g.)  'Hey,        Hello    World'  - becomes -  'Hey, Hello World'   
-    '''       
+
+    (e.g.)  'Hey,        Hello    World'  - becomes -  'Hey, Hello World'
+    '''
+    pkwargs = __update_funcName__("str_set_spacing", **pkwargs)
+
     try:
-        array = str_to_list(string, filtre = True)
-        if(not __isArray__(array)):
-            return False        
-        output = array_to_str(array, spc = space)   
-        return output  
+        if(__not_str_print__(string, varID='string', **pkwargs)):
+            return False
+        array = str_to_list(string, filtre=True, **pkwargs)
+        if(__not_arr_print__(array, varID="array (array conversion)", **pkwargs)):
+            return False
+        output = array_to_str(array, spc=space, **pkwargs)
+        return output
     except:
-        return False           
+        return False
 
 
 ### Formatting and Printing Functions
 
-def format_fancy(obj, header = None, newln = True, indt = 4, err = True, list_return = False):
+def format_fancy(obj, header=None, newln=True, indt=4, err=True, list_return=False, **pkwargs):
+
+    pkwargs = __update_funcName__("format_fancy", **pkwargs)
 
     if(newln):
         nl = '\n'
@@ -729,14 +757,14 @@ def format_fancy(obj, header = None, newln = True, indt = 4, err = True, list_re
             stylized_list.append(' \n')
         else:
             print(' ')
-        if(isinstance(header,str)):
+        if(isinstance(header, str)):
             out_val = header+nl
             if(list_return):
                 stylized_list.append(out_val)
             else:
                 print(out_val)
-        for i in obj:
-            out_val = spc+str(i)+nl
+        for entry in obj:
+            out_val = spc+str(entry)+nl
             if(list_return):
                 stylized_list.append(out_val)
             else:
@@ -767,34 +795,39 @@ def format_fancy(obj, header = None, newln = True, indt = 4, err = True, list_re
             print(out_val)
             return None
     else:
-        print("TypeError: 'obj' input object must be either an 'array' or a 'string'")
+        __err_print__("should be a 'str' type or 'arr' type, not "+str(type(obj)), varID="obj", heading="TypeError", **pkwargs)
+        return False
 
 
-def print_border(string, style = ('-','|'), newln = True, cushion = 0, indt = 0, comment = None):
-    
+def print_border(string, style=('-','|'), newln=True, cushion=0, indt=0, comment=None, **pkwargs):
+
+    pkwargs = __update_funcName__("print_border", **pkwargs)
+    if(__not_str_print__(string, varID="string", **pkwargs)):
+        return False
+
     n = len(string)
-    
+
     if(newln):
         nl = '\n'
     else:
         nl = ''
-    
-    spr = 2*cushion+(cushion/1)*2+(cushion/2)*2+(cushion/4)*2     
-#    tnb = 4*style[0]+(n+2*cushion)*style[0] 
-    blnk= style[1]+(2+spr+n)*' '+style[1]  
-    tnb = len(blnk)*style[0]         
-    mid = style[1]+(1+spr/2)*' '+string+(1+spr/2)*' '+style[1] 
+
+    spr = 2*cushion+(cushion/1)*2+(cushion/2)*2+(cushion/4)*2
+#    tnb = 4*style[0]+(n+2*cushion)*style[0]
+    blnk= style[1]+(2+spr+n)*' '+style[1]
+    tnb = len(blnk)*style[0]
+    mid = style[1]+(1+spr/2)*' '+string+(1+spr/2)*' '+style[1]
 
     if(isinstance(indt,int) and indt >= 0):
         blnk = indt*' '+blnk
-        tnb = indt*' '+tnb 
+        tnb = indt*' '+tnb
         mid = indt*' '+mid
 
     if(isinstance(comment,str)):
         blnk = comment+blnk
-        tnb = comment+tnb 
+        tnb = comment+tnb
         mid = comment+mid
-    
+
     stylized_list = []
     print(tnb)
     stylized_list.append(tnb+nl)
@@ -812,7 +845,10 @@ def print_border(string, style = ('-','|'), newln = True, cushion = 0, indt = 0,
     return stylized_list       
 
 
-def print_ordinal(n):
+def print_ordinal(n, **pkwargs):
+
+    pkwargs = __update_funcName__("print_ordinal", **pkwargs)
+
     chg = ['1','2','3']
     dictn = {'1':'st','2':'nd','3':'rd'}
 
@@ -823,11 +859,13 @@ def print_ordinal(n):
         try:
             n = int(float(n))
         except:
-            return False
+            __err_print__("must be castable to an integer", varID='n', **pkwargs)
+            return str(n)
     else:
-        return False
+        return str(n)
 
     if(str(n) in chg):
         return str(n)+dictn[str(n)]
     else:
         return str(n)+'th'
+

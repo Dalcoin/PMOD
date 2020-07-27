@@ -21,7 +21,7 @@ class isov(pstruct.progStruct):
 
         self.E0FILE_PATH = ''
         self.E1FILE_PATH = ''
-        self.ExFILE_PATH = ''
+        self.EXFILE_PATH = ''
 
         self.PARFILE = 'par.don'
 
@@ -56,7 +56,7 @@ class isov(pstruct.progStruct):
                 del kwargs[key]
 
         # Initializing parent class
-        super(isov, self).__init__(kwargs)
+        super(isov, self).__init__(**kwargs)
 
         # Setting-up additional requirements for ISOV class
         self.eos_check()
@@ -71,6 +71,17 @@ class isov(pstruct.progStruct):
     #-----------------#
 
     def create_parline(self, eosinfo, **phenom_pars):
+        '''
+            Requires 6 input variables:
+
+            1: tuple-3 ;(idbase, nread, n) = eosinfo
+            2: int     ; mic
+            3: int     ; isym_emp
+            4: int     ; isnm
+            5: int     ; k0
+            6: float   ; rho0
+
+        '''
 
         idbase, nread, n = eosinfo
         if(nread == 1):
@@ -86,7 +97,7 @@ class isov(pstruct.progStruct):
         rho0 = phenom_pars.get('rho0')
 
         array = (n, 2, nread, n0, n1, mic, isnm, isym_emp, k0, rho0 , 65)
-        parline = strl.array_to_str(array)
+        parline = strl.array_to_str(array, funcName='create_parline')
         return parline
 
 
@@ -128,8 +139,8 @@ class isov(pstruct.progStruct):
     def set_eos_file_paths(self):
         if(self.INTERNAL_CML_SET and self.EOSPATH_SET):
             self.E0FILE_PATH = self.cmv.joinNode(self.EOSPATH,self.E0FILE)
-            self.E1FILE_PATH = self.cmv.joinNode(self.EOSPATH,self.E0FILE)
-            self.ExFILE_PATH = self.cmv.joinNode(self.EOSPATH,self.E0FILE)
+            self.E1FILE_PATH = self.cmv.joinNode(self.EOSPATH,self.E1FILE)
+            self.EXFILE_PATH = self.cmv.joinNode(self.EOSPATH,self.EXFILE)
         else:
             if(self.debug):
                 print(self.s4+"[set_eos_file_paths] Error: check that internal pathways are set\n")
@@ -159,20 +170,21 @@ class isov(pstruct.progStruct):
         nafiles = []
         eoslist = []
 
-
+        # Sort files in EOS folder according to how they should be parsed
         for i in eos_file_list:
-            if('ex' in i.lower() and (('e0' not in i.lower()) and ('e1' not in i.lower()))):
+            lower = i.lower()
+            if('ex' in lower and (('e0' not in lower) and ('e1' not in lower))):
                 exfiles.append(i)
-            elif('e1' in i.lower() and (('e0' not in i.lower()) and ('ex' not in i.lower()))):
+            elif('e1' in lower and (('e0' not in lower) and ('ex' not in lower))):
                 e1files.append(i)
-            elif('e0' in i.lower() and (('ex' not in i.lower()) and ('e1' not in i.lower()))):
+            elif('e0' in lower and (('ex' not in lower) and ('e1' not in lower))):
                 e0files.append(i)
             else:
                 nafiles.append(i)
 
         if(len(nafiles) > 0):
             head_Text = "The following files are not valid 'eos' files:"
-            strl.format_fancy(nafiles,header=head_Text)
+            strl.format_fancy(nafiles, header=head_Text)
 
         for i in exfiles:
             file_path = self.cmv.joinNode(self.EOSPATH,i)
@@ -194,9 +206,9 @@ class isov(pstruct.progStruct):
             e1pack = False
             e1data = False
 
-            e1name, idbaseline = self.name_compliment(i,{'e0':'e1','E0':'E1'})
+            e1name, idbaseline = self.name_compliment(i, {'e0':'e1', 'E0':'E1'})
 
-            e0_file_path = self.cmv.joinNode(self.EOSPATH,i)
+            e0_file_path = self.cmv.joinNode(self.EOSPATH, i)
             if(e1name in e1files):
                 e1pack = True
                 e1extra.append(e1name)
@@ -368,7 +380,7 @@ class isov(pstruct.progStruct):
         success = True
         eos_content = self.cmv.contentPath(self.BINPATH)
         if('verify_isov.don' in eos_content):
-            self.cmv.delfile(self.cmv.joinNode(self.BINPATH,'verify_isov.don'))
+            self.cmv.delFile(self.cmv.joinNode(self.BINPATH,'verify_isov.don'))
 
         os.chdir(self.BINPATH)
         try:
@@ -383,7 +395,7 @@ class isov(pstruct.progStruct):
         success = True
         eos_content = self.cmv.contentPath(self.BINPATH)
         if('verify_parab.don' in eos_content):
-            self.cmv.delfile(self.cmv.joinNode(self.BINPATH,'verify_isov.don'))
+            self.cmv.delFile(self.cmv.joinNode(self.BINPATH,'verify_isov.don'))
 
         os.chdir(self.BINPATH)
         try:
@@ -392,11 +404,16 @@ class isov(pstruct.progStruct):
             if(self.debug):
                 print(self.s4+"[run_parab_val] Error: unknown error while attempting to run the 'run.sh' script in 'bin'\n")
         os.chdir(self.DIRPATH)
-        
 
+
+    # This function is the function which actually runs the ISOV program loop
     def run_isov_loop(self):
         success = self.program_loop(self.isov_action_function, program_name='ISOV')
         return success
+
+    def clean_up(self):
+        return None
+
 
     #----------------#
     # loop functions #
@@ -514,7 +531,7 @@ class isov(pstruct.progStruct):
         phenom_eos_dict, all_sym = self.generate_phenom_parline_dict()
 
         print(" ")
-        # Exceute Input
+        # Execute Input
         for i,eos in enumerate(eoslist):
 
             print(self.s4+"ISOV evaluation for the "+strl.print_ordinal(i)+" EoS :")
@@ -549,10 +566,10 @@ class isov(pstruct.progStruct):
         print("  ")
         while(True):
             answer = raw_input(self.s4+"Do you want to calculate the chiral cutoff error [yes/no]? ")
-                if(answer.lower() == 'yes'):
+                if(answer.rstrip().lower() == 'yes'):
                     err_opt = True
                     break
-                elif(answer.lower() == 'no'):
+                elif(answer.rstrip().lower() == 'no'):
                     err_opt = False
                     break
                 else:
@@ -684,18 +701,3 @@ class isov(pstruct.progStruct):
         if(err_opt):
             self.chiral_cutoff_error()
         return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

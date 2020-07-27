@@ -39,28 +39,33 @@ printer = check.imprimer()
 # Helper functions----------------------------------------------#
 #################################################################
 
-def __err_print__(errmsg, varID=None, **kwargs):
+def __err_print__(errmsg, varID=None, **pkwargs):
     if(isinstance(varID, str)):
-        kwargs["varName"] = varID
-    printer.errPrint(errmsg, **kwargs)
+        pkwargs["varName"] = varID
+    printer.errPrint(errmsg, **pkwargs)
 
-def __warn_print__(errmsg, varID=None, **kwargs):
+def __warn_print__(errmsg, varID=None, **pkwargs):
     if(isinstance(varID, str)):
-        kwargs["varName"] = varID
-    printer.warnPrint(errmsg, **kwargs)
+        pkwargs["varName"] = varID
+    printer.warnPrint(errmsg, **pkwargs)
 
-def __not_str_print__(var, varID=None, **kwargs):
+def __not_str_print__(var, varID=None, **pkwargs):
     if(isinstance(varID, str)):
-        kwargs["varName"] = varID
-    return not printer.strCheck(var, **kwargs)
+        pkwargs["varName"] = varID
+    return not printer.strCheck(var, **pkwargs)
 
-def __not_arr_print__(var, varID=None, **kwargs):
+def __not_arr_print__(var, varID=None, **pkwargs):
     if(isinstance(varID, str)):
-        kwargs["varName"] = varID
-    return not printer.arrCheck(var, **kwargs)
+        pkwargs["varName"] = varID
+    return not printer.arrCheck(var, **pkwargs)
 
 def __update_varName__(varName, **pkwargs):
     return printer.update_varName(varName, **pkwargs)
+
+def __update_funcName__(newFuncName, **pkwargs):
+    pkwargs = printer.update_funcName(newFuncName, **pkwargs)
+    return pkwargs
+
 
 
 def __io_test_fail__(ptype, io, **pkwargs):
@@ -238,7 +243,7 @@ def flat_file_read(file_in, ptype='r', type_test=True, **pkwargs):
     '''
 
     pkwargs = printer.update_funcName("flat_file_read", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'read', **pkwargs)):
@@ -283,7 +288,7 @@ def flat_file_write(file_out, add_list=[], par=False, ptype="w+", checkall_addli
     '''
 
     pkwargs = printer.update_funcName("flat_file_write", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -347,7 +352,7 @@ def flat_file_append(file_out, add_list, par=False, newline=True, checkall_addli
     ptype = 'a+'
 
     pkwargs = printer.update_funcName("flat_file_append", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -423,7 +428,7 @@ def flat_file_replace(file_out, grab_list, change_list, count_offset=True, par=F
     ptype='w'
 
     pkwargs = printer.update_funcName("flat_file_replace", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     if(type_test):
         if(__io_test_fail__(ptype, 'write', **pkwargs)):
@@ -501,7 +506,7 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
     '''
 
     pkwargs = printer.update_funcName("flat_file_grab", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     # Testing proper variable types
     if(type_test):
@@ -579,7 +584,7 @@ def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count
     '''
 
     pkwargs = printer.update_funcName("flat_file_copy", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     # Testing proper variable types
     if(type_test):
@@ -618,7 +623,7 @@ def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count
     return result
 
 
-def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=float, **pkwargs):
+def flat_file_intable(file_in, header=False, entete=False, transpose=True, genre=float, **pkwargs):
     '''
     Purpose: To read in a well constrained table from a text file.
 
@@ -630,17 +635,20 @@ def flat_file_intable(file_in, header=False, entete=False, columns=True, genre=f
 
         entete  : (bool)[False] If True and header is True, then the header values are included in the output
 
-        columns : (bool)[True] If True, lists of the data value are returned by column, else data values are returned by row
+        transpose : (bool)[True] If True, lists of the data value are returned by column, else data values are returned by row
 
         genre   : (type)[float] The variable type of the entries in the table
 
     '''
 
     pkwargs = printer.update_funcName("flat_file_intable", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
-    table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, columns=columns, genre=genre)
+    if(table_lines == False):
+        return False
+
+    table_num = px.table_str_to_numeric(table_lines, header=header, entete=entete, transpose=transpose, genre=genre, **pkwargs)
     return table_num
 
 
@@ -651,7 +659,7 @@ def flat_file_skewtable(file_in,
                         numeric = True,
                         header = False, 
                         entete = False, 
-                        columns = True, 
+                        transpose = True, 
                         nanopt = True, 
                         nantup = (True,True,True),
                         spc = ' ',
@@ -669,21 +677,25 @@ def flat_file_skewtable(file_in,
     '''
 
     pkwargs = printer.update_funcName("flat_file_skewtable", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
+    if(table_lines == False):
+        return False
+
     table_num = px.table_str_to_fill_numeric(table_lines, 
                                              space = space,
                                              fill = fill, 
                                              nval = nval,
                                              header = header, 
                                              entete = entete, 
-                                             columns = columns, 
+                                             transpose = transpose, 
                                              nanopt = nanopt, 
                                              nantup = nantup,
                                              spc = spc, 
                                              genre = genre,
-                                             debug = True)
+                                             debug = True,
+                                             **pkwargs)
     return table_num
 
 
@@ -692,7 +704,7 @@ def iop_help(string, **pkwargs):
 
     '''
     pkwargs = printer.update_funcName("iop_help", **pkwargs)
-    pkwargs = printer.setstop_funcName(**kwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
 
     if(__not_str_print__(string, varID='string')):
         return None

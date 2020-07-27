@@ -83,6 +83,9 @@ def compileFunc(bin_list,
     BINPATH = ""
 
     # Check input variable 'bin_list' for TypeError
+    if(not isinstance(SPC, str)):
+        SPC = '    '
+
     if(isinstance(bin_list,(list,tuple))):
         if(not all([isinstance(entry,str) for entry in bin_list])):
             print(SPC+"[compileFunc] ExitError: if input 'bin_list' is an array, it must contain only strings\n")

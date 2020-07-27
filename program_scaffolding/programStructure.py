@@ -160,7 +160,7 @@ class progStruct(object):
         self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
 
         self.FILEPATH_ERROR_LIST = [self.OPTPATH_ERROR]
-        self.FILEPATH_ERROR_DICT = {zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST)}
+        self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
 
         # Set Pathways
         self.INTERNAL_CML_SET = False
@@ -176,7 +176,7 @@ class progStruct(object):
         self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
 
         self.FILEPATH_SET_LIST = [self.OPTPATH_SET]
-        self.FILEPATH_SET_DICT = {zip(self.FILENAME_LIST,FILEPATH_SET_LIST)}
+        self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
         # Other intial task errors
         self.INTERNAL_CML_ERROR = False
@@ -316,9 +316,9 @@ class progStruct(object):
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
             self.FILEPATH_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_LIST))
             self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_ERROR_DICT = {zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST)}
+            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
             self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_SET_DICT = {zip(self.FILENAME_LIST,FILEPATH_SET_LIST)}
+            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
         elif(dict_type == 'fold'):
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
@@ -327,8 +327,8 @@ class progStruct(object):
 
         elif(dict_type == 'file'):
             self.FILEPATH_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_LIST))
-            self.FILEPATH_ERROR_DICT = {zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST)}
-            self.FILEPATH_SET_DICT = {zip(self.FILENAME_LIST,FILEPATH_SET_LIST)}
+            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
+            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
         elif(dict_type == 'path'):
 
@@ -337,9 +337,9 @@ class progStruct(object):
 
         elif(dict_type == 'error'):
             self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_ERROR_DICT = {zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST)}
+            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
             self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_SET_DICT = {zip(self.FILENAME_LIST,FILEPATH_SET_LIST)}
+            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
         else:
             if(self.debug):
@@ -394,14 +394,14 @@ class progStruct(object):
             return False
 
         if(fold_name in self.FOLDNAME_LIST):
-            self.FOLDPATH_DICT[fold_name] = self.cmv.joinNode(self.DIRPATH,fold_name)
-		    self.FOLDPATH_SET_DICT[fold_name] = True
-		    self.PATH_ERROR_DICT[fold_name] = False
+            self.FOLDPATH_DICT[fold_name] = self.cmv.joinNode(self.DIRPATH, fold_name)
+            self.FOLDPATH_SET_DICT[fold_name] = True
+            self.PATH_ERROR_DICT[fold_name] = False
             return True
         else:
             self.FOLDPATH_DICT[fold_name] = False
-		    self.FOLDPATH_SET_DICT[fold_name] = False
-		    self.FOLDPATH_ERROR_DICT[fold_name] = True
+            self.FOLDPATH_SET_DICT[fold_name] = False
+            self.FOLDPATH_ERROR_DICT[fold_name] = True
             return False
 
 
@@ -418,15 +418,15 @@ class progStruct(object):
 
         if(file_name in self.FILENAME_LIST):
             self.FILEPATH_DICT[file_name] = self.cmv.joinNode(self.DIRPATH,file_name)
-		    self.FILEPATH_SET_DICT[file_name] = True
-		    self.FILEPATH_ERROR_DICT[file_name] = False
+            self.FILEPATH_SET_DICT[file_name] = True
+            self.FILEPATH_ERROR_DICT[file_name] = False
             return True
         else:
             self.FILEPATH_DICT[file_name] = False
-		    self.FILEPATH_SET_DICT[file_name] = False
-		    self.FILEPATH_ERROR_DICT[file_name] = True
+            self.FILEPATH_SET_DICT[file_name] = False
+            self.FILEPATH_ERROR_DICT[file_name] = True
             return False
-
+        
 
     def init_binary(self, bin_name):
         '''
@@ -488,7 +488,7 @@ class progStruct(object):
         if(failure):
             print("ExitError: '"+self.DIRNAME+"' failed "+action_msg)
         print("Run Number upon exit:  "+str(self.cycle))
-        print("Script run-time :  "+self.get_run_time(type='str')
+        print("Script run-time :  "+self.get_run_time(type='str'))
         print("   ")
         sys.exit()
 
@@ -622,9 +622,27 @@ class progStruct(object):
                 new_name = base_val[0]+add_val+base_val[1]
                 base_id = base_val[0]+base_val[1]
 
-        return (new_name, base_id)   
+        return (new_name, base_id)
 
 
+    def clear_data_folder(self):
+        if(not self.INTERNAL_CML_SET):
+            print(self.s4+"[clear_data_folder] Error: internal CMD line has not yet been initialized\n")
+            return False
+
+        success, value = self.cmv.cmd("cd "+self.DATFILE)
+        if(not success):
+            print(self.s4+"[clear_data_folder] Error: Could not access data folder\n")
+            return False
+
+        if(self.cmv.varPath_Dir == self.DATFILE):
+            if(len(self.cmv.varPath_Contains) > 0):
+                print(self.s4+"[clear_data_folder] Warning: files were found in the data file, the files will be cleared\n")
+            while(len(self.cmv.varPath_Contains) > 0):
+                self.cmv.cmd("rm "+self.cmv.varPath_Contains[0])
+
+        success, value = self.cmv.cmd("cd ..")
+        return success
 
 
     #------------------------#----------------#------------------------#
@@ -711,7 +729,7 @@ class progStruct(object):
 
             if(formatted_action == 'quit' or formatted_action == 'exit'):
                 print(" ")
-                break 
+                run = False
 
             success = self.action_function(formatted_action)
             if(success):
