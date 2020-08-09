@@ -1,5 +1,5 @@
 
-from scipy.interpolate import interp1d as __spln__    
+from scipy.interpolate import interp1d as __spln__
 from scipy.interpolate import splrep as __bspln__
 from scipy.interpolate import splev as __deriv__
 from scipy.interpolate import splint as __integ__
@@ -10,8 +10,8 @@ import pmod.tcheck as check
 import pmod.strlist as strl
 
 '''
-Functions useful for mathmatical operations and plotting, fills a void found in math and numpy
-''' 
+Functions useful for mathmatical operations and plotting, emphasis on parsing floating point variables
+'''
 
 #################################################################
 # Error Printing Helper functions-------------------------------#
@@ -49,41 +49,43 @@ def __update_funcName__(newFuncName, **pkwargs):
 #################################################################
 
 
-def round_decimal(num, decimal, string=True):
+def round_decimal(value, decimal, string=True, **pkwargs):
+    '''
+    round_decimal(30.112, 1, True)
 
-    # round_decimal(30.112, 1, True)
+        value: input file string
+        decimal: non-zero integer
+        string: (bool)[True] if True, returns String. Else, returns Float
+    '''
 
-    # num: input file string
-    # decimal: non-zero integer
-    # string: boolean, String if True, Float if false
+    __update_funcName__("round_decimal", **pkwargs)
 
-    test = check.type_test_print(num, 'num', 'num', 'round_decimal')
-    if(not test):
-        return test 
-    test = check.type_test_print(decimal, int, 'decimal','round_decimal')
-    if(not test):
-        return test 
-    test = check.type_test_print(string,bool,'string','round_decimal') 
-    if(not test):
-        return test 
-
-    if(deci < 0):
-        print("[round_decimal] Error: 'deci' decimal value must be non-negative")
+    try:
+        value = float(value)
+    except:
+        __err_print__("must be castable to a float value", varID='value', heading="ValueError", **pkwargs)
         return False
-    
-    num = float(num)                
-    fm = '%.' + str(int(deci)) + 'f'
-    rnum = fm % num
+
+    if(__not_num_print__(decimal, style='int', **pkwargs)):
+        return False
+
+    if(decimal < 0):
+        __err_print__("should be an integer greater than zero", varID="decimal", **pkwargs)
+        return False
+
+    value = float(value)                
+    fm = '%.' + str(int(decimal)) + 'f'
+    rnum = fm % value
 
     if(string):
-        if(deci > 0):
+        if(decimal > 0):
             output = str(rnum)
             return output
         else:
             output = str(int(rnum))+'.'
             return output          
     else:
-        if(deci > 0):
+        if(decimal > 0):
             output = float(rnum)
             return output
         else:
@@ -91,88 +93,112 @@ def round_decimal(num, decimal, string=True):
             return output                  
 
 
-def round_scientific(num, digi, pyver = '2.7', string = True):
-    
-    # round_scientific(30.112,1,True)    
-    # num: input file string
-    # d: a non-negative integer signifying the number of significant digits
+def round_scientific(value, digits, pyver = '2.7', string=True, **pkwargs):
+    '''
+    Description:
 
-    test = check.type_test_print(num,'num','num','round_scientific') 
-    if(not test):
-        return test 
-    test = check.type_test_print(digi,int,'digi','round_scientific')
-    if(not test):
-        return test 
-    test = check.type_test_print(string,bool,'string','round_scientific') 
-    if(not test):
-        return test 
-    
-    if(digi < 0):
-        print("[round_scientific] Error: 'digi' decimal value must be non-negative")
+        Takes as inputs a numeric value and the number of significant digits
+        to which the the value is rounded when the value is converted to 
+        scientific notation
+
+    round_scientific(30.112, 1)
+
+        value: input file string
+
+        decimal: non-zero integer
+
+        digits: a non-negative integer signifying the number of significant digits
+
+        string: (bool)[True] if True, returns String. Else, returns Float
+    '''
+
+    # round_scientific(30.112, 1, True)
+    # value: input file string
+
+    __update_funcName__("round_scientific", **pkwargs)
+
+    if(__not_num_print__(value, varID='number', heading="warning", **pkwargs)):
+        try:
+            value = float(value)
+        except:
+            return False
+
+    if(__not_num_print__(value, varID='digits', style='int', **pkwargs)):
+        return False
+    else:
+        if(digits <= 0):
+            __err_print__("should be an integer greater than zero", varID="digits", **pkwargs)
+
+    if(pyver == '2.7' or pyver == 2.7):
+        fm = "{:." + str(int(digits)-1) + "e}"
+        rnum = fm.format(value)
+    elif(pyver == '2.6' or pyver == 2.6):
+        fm = "{0:." + str(int(digits)-1) + "e}"
+        rnum = fm.format(value)
+    else:
+        __err_print__("supported vaules are either '2.7' or '2.6'; '"+str(pyver)+"' not recognized", varID="pyver", **pkwargs)
         return False
 
-    num = float(num)
-    if(pyver == '2.7'):        
-        fm = "{:." + str(int(digi)-1) + "e}"
-        rnum = fm.format(num)
-    elif(pyver == '2.6'):
-        fm = "{0:." + str(int(digi)-1) + "e}"
-        rnum = fm.format(num)             
-    else:
-        print("[round_scientific] Error: 'pyver' not recognized'")
-        return False        
-         
     if(string):
         return str(rnum)
     else:
-        return float(rnum)    
+        return float(rnum)
 
 
-def round_uniform(num, pyver = '2.7'):
-    
-    test = check.type_test_print(num,'num','num','round_uniform') 
-    if(not test):
-        return test 
+def round_uniform(value, pyver = '2.7', **pkwargs):
 
-    num = float(num)
-        
-    pos_bool = (num > 0.0)
-    neg_bool = (num < 0.0)
-    nul_bool = (num == 0.0)
-     
+    __update_funcName__("round_uniform", **pkwargs)
+
+    if(isinstance(value, str)):
+        try:
+            value = float(value)
+        except:
+            __err_print__("could not be coerced to a string", varID="value", **pkwargs)
+            return False
+    elif(__not_num_print__(value, varID='number', heading="error", **pkwargs)):
+        return False
+    else:
+        pass
+
+    pos_bool = (value > 0.0)
+    neg_bool = (value < 0.0)
+    nul_bool = (value == 0.0)
+
     if(pos_bool):
-        if(num < 10000000):
-            output = round_decimal(num,6)
+        if(value < 10000000):
+            output = round_decimal(value, 6, **pkwargs)
             for i in range(6):
-                if(num > 10.0**(i+1)):
-                    output = round_decimal(num,6-(i+1))
+                if(value > 10.0**(i+1)):
+                    output = round_decimal(value, 6-(i+1), **pkwargs)
                     if(i == 6):
                         output = output+'.'
-        if(num >= 10000000):
-            output = round_scientific(num,3,pyver)
-        if(num < 0.000001):
-            output = round_scientific(num,3,pyver)
+            if(value < 0.000001):
+                output = round_scientific(value, 3, pyver, **pkwargs)
+        else:
+            output = round_scientific(value, 3, pyver, **pkwargs)
     elif(neg_bool):
-        if(num > -1000000):
-            output = round_decimal(num,5)
+        if(value > -1000000):
+            output = round_decimal(value, 5, **pkwargs)
             for i in range(5):
-                if(num < -10.0**(i+1)):
-                    output = round_decimal(num,5-(i+1))   
+                if(value < -10.0**(i+1)):
+                    output = round_decimal(value, 5-(i+1), **pkwargs)   
                     if(i == 5):
                         output = output+'.'
-        if(num <= -1000000):
-            output = round_scientific(num,2,pyver)
-        if(num > -0.000001):
-            output = round_scientific(num,2,pyver)
+            if(value > -0.000001):
+                output = round_scientific(value, 2, pyver, **pkwargs)
+        else:
+            output = round_scientific(value, 2, pyver, **pkwargs)
     else:
         output = '0.000000'
     return output
-     
-      
-def round_format(num, dec):     
+
+
+def round_format(num, dec, **pkwargs):     
     ''' 
-         
-    '''  
+
+    '''
+
+    __update_funcName__("round_format", **pkwargs)
 
     if(not isinstance(dec,int)):
         return False 
@@ -181,7 +207,7 @@ def round_format(num, dec):
             return False 
         else:
             pass
-           
+
     if(check.numeric_test(num)):
         pass
     else:
@@ -193,8 +219,10 @@ def round_format(num, dec):
                     else:
                         num = int(num)
                 except:
+                    __err_print__("could not be coerced into a numeric type", varID="num", **pkwargs)
                     return False
         except:
+            __err_print__("must be castable as a numeric type", varID="num", **pkwargs)
             return False
 
     f = "{0:."+str(dec)+"f}"
@@ -203,7 +231,9 @@ def round_format(num, dec):
     return out_String    
 
 
-def space_format(num, spc, adjust = 'left'):
+def space_format(num, spc, adjust = 'left', **pkwargs):
+
+    __update_funcName__("round_format", **pkwargs)
 
     def __extra_spaces__(string, extra_Spaces, adjust):
         out_Str = ''
@@ -221,6 +251,8 @@ def space_format(num, spc, adjust = 'left'):
             return out_Str
         return False
 
+    __update_funcName__("space_format", **pkwargs)
+
     sci_notation = False
     decimal = False
     negative = False
@@ -228,12 +260,13 @@ def space_format(num, spc, adjust = 'left'):
     output_String = ''
     required_String = ''
 
-    if(not isinstance(num,str)):
+    if(not isinstance(num, str)):
         try:
             num = str(num)
         except:
-            print("[space_format] Error: 'num' should be a string, input could not be coerced")
+            __err_print__("should be a string, or castable to a string", varID="num")
             return False
+
     num = num.lower()
 
     n = len(num)
@@ -250,13 +283,16 @@ def space_format(num, spc, adjust = 'left'):
         return output_String
     elif(n > spc):
         numlist = [j for i,j in enumerate(num) if i < spc]
-        output_String = strl.array_to_str(numlist,spc='')
+        output_String = strl.array_to_str(numlist, spc='')
 
         if(sci_notation and ('e' not in output_String or 'd' not in output_String)):
+            __err_print__("lost scientific notation markers when parsed thorugh spacer", varID="num", **pkwargs)
             return False
         if(decimal and '.' not in output_String):
+            __err_print__("lost decimal place when parsed thorugh spacer", varID="num", **pkwargs)
             return False
-        if(negative and '.' not in output_String):
+        if(negative and '-' not in output_String):
+            __err_print__("lost negative sign when parsed thorugh spacer", varID="num", **pkwargs)
             return False
 
         return output_String
@@ -264,16 +300,18 @@ def space_format(num, spc, adjust = 'left'):
         return num
 
 
-def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6'):
+def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6', **pkwargs):
 
-    def to_float(num):
+    __update_funcName__("sci_space_format", **pkwargs)
+
+    def to_float(num, **pkwargs):
 
         if(not isinstance(num, (float,int))):
             try:
                 num = float(num)
                 return num
             except:
-                print(space+"Error: input, 'num' could not be coerced to numeric: "+str(num)) 
+                __err_print__("could not be coerced to numeric", varID="num", **pkwargs)
                 return None
         else:
             return num
@@ -329,7 +367,7 @@ def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6'):
     return value_array
 
 
-def span_vec(xvec, nspan):
+def span_vec(xvec, nspan, **pkwargs):
     '''
     Description: generates a list which spans the range of numerical 
                  array 'xvec' with 'nspan' number of equally spaced floats
@@ -433,11 +471,11 @@ class spline:
         self.y_vec = y_vec  
         self.xarray = xarray  
 
-    def pass_newx_vec(self, xarray, der = None):
+    def pass_newx_vec(self, xarray, der=None):
         self.xarray = xarray       
         self.der    = der
 
-    def pass_int_lim(self,a,b):
+    def pass_int_lim(self, a, b):
         self.a = a 
         self.b = b  
 
@@ -660,7 +698,7 @@ class spline:
                 return False
    
  
-    def spline_integ_scos(self, x_arr, y_arr, a, b, tol = 0.000001, nlim = 1000):
+    def spline_integ_scos(self, x_arr, y_arr, a, b, tol=0.000001, nlim=1000):
         
         test = check.type_test_print(x_arr,'arr','x_arr','spline_integ')
         if(not test):
@@ -682,8 +720,8 @@ class spline:
             return test         
 
         try: 
-            bspline_obj = __bspln__(x_arr,y_arr)
-            int_spline_val = __integ__(a,b,bspline_obj)
+            bspline_obj = __bspln__(x_arr, y_arr)
+            int_spline_val = __integ__(a, b, bspline_obj)
         except:
             int_spline_val = False 
             print("[spline_integ] Error: integral evaluation error")   

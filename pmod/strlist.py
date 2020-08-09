@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import itertools
 import collections
 
@@ -37,6 +39,8 @@ function list:
 #################################################################
 # Error Printing Helper functions-------------------------------#
 #################################################################
+
+global printer
 
 printer = check.imprimer()
 

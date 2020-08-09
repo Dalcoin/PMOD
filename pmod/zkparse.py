@@ -149,18 +149,18 @@ def time_convert(zeit, inunit, outunit='sec'):
     factor_list = [1.,60.,86400.,31536000.,3153600000.,31536000000.,cosmo,aeon]
 
     conv_dict = dict(zip(unit_list,factor_list))
-    
+
     if(inunit not in unit_list):
-        print("[time_convert] Error: "+str(inunit)+" not a recognized abbreviated unit of time")  
+        print("[time_convert] Error: "+str(inunit)+" not a recognized abbreviated unit of time")
         return False
     if(outunit not in unit_list):
-        print("[time_convert] Error: "+str(outunit)+" not a recognized abbreviated unit of time")  
+        print("[time_convert] Error: "+str(outunit)+" not a recognized abbreviated unit of time")
         return False
-    
+
     zeit = float(zeit)
     secs = zeit*conv_dict[inunit]
 
-    if(outunit == 'sec'): 
+    if(outunit == 'sec'):
         return secs
     else:
         heure = secs/conv_dict[outunit]

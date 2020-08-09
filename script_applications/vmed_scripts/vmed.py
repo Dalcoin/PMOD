@@ -83,6 +83,29 @@ import cmdline as cml
 
 Partial wave notes:
 
+J = L + S
+
+(2 S + 1) L J
+
+s = 0, 1, 2, 3...
+
+    s, p, d, f, g, h...
+
+j = 0 : s = 0 ; (2*0+1) 0 0 = 1 -> 1s0 Singlet
+
+j = 1 : s = 0, 1; l = 0, 1 
+
+                 2s1  l   j
+
+        (2*0+1) = 1 (1-0) 1 -> 1p1 Singlet
+
+        (2*1+1) = 3 (1-0) 1 -> 3p1 Triplet
+
+        (2*1+1) = 3 (1+1) 1 -> 3d1 Plus L
+
+        (2*1+1) = 3 (1-1) 1 -> 3s1 Minus L
+        
+
 Each group of the potential matrix reads: 
 
    j (angular momentum)     x (momentum 1)    y (momentum 2)
