@@ -538,3 +538,22 @@ class imprimer(object):
             return isString
         else:
             return isString
+
+
+    def typeCheck(self, var, sort, **kwargs):
+
+        typeTest = isType(var, sort)
+
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Error"
+
+        if(not isinstance(kwargs.get('varName'), str)):
+            kwargs['varName'] = True
+
+        if(typeTest == False):
+            printString = "should be a "+str(sort)+", not: "+str(type(var))
+            self.__stringParse__(printString, **kwargs)
+            return typeTest
+        else:
+            return typeTest
+

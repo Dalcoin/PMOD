@@ -23,6 +23,7 @@ def __err_print__(errmsg, varID=None, **pkwargs):
     if(isinstance(varID, str)):
         pkwargs["varName"] = varID
     printer.errPrint(errmsg, **pkwargs)
+    return False
 
 def __not_str_print__(var, varID=None, **pkwargs):
     if(isinstance(varID, str)):
@@ -38,6 +39,11 @@ def __not_num_print__(var, varID=None, style=None, **pkwargs):
     if(isinstance(varID, str)):
         pkwargs["varName"] = varID
     return not printer.numCheck(var, style, **pkwargs)
+
+def __not_type_print__(var, sort, varID=None, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    return not printer.typeCheck(var, sort, **pkwargs)
 
 def __update_funcName__(newFuncName, **pkwargs):
     pkwargs = printer.update_funcName(newFuncName, **pkwargs)
@@ -58,7 +64,7 @@ def round_decimal(value, decimal, string=True, **pkwargs):
         string: (bool)[True] if True, returns String. Else, returns Float
     '''
 
-    __update_funcName__("round_decimal", **pkwargs)
+    pkwargs = __update_funcName__("round_decimal", **pkwargs)
 
     try:
         value = float(value)
@@ -115,7 +121,7 @@ def round_scientific(value, digits, pyver = '2.7', string=True, **pkwargs):
     # round_scientific(30.112, 1, True)
     # value: input file string
 
-    __update_funcName__("round_scientific", **pkwargs)
+    pkwargs = __update_funcName__("round_scientific", **pkwargs)
 
     if(__not_num_print__(value, varID='number', heading="warning", **pkwargs)):
         try:
@@ -147,7 +153,7 @@ def round_scientific(value, digits, pyver = '2.7', string=True, **pkwargs):
 
 def round_uniform(value, pyver = '2.7', **pkwargs):
 
-    __update_funcName__("round_uniform", **pkwargs)
+    pkwargs = __update_funcName__("round_uniform", **pkwargs)
 
     if(isinstance(value, str)):
         try:
@@ -198,7 +204,7 @@ def round_format(num, dec, **pkwargs):
 
     '''
 
-    __update_funcName__("round_format", **pkwargs)
+    pkwargs = __update_funcName__("round_format", **pkwargs)
 
     if(not isinstance(dec,int)):
         return False 
@@ -233,8 +239,6 @@ def round_format(num, dec, **pkwargs):
 
 def space_format(num, spc, adjust = 'left', **pkwargs):
 
-    __update_funcName__("round_format", **pkwargs)
-
     def __extra_spaces__(string, extra_Spaces, adjust):
         out_Str = ''
         adjust = adjust.lower()
@@ -251,7 +255,7 @@ def space_format(num, spc, adjust = 'left', **pkwargs):
             return out_Str
         return False
 
-    __update_funcName__("space_format", **pkwargs)
+    pkwargs = __update_funcName__("space_format", **pkwargs)
 
     sci_notation = False
     decimal = False
@@ -300,13 +304,10 @@ def space_format(num, spc, adjust = 'left', **pkwargs):
         return num
 
 
-def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6', **pkwargs):
-
-    __update_funcName__("sci_space_format", **pkwargs)
+def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.7', **pkwargs):
 
     def to_float(num, **pkwargs):
-
-        if(not isinstance(num, (float,int))):
+        if(not isinstance(num, float)):
             try:
                 num = float(num)
                 return num
@@ -316,38 +317,40 @@ def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6', **pkwargs
         else:
             return num
 
+    pkwargs = __update_funcName__("sci_space_format", **pkwargs)
+
     space='    '
-    if(not isinstance(digi, int)):
-        print(space+"[sci_space_format] Error: input 'digi' must be an integer, not a "+str(type(digit)))
+    if(__not_num_print__(digi, style='int', **pkwargs)):
+        return False
     else:
         if(digi < 1):
-            print(space+"[sci_space_format] Warning: the lowest number of digits allowed is 1")
+            __err_print__("must equal to or greater than 1, setting 'digi' to 1", varID='digi', **pkwargs)
             digi = 1
 
     value_array = []
 
     if(isinstance(num,(list,tuple))):
         for i,entry in enumerate(num):
-            value = to_float(entry)
+            value = to_float(entry, **pkwargs)
             if(value == None):
-                print(space+"[sci_space_format] Error: 'num' entry, "+str(i)+", cannot be converted to numeric")
+                __err_print__("entry index, "+str(i)+", could be converted to a numeric", varID='num', **pkwargs)
                 continue
             else:
                 value_array.append(value)
     elif(isinstance(num,str)):
         value = to_float(num)
         if(value == None):
-            print(space+"[sci_space_format] Error: 'num' entry, "+str(num)+", cannot be converted to numeric")
+            __err_print__("could be converted to a numeric", varID='num', **pkwargs)
             return False
         else:
             value_array.append(value)
-    elif(isinstance(num,(float,int))):
+    elif(isinstance(num,(float,int,long))):
         value_array.append(num)
     else:
-        print(space+"[sci_space_format] Error: 'num', "+str(num)+", not a recognized type")
+        __err_print__("type, "+str(type(num))+", is not a recognized type", varID='num', **pkwargs)
 
     if(len(value_array) == 0):
-        print(space+"[sci_space_format] Error: no values found after parsing values into array")
+        __err_print__("no values found after parsing 'num' into an array", **pkwargs)
         return False
 
     for i,entry in enumerate(value_array):
@@ -358,43 +361,44 @@ def sci_space_format(num, digi, spacing=3, adjust='left', pyver='2.6', **pkwargs
             spacing_value = digi+6+spacing
         value_array[i] = round_scientific(entry, digi, pyver=pyver)
         if(value_array[i] == False):
-            print(space+"[sci_space_format] Error: could not parse, "+str(value_array[i]))
-        value_array[i] = space_format(value_array[i], spacing_value, adjust=adjust)
-#        except:
-#            print(space+"[sci_space_format] Error: terminal error, could not parse value number "+str(i))
-#            return False
-    
+            __err_print__("could not parse  '"+str(value_array[i])+"' into scientific notation")
+            continue
+        value_array[i] = space_format(value_array[i], spacing_value, adjust=adjust)    
     return value_array
 
 
 def span_vec(xvec, nspan, **pkwargs):
     '''
-    Description: generates a list which spans the range of numerical 
+    Description: generates a list which spans the range of numerical
                  array 'xvec' with 'nspan' number of equally spaced floats
 
-    Inputs: 
-     
-        'xvec' : A python array containing numeric values 
-        'nspan': The length of the generated spanning array 
-        
-    Output: 
-       
+    Inputs:
+
+        'xvec' : A python array containing numeric values
+        'nspan': The length of the generated spanning array
+
+    Output:
+
         'span_list' : A list of equally spaced floats spanning the range of 'xvec'
-        False       : if an error is detected  
+        False       : if an error is detected
     '''
 
-    test = check.array_test(xvec)
-    if(not test):
-        print("[span_vec] TypeError: 'xvec' must be a python array")
-        return False 
+    pkwargs = __update_funcName__("sci_space_format", **pkwargs)
+
+    if(__not_arr_print__(xvec, varID='xvec', **pkwargs)):
+        return False
     else:
-        if(not isinstance(xvec,list)):
-            xvec = list(xvec)
-    test = isinstance(nspan, int) and nspan > 2 
-    if(not test):
-        print("[span_vec] Error: 'nspan' must be an integer at least equal to 3")
-        return False      
-         
+        if(not all([check.isNumeric(i) for i in xvec])):
+            __err_print__("should be an array of numerics", varID='xvec', **pkwargs)
+            return False
+
+    if(__not_num_print__(nspan, style='int', **pkwargs)):
+        return False
+    else:
+        if(nspan < 3):
+            __err_print__("should be at least equal to 3", varID='nspan', **pkwargs)
+            return False
+
     xl = min(xvec)
     xu = max(xvec)
 
@@ -411,20 +415,20 @@ def span_vec(xvec, nspan, **pkwargs):
         xu = xu-0.0000000001
     else:
         pass
-     
-    test = check.numeric_test(xl) and check.numeric_test(xu)
-    if(not test or xl == xu): 
-        print("[span_vec] TypeError: 'xvec' should be an array of unique numeric values")
-     
-    inc = (float(xu) - float(xl))/float((nspan-1))
+
+    if(xl == xu): 
+        __err_print__("should be contain at least two different numbers", varID='xvec')
+        return False
+
+    inc = (xu-xl)/float((nspan-1))
     span_list = [float(xl)]
     for i in range(nspan-1):
         val = xl+float(i+1)*(inc)
         span_list.append(val) 
-    return span_list    
-    
-    
-    
+    return span_list
+
+
+
 class spline:
     '''
     class spline:
@@ -446,156 +450,146 @@ class spline:
                  in general do no interpolate beyond the range of the input data
     '''
 
-    def __init__(self, x_vec = None, y_vec = None, xarray = None):
+    def __init__(self, x_vec=None, y_vec=None, xarray=None):
         self.x_vec = x_vec
-        self.y_vec = y_vec 
+        self.y_vec = y_vec
 
-        #Values to be passed 
+        #Values to be passed
         self.spline_inst = None
-        self.bspline_inst = None 
-        self.xarray = xarray 
+        self.bspline_inst = None
+        self.xarray = xarray
         
-        #Values to get 
+        #Values to get
         self.spln_array = None
         self.der_array = None
-        self.int = None     
+        self.int = None
 
         #Values for variables
-        self.a = None 
-        self.b = None 
-        self.der = None   
-    
+        self.a = None
+        self.b = None
+        self.der = None
 
-    def pass_vecs(self, x_vec, y_vec, xarray = None):
-        self.x_vec = x_vec  
-        self.y_vec = y_vec  
-        self.xarray = xarray  
+    def pass_vecs(self, x_vec, y_vec, xarray=None):
+        self.x_vec = x_vec
+        self.y_vec = y_vec
+        self.xarray = xarray
 
     def pass_newx_vec(self, xarray, der=None):
-        self.xarray = xarray       
-        self.der    = der
+        self.xarray = xarray
+        self.der = der
 
     def pass_int_lim(self, a, b):
-        self.a = a 
-        self.b = b  
+        self.a = a
+        self.b = b
 
 
-    def spln_obj(self, x_arr, y_arr, type = 'spline', sort = 'cubic'):
+    def spln_obj(self, x_arr, y_arr, type='spline', sort='cubic', **pkwargs):
 
-        test = check.type_test_print(x_arr,'arr','x_arr','spln_obj')
-        if(not test):
-            return test 
-        test = check.type_test_print(y_arr,'arr','y_arr','spln_obj')
-        if(not test):
-            return test 
-        test = check.type_test_print(type,str,'type','spln_obj')   
-        if(not test):
-            return test 
-        test = check.type_test_print(sort,str,'sort','spln_obj')  
-        if(not test):
-            return test 
+        pkwargs = __update_funcName__("spln_obj", **pkwargs)
+
+        spline_list = ['spline', 'bspline']
+
+        if(__not_arr_print__(x_arr, varID='x_arr', **pkwargs)):
+            return False
+        if(__not_arr_print__(y_arr, varID='y_arr', **pkwargs)):
+            return False
+        if(type not in spline_list):
+            __err_print__("is not recognized, defaulting to 'spline'", varID='type', **pkwargs)
+            type='spline'
 
         if(type == 'spline'):
-
             try: 
-                spline = __spln__(x_arr, y_arr, kind=sort)
-                return spline
-            except: 
-                spline = False 
-                print("[spln_obj] Error: spline object generation failed") 
-                return spline
+                return __spln__(x_arr, y_arr, kind=sort)
+            except:
+                return __err_print__("failed to generate spline object", **pkwargs)
 
         elif(type == 'bspline'):
 
             try: 
-                bspline = __bspln__(x_arr, y_arr)
-                return bspline
-            except: 
-                bspline = False 
-                print("[spln_obj] Error: bspline object generation failed") 
-                return bspline
+                return __bspln__(x_arr, y_arr)
+            except:
+                return __err_print__("failed to generate spline object", **pkwargs)
 
         else: 
-            print("[spln_obj] Error: input variable 'type' is not recognized string")
+            __err_print__("is not recognized: '"+str(type)+"'", varID='type', **pkwargs)
             return False
 
-
-    def pass_spline(self, x_arr = None, y_arr = None, sort = 'cubic'):
-        try:
-            if(x_arr != None and y_arr != None):
-                self.x_vec = x_arr 
-                self.y_vec = y_arr
-            self.spline_inst = self.spln_obj(self.x_vec, self.y_vec, type = 'spline', sort = 'cubic')
-            return True
-        except:
-            return False       
+    def pass_spline(self, x_arr, y_arr, sort='cubic'):
+        self.x_vec = x_arr 
+        self.y_vec = y_arr
+        self.spline_inst = self.spln_obj(self.x_vec, self.y_vec, type='spline', sort='cubic')
+        return self.spline_inst
 
     def pass_bspline(self, x_arr = None, y_arr = None):
-        try:
-            if(x_arr != None and y_arr != None):
-                self.x_vec = x_arr 
-                self.y_vec = y_arr
-            self.bspline_inst = self.spln_obj(x_arr, y_arr, type = 'bspline', sort = 'cubic')
-            return True
-        except:
+        self.x_vec = x_arr 
+        self.y_vec = y_arr
+        self.spline_inst = self.spln_obj(self.x_vec, self.y_vec, type='bspline', sort='cubic')
+        return self.spline_inst
+
+
+    def spln_val(self, splineInst, xvals_arr, **pkwargs):
+
+        pkwargs = __update_funcName__("spln_val", **pkwargs)
+
+        if(__not_type_print__(splineInst, __spln__, varID='splineInst', **pkwargs)):
+            return False
+        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
             return False
 
-    def spln_val(self, spline, xvals_arr):
+        try:
+            return splineInst(xvals_arr)
+        except:
+            __err_print__("failure to parse interpolated value from input", **pkwargs)
+            return False
 
-        test = check.type_test_print(spline,__spln__,'spline','spln_val') 
-        if(not test):
-            return test 
-        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spln_val') 
-        if(not test):
-            return test 
+
+    def spln_der(self, bsplineInst, xvals_arr, der=1):
+
+        pkwargs = __update_funcName__("spln_der", **pkwargs)
+
+        if(__not_type_print__(bsplineInst, __bspln__, varID='bsplineInst', **pkwargs)):
+            return False
+        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
+            return False
+
+        if(__not_num_print__(der, style='int', varID='der', **pkwargs)):
+            return False
+        else:
+            if(der < 1):
+                return __err_print__("must be equal to or greater than 1", varID='der', **pkwargs)
 
         try:
-            spline_vals = spline(xvals_arr)
-            return(spline_vals)
-        except: 
-            return False 
+            return __deriv__(xvals_arr, bsplineInst, der)
+        except:
+            __err_print__("failure to parse the derivative from input", **pkwargs)
+            return False
 
 
-    def spln_der(self, bspline, xvals_arr, der = 1):
+    def spln_integ(self, bsplineInst, a, b):
 
-        test = check.type_test_print(bspline,__bspln__,'spline','spln_der') 
-        if(not test):
-            return test 
-        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spln_der') 
-        if(not test):
-            return test 
-        test = check.type_test_print(der,int,'der','spln_der') 
-        if(not test):
-            return test 
+        pkwargs = __update_funcName__("spln_integ", **pkwargs)
 
-        try:    
-            der_vals = __deriv__(xvals_arr, bspline, der)
-            return(der_vals) 
-        except: 
-            return False 
+        if(__not_type_print__(bsplineInst, __bspln__, varID='bsplineInst', **pkwargs)):
+            return False
+
+        if(__not_num_print__(a, varID='a', **pkwargs)):
+            return False
+        if(__not_num_print__(b, varID='b', **pkwargs)):
+            return False
+
+        if(a >= b):
+            return __err_print__("the lower integration limit, a, must be less than the upper limit", **pkwargs)
+
+        try:
+            return __integ__(a, b, bsplineInst)
+        except:
+            __err_print__("failure to parse the derivative from input", **pkwargs)
+            return False
 
 
-    def spln_integ(self, bspline, a, b):
+    ### Functions for performing 1-D splines, derivatives and integrals------------Needs to be updated------------
 
-        test = check.type_test_print(bspline,__bspln__,'spline','spln_integ') 
-        if(not test):
-            return test 
-        test = check.type_test_print(a,'num','a','spln_integ')
-        if(not test):
-            return test 
-        test = check.type_test_print(b,'num','b','spln_integ') 
-        if(not test):
-            return test 
-
-        try:    
-            int_vals = __integ__(a,b,bspline)
-            return(der_vals)
-        except: 
-            return False 
-
-    ### Functions for performing 1-D splines, derivatives and integrals
-
-    def get_spline(self, in_xarray = None):
+    def get_spline(self, in_xarray=None):
         if(self.spline_inst != None and in_xarray == None):  
             try:
                 result = self.spln_val(self.spline_inst, self.xarray)
@@ -662,74 +656,70 @@ class spline:
                 return result  
             except:
                 return False
-        
-             
-     
-    # SCOS (Self-Contained One-Shot: does not use class variables) 
 
-    def spline_val_scos(self, xvals_arr, x_arr, y_arr, der = 0 , type = 'cubic'):
 
-        test = check.type_test_print(xvals_arr,'arr','xvals_arr','spline_val_scon')     
-        if(not test):
-            return test 
-        test = check.type_test_print(der,int,'der','spline_val_scon')    
-        if(not test):
-            return test 
-        
-        if(der < 0):
-            print("[spline_val_scon] Error: 'der' must be non-negative")
+    # SCOS (Self-Contained One-Shot: does not use class variables)
+
+    def spline_val_scos(self, xvals_arr, x_arr, y_arr, der=0, sort='cubic', **pkwargs):
+
+        pkwargs = __update_funcName__("spline_val_scos", **pkwargs)
+
+        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
+            return False
+        if(__not_arr_print__(x_arr, varID='x_arr', **pkwargs)):
+            return False
+        if(__not_arr_print__(y_arr, varID='y_arr', **pkwargs)):
             return False
 
-        if(der == 0):    
+        if(not isinstance(der,int)):
             try:
-                spline = __spln__(x_arr,y_arr,kind=type)
-                spline_vals = spline(xvals_arr)
-                return(spline_vals)
+                der = int(der)
             except:
-                print("[spline_val_scon] Error: spline function(s) failed")
-                return False
-        if(der > 0):
-            try:
-                bspline_obj = __bspln__(x,y)
-                der_spline_vals = __deriv__(xvals_arr,bspline_obj,der)
-                return(der_spline_vals)
-            except:
-                print("[spline_val_scon] Error: bspline function(s) failed")
-                return False
-   
- 
-    def spline_integ_scos(self, x_arr, y_arr, a, b, tol=0.000001, nlim=1000):
-        
-        test = check.type_test_print(x_arr,'arr','x_arr','spline_integ')
-        if(not test):
-            return test 
-        test = check.type_test_print(y_arr,'arr','y_arr','spline_integ')            
-        if(not test):
-            return test 
-        test = check.type_test_print(a,'num','a','spline_integ')
-        if(not test):
-            return test 
-        test = check.type_test_print(b,'num','b','spline_integ')          
-        if(not test):
-            return test 
-        test = check.type_test_print(tol,float,'tol','spline_integ')
-        if(not test):
-            return test 
-        test = check.type_test_print(nlim,int,'nlim','spline_integ') 
-        if(not test):
-            return test         
+                return __err_print__("should be a non-negative integer", varID='der', **pkwargs)
+        else:
+            if(der < 0):
+                return __err_print__("should be a non-negative integer", varID='der', **pkwargs)
 
-        try: 
+        if(der == 0):
+            try:
+                spline = __spln__(x_arr, y_arr, kind=sort)
+                return spline(xvals_arr)
+            except:
+                __err_print__("failure to interpolate from input array", **pkwargs)
+                return False
+        else:
+            try:
+                bspline_obj = __bspln__(x, y)
+                return __deriv__(xvals_arr, bspline_obj, der)
+            except:
+                __err_print__("failure to derivate from input array", **pkwargs)
+                return False
+
+
+    def spline_integ_scos(self, x_arr, y_arr, a, b):
+
+        pkwargs = __update_funcName__("spline_integ_scos", **pkwargs)
+
+        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
+            return False
+        if(__not_arr_print__(x_arr, varID='x_arr', **pkwargs)):
+            return False
+        if(__not_arr_print__(y_arr, varID='y_arr', **pkwargs)):
+            return False
+
+        if(__not_num_print__(a, varID='a', **pkwargs)):
+            return False
+        if(__not_num_print__(b, varID='b', **pkwargs)):
+            return False
+
+        if(a >= b):
+            return __err_print__("the lower integration limit, a, must be less than the upper limit", **pkwargs)
+
+        try:
             bspline_obj = __bspln__(x_arr, y_arr)
             int_spline_val = __integ__(a, b, bspline_obj)
         except:
-            int_spline_val = False 
-            print("[spline_integ] Error: integral evaluation error")   
+            int_spline_val = False
+            print("failure to evaluate integral from input arrays")
 
         return(int_spline_val)
-
-    # Utility Functions 
-
-
-
-
