@@ -142,7 +142,7 @@ def time_convert(zeit, inunit, outunit='sec'):
         The function converts time from one unit to another. 
 
     '''
-    
+
     cosmo = 31536000000.*230000.
     aeon = 31536000000.*1000000.
     unit_list = ['sec','min','day','yr','cent','mil','cosmo','aeon'] 
