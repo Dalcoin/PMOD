@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 '''
-'tcheck' module:
+'tcheck' module dependencies:
 
-*Stand-Alone Module: no dependencies
+    re
 
 Description: A selection of functions for aiding with error checking
              by searching for TypeError, each function returns either
@@ -45,7 +45,16 @@ Directions:
     
 '''
 
+import re
+
 ### Tester functions: test input against a given object type or object format
+
+
+# Regex codes:
+
+re_funcName_list_from_string = re.compile('\[(.*?)\]')
+
+# Modules functions
     
 def isNumeric(obj):
     '''
@@ -56,15 +65,6 @@ def isNumeric(obj):
     return isinstance(obj, (int, float, long))
 
 
-def isArray(obj):
-    '''
-    Description: An array is defined as a iterable and numerically indexed object: lists and tuples
-
-    obj: input, any python object
-    '''
-    return isinstance(obj, (list, tuple))
-
-
 def isString(obj):
     '''
     Description: An string is a python 'str' object
@@ -72,6 +72,37 @@ def isString(obj):
     obj: input, any python object
     '''
     return isinstance(obj, str)
+
+
+def isArray(obj):
+    '''
+    Description: An 'array' is defined as a iterable and numerically indexed object: lists and tuples
+
+    obj: input, any python object
+    '''
+    return isinstance(obj, (list, tuple))
+
+
+def isNumArr(obj):
+    '''
+    Description: A 'numeric array' is defined as an 'array' for which every entry is a 'numeric'
+
+    obj: input, any python object
+    '''
+    if(not isArray(obj)):
+        return False
+    return all([isNumeric(entry) for entry in obj])
+
+
+def isStrArr(obj):
+    '''
+    Description: A 'string array' is defined as an 'array' for which every entry is a 'string'
+
+    obj: input, any python object
+    '''
+    if(not isArray(obj)):
+        return False
+    return all([isString(entry) for entry in obj])
 
 
 def isArrayFlat(obj): 
@@ -142,14 +173,14 @@ def isType(var, sort):
     if(sort == None):
         type_bool = (var == sort)
     elif(sort == 'num'):
-        type_bool = isNumeric(var)  
+        type_bool = isNumeric(var)
     elif(sort == 'arr'):
         type_bool = isArray(var)
-    elif(isinstance(sort, type) or type(sort) == "<type 'classobj'>" or type(sort) == "<type 'module'>"):        
+    elif(isinstance(sort, type) or type(sort) == "<type 'classobj'>" or type(sort) == "<type 'module'>"):
         type_bool = isinstance(var, sort)
     else:
         type_bool = False
-    return type_bool 
+    return type_bool
 
 
 def isType_print(var, sort, var_name=None, func_name='', print_bool=True):
@@ -219,16 +250,12 @@ class imprimer(object):
 
         Rules:
 
-            'funcName' string takes the format: '([\d+])+'
+            'funcName' string takes the format: '(\[\.*?\])'
         '''
-        if(not isString(funcName)):
+        if(isString(funcName)):
+            return re_funcName_list_from_string.findall(funcName)
+        else:
             return False
-        try:
-            outArray = map(lambda y: y[:-1], filter(None, funcName.split('[')))
-        except:
-            outArray = False
-        return outArray
-
 
     def update_funcName(self, funcNameNode, **kwargs):
         '''
@@ -262,14 +289,25 @@ class imprimer(object):
 
         return kwargs
 
-    def update_varName(self, varName, **pkwargs):
-        if(not isinstance(pkwargs.get("varName"), str)):
-            pkwargs["varName"] = varName
-        elif(varName == None):
-            pkwargs["varName"] = None
+    def update_funcNameHeader(self, funcNameHeader, addFuncNameHeader=False, **kwargs):
+
+        if(addFuncNameHeader):
+            if(isString(kwargs.get("funcNameHeader"))):
+                old_funcNameHeader = kwargs["funcNameHeader"]
         else:
-            pass
-        return pkwargs
+            old_funcNameHeader = ''
+
+        if(isString(funcNameHeader)):
+            if("[" not in funcNameHeader and "]" not in funcNameHeader):
+                new_funcNameHeader = "["+funcNameHeader+"]"
+            kwargs["funcNameHeader"] = old_funcNameHeader+new_funcNameHeader
+            return kwargs
+        elif(isStrArr(funcNameHeader)):
+            new_funcNameHeader = self.funcName_list2str(funcNameHeader)
+            kwargs["funcNameHeader"] = old_funcNameHeader+new_funcNameHeader
+            return kwargs
+        else:
+            return kwargs
 
     def setstop_funcName(self, inverse=False, **kwargs):
         '''
@@ -283,6 +321,15 @@ class imprimer(object):
                 kwargs["nonewFuncName"] = False
         return kwargs
 
+
+    def update_varName(self, varName, **kwargs):
+        if(not isinstance(kwargs.get("varName"), str)):
+            kwargs["varName"] = varName
+        elif(varName == None):
+            kwargs["varName"] = None
+        else:
+            pass
+        return kwargs
 
     def __stringParse__(self, msg, **kwargs):
         '''
@@ -299,6 +346,8 @@ class imprimer(object):
 
             funcName : (str)(None)[None], determines the function id strings to be added to the beginning of each string (str),
                                           if None, or not a string then nothing is added
+
+            funcNameHeader : (str)(None)[None], adds a node to the beginning of each 'funcName' string
 
             heading : (str)(bool)[" Error"], determines the string to be added which identifies the message (str),
                                             if True, the string " 'Error'" is added, else if False, nothing is added
@@ -359,7 +408,10 @@ class imprimer(object):
             endlineAdd = False
 
         funcNameStr = self.funcName_list2str(kwargs.get('funcName'))
-        if(isinstance(funcNameStr,str)):
+        funcNameHeader = kwargs.get('funcNameHeader')
+        if(isString(funcNameStr)):
+            if(isString(funcNameHeader)):
+                outString = outString+funcNameHeader
             outString = outString+funcNameStr
 
         if(self.__kwarg2bool__(kwargs.get('heading'))):
@@ -462,34 +514,6 @@ class imprimer(object):
         outString = self.__stringParse__(msg, **kwargs)
         return outString
 
-    def arrCheck(self, var, style=None, **kwargs):
-
-        if(style == None):
-            isArray = isinstance(var,(list,tuple))
-            typeText = "array [tuple or list]"
-        elif(style == "list"):
-            isArray = isinstance(var, list)
-            typeText = "mutable array [list]"
-        elif(style == "tuple"):
-            isArray = isinstance(var, tuple)
-            typeText = "immutable array [tuple]"
-        else:
-            isArray = isinstance(var,(list,tuple))
-            typeText = "array (tuple or list)"
-
-        if(not isinstance(kwargs.get('heading'), str)):
-            kwargs['heading'] = "Error"
-
-        if(not isinstance(kwargs.get('varName'), str)):
-            kwargs['varName'] = True
-
-        if(isArray == False):
-            printString = "should be a(n) "+typeText+", not: "+str(type(var))
-            self.__stringParse__(printString, **kwargs)
-            return isArray
-        else:
-            return isArray
-
 
     def numCheck(self, var, style=None, **kwargs):
 
@@ -557,3 +581,128 @@ class imprimer(object):
         else:
             return typeTest
 
+
+    def arrCheck(self, var, style=None, **kwargs):
+
+        if(style == None):
+            isArr = isinstance(var,(list,tuple))
+            typeText = "array [tuple or list]"
+        elif(style == "list"):
+            isArr = isinstance(var, list)
+            typeText = "mutable array [list]"
+        elif(style == "tuple"):
+            isArr = isinstance(var, tuple)
+            typeText = "immutable array [tuple]"
+        else:
+            isArr = isinstance(var,(list,tuple))
+            typeText = "array (tuple or list)"
+
+        if(not isinstance(kwargs.get('heading'), str)):
+            kwargs['heading'] = "Error"
+
+        if(not isinstance(kwargs.get('varName'), str)):
+            kwargs['varName'] = 'var'
+
+        if(isArr == False):
+            printString = "should be a(n) "+typeText+", not: "+str(type(var))
+            self.__stringParse__(printString, **kwargs)
+            return isArr
+        else:
+            return isArr
+
+
+    def numarrCheck(self, var, numStyle=None, arrStyle=None, firstError=False, descriptiveMode=False, **kwargs):
+
+        switch=False
+        if(not self.arrCheck(var, style=arrStyle, **kwargs)):
+            if(descriptiveMode):
+                return (False, False)
+            else:
+                return False
+
+        if(isString(kwargs.get('varName'))):
+            var_name = kwargs['varName']
+        else:
+            var_name = 'var'
+
+        fail_list = ["Entries in "+var_name+" which are not strings:"]
+        for i,entry in enumerate(var):
+
+            if(numStyle == None):
+                isNumeric = isinstance(entry,(int,float,long))
+                typeText = "numeric [int, float or long]"
+            elif(numStyle == 'int'):
+                isNumeric = isinstance(entry, int)
+                typeText = "integer [int]"
+            elif(numStyle == 'float'):
+                isNumeric = isinstance(entry, float)
+                typeText = "floating point [float]"
+            elif(numStyle == 'long'):
+                isNumeric = isinstance(entry, long)
+                typeText = "long integer [long]"
+            else:
+                isNumeric = isinstance(entry,(int,float,long))
+                typeText = "numeric [int, float or long]"
+
+            if(isNumeric == False):
+                fail_line = "'"+str(i)+"' index of "+var_name
+                if(firstError):
+                    if(descriptiveMode):
+                        return (True, False)
+                    else:
+                        return False
+                switch=True
+                fail_list.append(fail_line+"should be a "+typeText+", not: "+str(type(entry)))
+
+        if(switch):
+            self.__stringParse__(fail_list, **kwargs)
+            if(descriptiveMode):
+                return (True, False)
+            else:
+                return False
+        else:
+            if(descriptiveMode):
+                return (True, True)
+            else:
+                return True
+
+
+    def strarrCheck(self, var, firstError=False, descriptiveMode=False, **kwargs):
+
+        switch=False
+        if(not self.arrCheck(var, style=arrStyle, **kwargs)):
+            if(descriptiveMode):
+                return (False, False)
+            else:
+                return False
+
+        if(isString(kwargs.get('varName'))):
+            var_name = kwargs['varName']
+        else:
+            var_name = 'var'
+
+        fail_list = ["Entries in "+var_name+" which are not strings:"]
+        for i,entry in enumerate(var):
+            isString = isinstance(entry, str)
+
+            if(isString == False):
+                kwargs['varName'] = str(i)+" index of "+var_name
+                if(firstError):
+                    if(descriptiveMode):
+                        return (True, False)
+                    else:
+                        return False
+                switch=True
+                fail_list.append("should be a 'str', not: "+str(type(entry)))
+
+        if(switch):
+            self.__stringParse__(fail_list, **kwargs)
+            if(descriptiveMode):
+                return (True, False)
+            else:
+                return False
+        else:
+            if(descriptiveMode):
+                return (True, True)
+            else:
+                return True

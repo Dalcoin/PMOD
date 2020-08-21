@@ -40,7 +40,7 @@ class minimize:
         else:
             self.Server = None
 
-        if(isinstance(self.Server,subp.Popen)):
+        if(isinstance(self.Server, subp.Popen)):
             self.server_Set = True
         elif(self.Server == None):
             pass

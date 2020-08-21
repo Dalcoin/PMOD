@@ -45,6 +45,14 @@ def __not_type_print__(var, sort, varID=None, **pkwargs):
         pkwargs["varName"] = varID
     return not printer.typeCheck(var, sort, **pkwargs)
 
+def __not_numarr_print__(var, numStyle=None, arrStyle=None, firstError=False, varID=None, descriptiveMode=False, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    if(descriptiveMode):
+        return printer.numarrCheck(var, numStyle, arrStyle, firstError, descriptiveMode, **pkwargs)
+    else:
+        return not printer.numarrCheck(var, numStyle, arrStyle, firstError, **pkwargs)
+
 def __update_funcName__(newFuncName, **pkwargs):
     pkwargs = printer.update_funcName(newFuncName, **pkwargs)
     return pkwargs
@@ -447,229 +455,285 @@ class spline:
 
         Warning: Interpolation using fuctions called upon splines generated with 
                  scipy must be within the range of the function, scipy functions 
-                 in general do no interpolate beyond the range of the input data
+                 in general do not interpolate beyond the range of the input data
     '''
 
-    def __init__(self, x_vec=None, y_vec=None, xarray=None):
+    def __init__(self, x_vec=None, y_vec=None, new_x_vec=None):
         self.x_vec = x_vec
         self.y_vec = y_vec
 
         #Values to be passed
+        self.new_x_vec = new_x_vec
         self.spline_inst = None
         self.bspline_inst = None
-        self.xarray = xarray
-        
+
         #Values to get
         self.spln_array = None
         self.der_array = None
         self.int = None
 
         #Values for variables
-        self.a = None
-        self.b = None
+        self.alim = None
+        self.blim = None
         self.der = None
 
-    def pass_vecs(self, x_vec, y_vec, xarray=None):
-        self.x_vec = x_vec
-        self.y_vec = y_vec
-        self.xarray = xarray
+    def __update_spline__funcName__(self, newFuncName, **pkwargs):
+        if(pkwargs.get("funcNameHeader") != None):
+            pass
+        else:
+            pkwargs = printer.update_funcNameHeader("spline", **pkwargs)
+        pkwargs = printer.update_funcName(newFuncName, **pkwargs)
+        return pkwargs
 
-    def pass_newx_vec(self, xarray, der=None):
-        self.xarray = xarray
-        self.der = der
+    @property
+    def x_vec(self):
+        return self.x_vec
 
-    def pass_int_lim(self, a, b):
-        self.a = a
-        self.b = b
+    @x_vec.setter
+    def x_vec(self, vector, **pkwargs):
+        pkwargs = __update_spline__funcName__("x_vec", **pkwargs)
+        arrcheck, numcheck = __not_numarr_print__(vector, varID='x_vec', descriptiveMode=True, **pkwargs)
+        if(arrcheck and numcheck):
+            self.x_vec = vector
+        elif(arrcheck and not numcheck):
+            __err_print__("will be cast as a numerical array", varID='x_vec', heading='warning', **pkwargs)
+            try:
+                self.x_vec = map(lambda x: float(x), x_vec)
+            except:
+                __err_print__("failed to be cast into a numerical array", varID='x_vec', **pkwargs)
+                self.x_vec = None
+        else:
+            __err_print__("must be a numerical array", varID='x_vec', **pkwargs)
+            self.x_vec = None
+
+    @property
+    def y_vec(self):
+        return self.y_vec
+
+    @y_vec.setter
+    def y_vec(self, vector, **pkwargs):
+        pkwargs = __update_spline__funcName__("y_vec", **pkwargs)
+        arrcheck, numcheck = __not_numarr_print__(vector, varID='y_vec', descriptiveMode=True, **pkwargs)
+        if(arrcheck and numcheck):
+            self.y_vec = vector
+        elif(arrcheck and not numcheck):
+            __err_print__("will be cast as a numerical array", varID='y_vec', heading='warning', **pkwargs)
+            try:
+                self.y_vec = map(lambda x: float(x), y_vec)
+            except:
+                __err_print__("failed to be cast into a numerical array", varID='y_vec', **pkwargs)
+                self.y_vec = None
+        else:
+            __err_print__("must be a numerical array", varID='y_vec', **pkwargs)
+            self.y_vec = None
+
+    @property
+    def new_x_vec(self):
+        return self.new_x_vec
+
+    @new_x_vec.setter
+    def new_x_vec(self, vector, **pkwargs):
+        pkwargs = __update_spline__funcName__("new_x_vec", **pkwargs)
+        arrcheck, numcheck = __not_numarr_print__(vector, varID='new_x_vec', descriptiveMode=True, **pkwargs)
+        if(arrcheck and numcheck):
+            self.new_x_vec = vector
+        elif(arrcheck and not numcheck):
+            __err_print__("will be cast as a numerical array", varID='new_x_vec', heading='warning', **pkwargs)
+            try:
+                self.new_x_vec = map(lambda x: float(x), vector)
+            except:
+                __err_print__("failed to be cast into a numerical array", varID='new_x_vec', **pkwargs)
+                self.new_x_vec = None
+        else:
+            __err_print__("must be a numerical array", varID='new_x_vec', **pkwargs)
+            self.new_x_vec = None
+
+    @property
+    def der(self):
+        return self.der
+
+    @der.setter
+    def der(self, val):
+        pkwargs = __update_spline__funcName__("der", **pkwargs)
+        if(__not_num_print__(val, style='int', varID='der', heading='warning', **pkwargs)):
+            try:
+                val=int(val)
+            except:
+                __err_print__("could not be evaluated as an integer", varID='der', **pkwargs)
+                val = None
+        else:
+            if(val < 0 or val > 5):
+                __err_print__("should be an integer bounded by 0 and 5", varID='der', **pkwargs)
+                val = None
+        self.der = val
+
+    @property
+    def alim(self):
+        return self.alim
+
+    @alim.setter
+    def alim(self, val):
+        pkwargs = __update_spline__funcName__("alim", **pkwargs)
+        if(__not_num_print__(val, varID='alim', heading='warning', **pkwargs)):
+            try:
+                val=float(val)
+            except:
+                __err_print__("could not be evaluated as an integer", varID='alim', **pkwargs)
+                val = None
+        self.alim = val
+
+    @property
+    def blim(self):
+        return self.blim
+
+    @blim.setter
+    def blim(self, val):
+        pkwargs = __update_spline__funcName__("blim", **pkwargs)
+        if(__not_num_print__(val, varID='blim', heading='warning', **pkwargs)):
+            try:
+                val=float(val)
+            except:
+                __err_print__("could not be evaluated as an integer", varID='blim', **pkwargs)
+                val = None
+        self.blim = val
 
 
-    def spln_obj(self, x_arr, y_arr, type='spline', sort='cubic', **pkwargs):
+    def spline(self, x_arr=None, y_arr=None, style='spline', sort='cubic', **pkwargs):
 
-        pkwargs = __update_funcName__("spln_obj", **pkwargs)
-
+        pkwargs = __update_funcName__("spline", **pkwargs)
         spline_list = ['spline', 'bspline']
 
-        if(__not_arr_print__(x_arr, varID='x_arr', **pkwargs)):
-            return False
-        if(__not_arr_print__(y_arr, varID='y_arr', **pkwargs)):
-            return False
-        if(type not in spline_list):
-            __err_print__("is not recognized, defaulting to 'spline'", varID='type', **pkwargs)
-            type='spline'
-
-        if(type == 'spline'):
-            try: 
-                return __spln__(x_arr, y_arr, kind=sort)
-            except:
-                return __err_print__("failed to generate spline object", **pkwargs)
-
-        elif(type == 'bspline'):
-
-            try: 
-                return __bspln__(x_arr, y_arr)
-            except:
-                return __err_print__("failed to generate spline object", **pkwargs)
-
-        else: 
-            __err_print__("is not recognized: '"+str(type)+"'", varID='type', **pkwargs)
-            return False
-
-    def pass_spline(self, x_arr, y_arr, sort='cubic'):
-        self.x_vec = x_arr 
-        self.y_vec = y_arr
-        self.spline_inst = self.spln_obj(self.x_vec, self.y_vec, type='spline', sort='cubic')
-        return self.spline_inst
-
-    def pass_bspline(self, x_arr = None, y_arr = None):
-        self.x_vec = x_arr 
-        self.y_vec = y_arr
-        self.spline_inst = self.spln_obj(self.x_vec, self.y_vec, type='bspline', sort='cubic')
-        return self.spline_inst
-
-
-    def spln_val(self, splineInst, xvals_arr, **pkwargs):
-
-        pkwargs = __update_funcName__("spln_val", **pkwargs)
-
-        if(__not_type_print__(splineInst, __spln__, varID='splineInst', **pkwargs)):
-            return False
-        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
-            return False
-
-        try:
-            return splineInst(xvals_arr)
-        except:
-            __err_print__("failure to parse interpolated value from input", **pkwargs)
-            return False
-
-
-    def spln_der(self, bsplineInst, xvals_arr, der=1):
-
-        pkwargs = __update_funcName__("spln_der", **pkwargs)
-
-        if(__not_type_print__(bsplineInst, __bspln__, varID='bsplineInst', **pkwargs)):
-            return False
-        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
-            return False
-
-        if(__not_num_print__(der, style='int', varID='der', **pkwargs)):
-            return False
+        if(x_arr != None and y_arr != None):
+            self.x_arr = x_arr
+            self.y_arr = y_arr
+            if(self.x_arr == None or self.y_arr == None):
+                return __err_print__("should be numeric arrays", varID="x_arr/y_arr", **pkwargs)
+        elif(self.x_arr != None and self.y_arr != None):
+            pass
         else:
-            if(der < 1):
-                return __err_print__("must be equal to or greater than 1", varID='der', **pkwargs)
-
-        try:
-            return __deriv__(xvals_arr, bsplineInst, der)
-        except:
-            __err_print__("failure to parse the derivative from input", **pkwargs)
+            __err_print__("should be numeric arrays", varID="x_arr/y_arr", **pkwargs)
             return False
 
+        if(style not in spline_list):
+            __err_print__("is not recognized, defaulting to 'spline'", varID='style', heading='warning', **pkwargs)
+            style='spline'
 
-    def spln_integ(self, bsplineInst, a, b):
-
-        pkwargs = __update_funcName__("spln_integ", **pkwargs)
-
-        if(__not_type_print__(bsplineInst, __bspln__, varID='bsplineInst', **pkwargs)):
-            return False
-
-        if(__not_num_print__(a, varID='a', **pkwargs)):
-            return False
-        if(__not_num_print__(b, varID='b', **pkwargs)):
-            return False
-
-        if(a >= b):
-            return __err_print__("the lower integration limit, a, must be less than the upper limit", **pkwargs)
-
-        try:
-            return __integ__(a, b, bsplineInst)
-        except:
-            __err_print__("failure to parse the derivative from input", **pkwargs)
-            return False
-
-
-    ### Functions for performing 1-D splines, derivatives and integrals------------Needs to be updated------------
-
-    def get_spline(self, in_xarray=None):
-        if(self.spline_inst != None and in_xarray == None):  
+        if(style == 'spline'):
             try:
-                result = self.spln_val(self.spline_inst, self.xarray)
-                self.spln_array = (self.xarray, result) 
-                return result
+                self.spline_inst = __spln__(x_arr, y_arr, kind=sort)
+                return self.spline_inst
             except:
-                print("[get_spline] Error 0: unknown error occured when trying to create spline") 
-                return False               
-        elif(self.spline_inst == None):
-            print("Error: No spline instance found, initialize a spline instance and try again") 
-            return False
-        elif(self.xarray == None):
-            if(in_xarray == None):
-                print("Error: No xspline vector found, input an xspline vector and try again") 
+                return __err_print__("failure to generate spline object", **pkwargs)
+        elif(style == 'bspline'):
+            try:
+                self.bspline_inst = __bspln__(x_arr, y_arr)
+                return self.bspline_inst
+            except:
+                return __err_print__("failure to generate spline object", **pkwargs)
+        else: 
+            return __err_print__("is not recognized: '"+str(style)+"'", varID='style', **pkwargs)
+
+
+    def interpolate(self, new_x_vec, spline_inst=None, errCheck=True, **pkwargs):
+
+        pkwargs = __update_funcName__("interpolate", **pkwargs)
+
+        if(errCheck):
+            if(spline_inst != None):
+                if(__not_type_print__(spline_inst, __spln__, varID='spline_inst', **pkwargs)):
+                    return False
+            else:
+                if(__not_type_print__(self.spline_inst, __spln__, varID='spline_inst', **pkwargs)):
+                    return False
+                else:
+                    spline_inst = self.spline_inst
+		    
+            if(__not_numarr_print__(new_x_vec, varID='new_x_vec', **pkwargs)):
+                return False
+
+        try:
+            return spline_inst(new_x_vec)
+        except:
+            return __err_print__("failure to parse interpolated value from input", **pkwargs)
+
+
+    def derivate(self, new_x_vec, bspline_inst=None, der=1, errCheck=True, **pkwargs):
+
+        pkwargs = __update_funcName__("derivate", **pkwargs)
+
+        if(errCheck):
+            if(bspline_inst != None):
+                if(__not_type_print__(bspline_inst, __spln__, varID='bspline_inst', **pkwargs)):
+                    return False
+            else:
+                if(__not_type_print__(self.bspline_inst, __spln__, varID='bspline_inst', **pkwargs)):
+                    return False
+                else:
+                    bspline_inst = self.bspline_inst
+		    
+            if(__not_numarr_print__(new_x_vec, varID='new_x_vec', **pkwargs)):
+                return False
+		    
+            if(__not_num_print__(der, style='int', varID='der', **pkwargs)):
                 return False
             else:
-                try:
-                    self.xarray = in_xarray
-                    result = self.spln_val(self.spline_inst, self.xarray)
-                    self.spln_array = (self.xarray, result) 
-                    return result                        
-                except:           
-                    print("[get_spline] Error 1: unknown error occured when trying to create spline") 
-                    return False   
-        else:           
-            print("[get_spline] Error 2: unknown error occured when trying to create spline") 
-            return False                                            
+                if(der < 1 or der > 5):
+                    return __err_print__("must be an integer in the range: 0 < der < 6", varID='der', **pkwargs)
 
-    def get_deriv(self, in_xarray, der = 1):
-        if(in_xarray == None):
-            try: 
-                result = self.spln_der(self.bspline_inst, self.xarray, der = self.der)
-                self.der_array = (self.xarray, result, self.der) 
-                return result  
-            except:
-                return False
-        else:
-            try: 
-                self.xarray = in_xarray
-                self.der = der
-                result = self.spln_der(self.bspline_inst, self.xarray, der = self.der)
-                self.der_array = (self.xarray, result, self.der) 
-                return result  
-            except:
-                return False
-
-    def get_integ(self, a = None, b = None):
-        if(a == None and b == None): 
-            try: 
-                result = self.spln_integ(self, self.bspline_inst, self.a, self.b)
-                self.int_inst = (result, self.a, self.b) 
-                return result  
-            except:
-                return False
-        else:
-            try: 
-                self.a = a 
-                self.b = b 
-                if(not check.numeric_test(a) or not check.numeric_test(b,'')):
-                    print("[get_integ] Error: check that the limits of integration are numeric types")
-                    return False    
-                result = self.spln_integ(self, self.bspline_inst, self.a, self.b)
-                self.int_inst = (result, self.a, self.b) 
-                return result  
-            except:
-                return False
-
-
-    # SCOS (Self-Contained One-Shot: does not use class variables)
-
-    def spline_val_scos(self, xvals_arr, x_arr, y_arr, der=0, sort='cubic', **pkwargs):
-
-        pkwargs = __update_funcName__("spline_val_scos", **pkwargs)
-
-        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
+        try:
+            return __deriv__(new_x_vec, bspline_inst, der)
+        except:
+            __err_print__("failure to evaluate the derivative from input", **pkwargs)
             return False
-        if(__not_arr_print__(x_arr, varID='x_arr', **pkwargs)):
+
+
+    def integrate(self, alim=None, blim=None, bspline_inst=None, errCheck=True, **pkwargs):
+
+        pkwargs = __update_funcName__("integrate", **pkwargs)
+
+        if(errCheck):
+            if(bspline_inst != None):
+                if(__not_type_print__(bspline_inst, __spln__, varID='bspline_inst', **pkwargs)):
+                    return False
+            else:
+                if(__not_type_print__(self.bspline_inst, __spln__, varID='bspline_inst', **pkwargs)):
+                    return False
+                else:
+                    bspline_inst = self.bspline_inst
+
+            if(alim == None):
+                if(__not_num_print__(self.alim, varID='alim', **pkwargs)):
+                    return False
+                else:
+                    alim = self.alim
+            else:
+                if(__not_num_print__(alim, varID='alim', **pkwargs)):
+                    return False
+
+            if(blim == None):
+                if(__not_num_print__(self.blim, varID='blim', **pkwargs)):
+                    return False
+                else:
+                    blim = self.blim
+            else:
+                if(__not_num_print__(blim, varID='blim', **pkwargs)):
+                    return False
+
+            if(alim >= blim):
+                return __err_print__("'alim' must be less than 'blim': (alim,blim) = ("+str(alim)+","+str(blim)+")", **pkwargs)
+
+        try:
+            return __integ__(alim, blim, bspline_inst)
+        except:
+            __err_print__("failure to parse the derivative from input", **pkwargs)
             return False
-        if(__not_arr_print__(y_arr, varID='y_arr', **pkwargs)):
-            return False
+
+
+    # SCOS (does not use class variables)
+
+    def scos_interpolate(self, new_x_arr, x_arr, y_arr, der=0, sort='cubic', **pkwargs):
+
+        pkwargs = __update_funcName__("scos_interpolate", **pkwargs)
 
         if(not isinstance(der,int)):
             try:
@@ -681,45 +745,25 @@ class spline:
                 return __err_print__("should be a non-negative integer", varID='der', **pkwargs)
 
         if(der == 0):
-            try:
-                spline = __spln__(x_arr, y_arr, kind=sort)
-                return spline(xvals_arr)
-            except:
-                __err_print__("failure to interpolate from input array", **pkwargs)
-                return False
+            spline = self.spline(x_arr, y_arr, 'spline', sort, **pkwargs)
+            if(spline == False):
+                return __err_print__("could not be evaluated, check input for errors", varID="spline", **pkwargs)
+            new_values = self.interpolate(new_x_arr, spline, **pkwargs)
+            return new_values
         else:
-            try:
-                bspline_obj = __bspln__(x, y)
-                return __deriv__(xvals_arr, bspline_obj, der)
-            except:
-                __err_print__("failure to derivate from input array", **pkwargs)
-                return False
+            spline = self.spline(x_arr, y_arr, 'bspline', sort, **pkwargs)
+            if(spline == False):
+                return __err_print__("could not be evaluated, check input for errors", varID="spline", **pkwargs)
+            new_values = self.derivate(new_x_arr, spline, der, **pkwargs)
+            return new_values
 
 
-    def spline_integ_scos(self, x_arr, y_arr, a, b):
+    def scos_integrate(self, x_arr, y_arr, alim, blim):
 
         pkwargs = __update_funcName__("spline_integ_scos", **pkwargs)
 
-        if(__not_arr_print__(xvals_arr, varID='xvals_arr', **pkwargs)):
-            return False
-        if(__not_arr_print__(x_arr, varID='x_arr', **pkwargs)):
-            return False
-        if(__not_arr_print__(y_arr, varID='y_arr', **pkwargs)):
-            return False
-
-        if(__not_num_print__(a, varID='a', **pkwargs)):
-            return False
-        if(__not_num_print__(b, varID='b', **pkwargs)):
-            return False
-
-        if(a >= b):
-            return __err_print__("the lower integration limit, a, must be less than the upper limit", **pkwargs)
-
-        try:
-            bspline_obj = __bspln__(x_arr, y_arr)
-            int_spline_val = __integ__(a, b, bspline_obj)
-        except:
-            int_spline_val = False
-            print("failure to evaluate integral from input arrays")
-
-        return(int_spline_val)
+        spline = self.spline(x_arr, y_arr, 'bspline', sort, **pkwargs)
+        if(spline == False):
+            return __err_print__("could not be evaluated, check input for errors", varID="spline", **pkwargs)
+        integral = self.integrate(alim, blim, spline, **pkwargs)
+        return(integral)
