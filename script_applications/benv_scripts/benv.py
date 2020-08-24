@@ -602,11 +602,11 @@ class benv(object):
                          *lengths):
 
         '''
-        A function which creates a 'par' formatted string 
-                 
-        The input consists of an eos identifier variable and optional 
-        variables corrosponding to each possible 'par' modifier      
-             
+        A function which creates a 'par' formatted string
+
+        The input consists of an eos identifier variable and optional
+        variables corrosponding to each possible 'par' modifier
+
         '''  
 
         if(isinstance(eos,str)):
@@ -642,7 +642,7 @@ class benv(object):
             elif(density == '4' or density.lower() in options_list_4):
                 pos_2 = 4
             else: 
-                pos_2 = 2   
+                pos_2 = 2
         elif(isinstance(density,int)):      
             if(eos == 2):
                 pos_2 = eos
@@ -651,19 +651,19 @@ class benv(object):
             elif(eos == 4):
                 pos_2 = eos
             else: 
-                pos_2 = 2      
+                pos_2 = 2
         else: 
-            pos_2 = 2      
+            pos_2 = 2
          
         if(microscopic):
             pos_6 = 1 
         else:
-            pos_6 = 0           
+            pos_6 = 0
          
         if(e0_rho0):
-            pos_7 = 1 
+            pos_7 = 1
         else:
-            pos_7 = 0             
+            pos_7 = 0
 
         if(phenom_esym):
             pos_8 = 1 
@@ -714,7 +714,7 @@ class benv(object):
         '''
         Takes a valid 'par.don' string and nucleus denoted by integers (A,Z)
         '''
-        
+
         if(parform == 'array' or parform == 'list' or parform == 'tuple'):
             parline = array_to_str(parline, endline=True)
         else:
@@ -726,11 +726,11 @@ class benv(object):
             else:
                 print(self.s4+"[format_pars_data] TypeError: 'parline' type does not match 'parform' \n")
                 return False
-         
+
         divs = "64 64 64\n"
-        lims = "0.0 20.0\n" 
+        lims = "0.0 20.0\n"
         az = str(a)+'  '+str(z)+'\n'
-        return [parline, divs, lims, az] 
+        return [parline, divs, lims, az]
 
     def data_to_pars(self, dataline):        
         success = iop.flat_file_write(self.parspath, dataline)
@@ -818,14 +818,18 @@ class benv(object):
        
          
     def format_skval_data(self, lines):
-          
+        '''
+        Converts 'skval string lines', as obtained from the 'skval.don' text file, into 'skavl data'
+
+        '''
+
         try:
-            skval_lines = list(lines)          
-        except: 
+            skval_lines = list(lines)
+        except:
             print(self.s4+"[format_skval_data] Error: input 'lines' should be a python array")
             return False
-         
-        
+
+
         # variables   
         incloop, azpairs, mirrors, initpar, eospars, eosgrup  = False, False, False, False, False, False
         incb, azpb, mirb, intp, newb, eosg = True, True, True, True, True, True  
@@ -870,8 +874,6 @@ class benv(object):
                     self.eosgrup = (eosgrup[0].lower() == 'true')
                     eosg = False 
 
-
-                 
             if(i+1 == n and not all([not incb, not azpb, not mirb, not newb])):
                 if(incb):
                     print(self.s4+"[format_skval_data] Warning: could not find parameter 'INCloop' in 'skval_lines'\n")  
@@ -904,7 +906,8 @@ class benv(object):
             print(self.s4+"[format_skval_data] Warning: both skval looping and nuclei pairs detected")
             print(self.s4+"                             skval looping takes precedent over paring\n")
             self.SKVAL_CONTROL_ERROR = True
-         
+
+        # If incloop is True
         if(self.incloop):
             for i in xrange(len(skval_lines)):
 
@@ -920,10 +923,10 @@ class benv(object):
                     looplist = self.EOSPARS.findall(skval_lines[i])
                     if(len(looplist)>0):
                         pars.append(looplist[0])
-                        
+
             if(len(loop) > 0):
                 if(len(loop) > 1):
-                    print(self.s4+"[format_skval_data] Warning: Multiple loop options detected, only the first one will be exectued\n")
+                    print(self.s4+"[format_skval_data] Warning: Multiple loop options detected, only the first one will be executed\n")
                 loop_data = loop[0]                     
                 loop_type = "loop"
                 self.azpairs = False 
@@ -932,7 +935,8 @@ class benv(object):
                 self.SKVAL_FORMAT_ERROR = True   
                 self.azpairs = True 
                 self.incloop = False             
-              
+
+        # If azpairs is True and if incloop is False
         if(self.azpairs and self.incloop == False):
             for i in xrange(len(skval_lines)):
 
@@ -1300,7 +1304,7 @@ class benv(object):
             
 
     def clean_up(self, debug = False):
-        
+
         if(debug):
             pass
         else:
@@ -1317,15 +1321,14 @@ class benv(object):
         self.exit_error_check()
         print("")
         time.sleep(0.5)
-        print("No fatal Errors detected") 
+        print("No fatal Errors detected")
         time.sleep(0.5)
         print("Run Number upon exit:  "+str(self.run_time))
         time.sleep(0.5)
         print("Script run-time :  "+str(round(time.time()-self.time_Start,3))+" seconds")
         time.sleep(0.5)
-        print("   ")            
-        
-             
+        print("   ")
+
         return True
 
     # Running and Looping functions
@@ -1423,25 +1426,30 @@ class benv(object):
             benvals = False     
           
         return benvals
-             
+
 
     def benv_eos_loop(self, reset = True):
-    
-        benvals_group = []
-        benvals_cohort= [] 
+        '''
+        !Function which runs the BENV program!
 
-        #Get EoS from 'eos' folder 
+        reset : [bool] (True), resets data files to pre-run values
+        '''
+
+        benvals_group = []
+        benvals_cohort= []
+
+        #Get EoS from 'eos' folder
         eoslist = self.collect_eos()
         if(eoslist == False):
             print(self.s4+"[benv_eos_loop] Error: could not format skval lines from skval file\n")
-            return False       
+            return False
 
         # Get line strings from 'skval.don' file 
         skval_lines = self.get_skval_data()
         if(skval_lines == False):
             print(self.s4+"[benv_eos_loop] Error: failure to retrieve data from skval file\n")
             return False
-           
+
         # Format skval lines into data list, type string and pars list
         packed_format_skval_data = self.format_skval_data(skval_lines)
         if(packed_format_skval_data == False):
@@ -1455,7 +1463,7 @@ class benv(object):
             self.INITIAL_PARS_ERROR = True
             print(self.s4+"[benv_eos_loop] Warning: 'inital_pars' have not been set\n")
          
-        # Convert parameters from string to list of floats, assign list to plst 
+        # Convert parameters from (string) to (list of floats), assign list to 'plst'
         if(self.INITIAL_PARS_ERROR):
             pass
         else:
@@ -1527,7 +1535,7 @@ class benv(object):
             else: 
                 out_Iter = eoslist 
                 inn_Iter = pars
-             
+
             for i,out_entry in enumerate(out_Iter):
                 for j,inn_entry in enumerate(inn_Iter):
 
