@@ -209,8 +209,53 @@ def isType_print(var, sort, var_name=None, func_name='', print_bool=True):
 
 class imprimer(object):
 
-    def __init__(self, space="    ", endline="\n", modName=None, failPrint=True):
-        self.modName = modName
+    def __init__(self, space="    ", endline="\n", failPrint=True):
+        '''
+        space : string added at the beginning of error messages
+
+        endline : string added at the end of error messages
+
+        failPrint : True if messages to be printed to console
+
+        kwarg list:
+
+            failPrint : (bool)[True], determines if the output strings are printed (True) or not (False)
+
+            newSpace : (str)(bool)['    '], determines the string which appears at the beginning of the message,
+                                         nothing is added for False
+
+            endline : (bool)[False], determines if the endline character is added to the end of each string (True) or not (False)
+
+            funcName : (str)(None)[None], determines the function id strings to be added to the beginning of each string (str),
+                                          if None, or not a string then nothing is added
+
+            funcNameHeader : (str)(None)[None], adds a node to the beginning of each 'funcName' string
+
+            heading : (str)(bool)[" Error"], determines the string to be added which identifies the message (str),
+                                            if True, the string " 'Error'" is added, else if False, nothing is added
+
+            varName : (str)(bool)[False], determines the string to be added which identifies a specific variable (str),
+                                        if True, the string " 'variable'" is added, else if False, nothing is added
+
+            lnum : (str)(int)(None)[None], determines the strings to be added for identifying the line for which the message
+                                           applies (str)(int), if None then nothing is added
+
+            blankLine : (bool)[True], determines if an extra blank line is to added between the heading and following lines
+                                       if 'msg' input is an array of strings. The blank line is not added if False
+
+            doubleSpace : (bool)[True], determines if an extra 'space' spacing string is to added to the beginning of each
+                                        line if the 'msg' input is an array of strings. The spacing defaults to that which is
+                                        determined by 'space' if False.
+
+            parSpace : (bool)[True], adds extra line to space out printing list of strings
+
+            nonewFuncName : (bool)[False], prevents referenced functions from added their name to the 'funcName' list
+
+            fullErrorPath : (bool)[False], overrides any existing blocks which might prevent nested function from adding
+                                           their name to 'funcName' list
+
+
+        '''
 
         if(isinstance(space, str)):
             self.space = space
@@ -334,43 +379,6 @@ class imprimer(object):
     def __stringParse__(self, msg, **kwargs):
         '''
         Description: Parses 'msg' input message(s) into string output
-
-        kwarg list:
-
-            failPrint : (bool)[True], determines if the output strings are printed (True) or not (False)
-
-            newSpace : (str)(bool)['    '], determines the string which appears at the beginning of the message,
-                                         nothing is added for False
-
-            endline : (bool)[False], determines if the endline character is added to the end of each string (True) or not (False)
-
-            funcName : (str)(None)[None], determines the function id strings to be added to the beginning of each string (str),
-                                          if None, or not a string then nothing is added
-
-            funcNameHeader : (str)(None)[None], adds a node to the beginning of each 'funcName' string
-
-            heading : (str)(bool)[" Error"], determines the string to be added which identifies the message (str),
-                                            if True, the string " 'Error'" is added, else if False, nothing is added
-
-            varName : (str)(bool)[False], determines the string to be added which identifies a specific variable (str),
-                                        if True, the string " 'variable'" is added, else if False, nothing is added
-
-            lnum : (str)(int)(None)[None], determines the strings to be added for identifying the line for which the message
-                                           applies (str)(int), if None then nothing is added
-
-            blankLine : (bool)[True], determines if an extra blank line is to added between the heading and following lines
-                                       if 'msg' input is an array of strings. The blank line is not added if False
-
-            doubleSpace : (bool)[True], determines if an extra 'space' spacing string is to added to the beginning of each
-                                        line if the 'msg' input is an array of strings. The spacing defaults to that which is
-                                        determined by 'space' if False.
-
-            parSpace : (bool)[True], adds extra line to space out printing list of strings
-
-            nonewFuncName : (bool)[False], prevents referenced functions from added their name to the 'funcName' list
-
-            fullErrorPath : (bool)[False], overrides any existing blocks which might prevent nested function from adding
-                                           their name to 'funcName' list
         '''
 
         if(kwargs.get('failPrint') == None):
@@ -625,7 +633,7 @@ class imprimer(object):
         else:
             var_name = 'var'
 
-        fail_list = ["Entries in "+var_name+" which are not strings:"]
+        fail_list = ["contains errors at the following indices:"]
         for i,entry in enumerate(var):
 
             if(numStyle == None):
@@ -645,14 +653,14 @@ class imprimer(object):
                 typeText = "numeric [int, float or long]"
 
             if(isNumeric == False):
-                fail_line = "'"+str(i)+"' index of "+var_name
+                fail_line = "'"+str(i)+"' index"
                 if(firstError):
                     if(descriptiveMode):
                         return (True, False)
                     else:
                         return False
                 switch=True
-                fail_list.append(fail_line+"should be a "+typeText+", not: "+str(type(entry)))
+                fail_list.append(fail_line+" should be a(n) "+typeText+", not: "+str(type(entry)))
 
         if(switch):
             self.__stringParse__(fail_list, **kwargs)
@@ -681,19 +689,19 @@ class imprimer(object):
         else:
             var_name = 'var'
 
-        fail_list = ["Entries in "+var_name+" which are not strings:"]
+        fail_list = ["contains errors at the following indices:"]
         for i,entry in enumerate(var):
             isString = isinstance(entry, str)
 
             if(isString == False):
-                kwargs['varName'] = str(i)+" index of "+var_name
+                fail_line = "'"+str(i)+"' index"
                 if(firstError):
                     if(descriptiveMode):
                         return (True, False)
                     else:
                         return False
                 switch=True
-                fail_list.append("should be a 'str', not: "+str(type(entry)))
+                fail_list.append(" should be a 'str', not: "+str(type(entry)))
 
         if(switch):
             self.__stringParse__(fail_list, **kwargs)
@@ -706,3 +714,71 @@ class imprimer(object):
                 return (True, True)
             else:
                 return True
+
+
+class imprimerTemplate(imprimer):
+
+    def __init__(self, space="    ", endline="\n", failPrint=True):
+        super(imprimerTemplate, self).__init__(space, endline, failPrint)
+        self.headerStr = ''
+
+    def __err_print__(self, errmsg, varID=None, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        self.errPrint(errmsg, **pkwargs)
+        return False
+
+    def __not_str_print__(self, var, varID=None, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        return not self.strCheck(var, **pkwargs)
+
+    def __not_arr_print__(self, var, varID=None, style=None, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        return not self.arrCheck(var, style, **pkwargs)
+
+    def __not_num_print__(self, var, varID=None, style=None, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        return not self.numCheck(var, style, **pkwargs)
+
+    def __not_type_print__(self, var, sort, varID=None, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        return not self.typeCheck(var, sort, **pkwargs)
+
+    def __not_numarr_print__(self, var, varID=None, numStyle=None, arrStyle=None, firstError=False, descriptiveMode=False, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        if(descriptiveMode):
+            return self.numarrCheck(var, numStyle, arrStyle, firstError, descriptiveMode, **pkwargs)
+        else:
+            return not self.numarrCheck(var, numStyle, arrStyle, firstError, **pkwargs)
+
+    def __not_strarr_print__(self, var, varID=None, firstError=False, descriptiveMode=False, **pkwargs):
+        if(isinstance(varID, str)):
+            pkwargs["varName"] = varID
+        if(descriptiveMode):
+            return self.numarrCheck(var, firstError, descriptiveMode, **pkwargs)
+        else:
+            return not self.numarrCheck(var, numStyle, arrStyle, firstError, **pkwargs)
+
+    def __update_funcName__(self, newFuncName, **pkwargs):
+        pkwargs = self.update_funcName(newFuncName, **pkwargs)
+        return pkwargs
+
+    def __set_funcNameHeader__(self, string, **pkwargs):
+        pkwargs = self.__update_funcName__("__set_funcNameHeader__")
+        if(self.__not_str_print__(string, varID='funcNameHeader', **pkwargs)):
+            return None
+        else:
+            self.headerStr = string
+
+    def __update_funcNameHeader__(self, newFuncName, **pkwargs):
+        if(pkwargs.get("funcNameHeader") != None):
+            pass
+        else:
+            pkwargs = self.update_funcNameHeader(self.headerStr, **pkwargs)
+        pkwargs = self.update_funcName(newFuncName, **pkwargs)
+        return pkwargs
