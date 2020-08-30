@@ -186,7 +186,7 @@ class progStruct(object):
         self.EXIT_ERROR = False
 
         # internal shell command line
-        self.cmv = object()   
+        self.cmv = object()
         self.cmvutil = object()
 
         # internal variables
@@ -195,7 +195,7 @@ class progStruct(object):
         # looping variables
         self.option_menu_lines = []
 
-        #initialization (optional)            
+        #initialization (optional)
         if(initialize):
             self.INITIALIZATION = True
 

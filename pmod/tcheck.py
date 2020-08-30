@@ -718,6 +718,26 @@ class imprimer(object):
 
 class imprimerTemplate(imprimer):
 
+    '''
+    List of Functions:
+
+        Erroor message functions:
+
+            __err_print__
+            __not_str_print__
+            __not_arr_print__
+            __not_num_print__
+            __not_type_print__
+            __not_numarr_print__
+            __not_strarr_print__
+
+        Setting internal kwargs:
+
+            __update_funcName__
+            __set_funcNameHeader__
+            __update_funcNameHeader__
+    '''
+
     def __init__(self, space="    ", endline="\n", failPrint=True):
         super(imprimerTemplate, self).__init__(space, endline, failPrint)
         self.headerStr = ''
