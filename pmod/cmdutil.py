@@ -2,8 +2,8 @@ import os
 import sys 
 import subprocess
 
-import ioparse as iop
-from cmdline import PathParse as cmv
+import pmod.ioparse as iop
+from pmod.cmdline import PathParse
 
 
 # File Utility Functions
@@ -30,190 +30,42 @@ def convert_endline(file, style = 'dos2unix', space = '    '):
  
 
 
-# Meta - CMDLine class 
-
-class cmdUtil(object):
+class cmdUtil(PathParse):
       
-    def __init__(self, cmd_Object = None, system = "linux", initialize = True,   debug = True):
+    def __init__(self,
+                 osFormat,
+                 newPath=None,
+                 rename=False,
+                 debug=True,
+                 shellPrint=False,
+                 colourPrint=True,
+                 space='    ',
+                 endline='\n',
+                 moduleNameOverride="cmdUtil",
+                 **kwargs):
 
-        self.folder_Names = ['dir', 'dirs', 'directory', 'directories', 'folder', 'folders']
-        self.file_Names = ['file', 'files']
-         
-        self._space = '    '          
-        self._cml = None                  
-        self._debug = None 
-
-        self.system = system
-
-        __errors__ = { 'initialize_Err' : False,
-                       'cml_setter_Err' : False,
-                       'cml_gen_Err'    : False,
-                       'spc_setter_Err' : False,
-                       'dbg_setter_Err' : False,
-                      }     
-
-        self.CML_SET = False 
-        self.CML_INIT = False
-            
-        if(initialize):    
-
-            if(debug):
-                self.debug = True  
-
-            if(cmd_Object != None):
-                self.cml = cmd_Object         
-            else:
-                self.cml_Generate()
-                 
-            if(self.CML_SET):
-                success, self.init_Path = self.cml.cmd("pwd") 
-                if(success):
-                    self.init_Name = self.cml.varPath_Dir
-                    self.CML_INIT = True                
-
-    @property
-    def cml(self):
-        return self._cml
-
-    @cml.setter 
-    def cml(self, cmd_Object):
-
-        if(isinstance(self._cml,cmv)):
-            self.CML_SET = True
-            if(self.debug):   
-                print(self.space+"[cml.setter] Warning: property variable 'cml' is already set and cannot be changed\n") 
-            else:
-                pass
-        else:
-            if(isinstance(cmd_Object,cmv)): 
-                self._cml = cmd_Object    
-                self.CML_SET = True            
-            else:
-                self.CML_SET = False
-                if(self.debug):
-                    print(self.space+"[cml.setter] Warning: 'cml' must be set to a 'cmdline.PathParse' object\n")                      
-                else:
-                    pass 
-
-
-    def cml_Generate(self): 
-         
-        try: 
-            self.cml = cmv(self.system)
-        except:
-            if(self.debug):
-                print(self.space+"[cml_Generate] Error: could not create a local 'cmv' object\n") 
-            return False
-                 
-        
-    @property
-    def space(self):
-        return self._space
-
-    @space.setter 
-    def space(self, space_Value):
-        if(isinstance(space_Value,str)):
-            self._space = space_Value 
-        else: 
-            if(self.debug):
-                print(self.space+"[space] Error: 'space' must be a string\n")
-
-    @property
-    def debug(self):
-        return self._debug
-
-    @debug.setter 
-    def debug(self, debug_Value):
-        if(isinstance(debug_Value,bool)):
-            self._debug = debug_Value 
-        else: 
-            self._debug = False                         
-           
-         
-    ############################################################33##
-
-      
-    def __err_Func__(self, **errs):
-        getter = True   
-        for errType, err in errs.iteritems():
-            getter = False  
-            if(__errors__.get(errType,None) != None):
-                __errors__[errType] = bool(err)       
-                   
-        if(getter):
-            return __errors__ 
-  
-    ############################################################33##
+        super(cmdUtil, self).__init__(osFormat,
+                                      newPath,
+                                      rename,
+                                      debug,
+                                      shellPrint,
+                                      colourPrint,
+                                      space,
+                                      endline,
+                                      moduleNameOverride,
+                                      **kwargs)
 
     ############################################################33##
+
 
     ### CMD Functions
 
-    def pass_CMD(self, cmd):
+    ### File Functions
 
-        if(not self.CML_SET):
-            if(self.debug):
-                print(self.space+"[pass_CMD] Error: 'cml' (internal 'PathParse' class instance) not found")
-
-        if(not isinstance(cmd,str)):
-            if(self.debug):
-                print(self.space+"[pass_CMD] Error: input 'cmd', must be a string\n")
-
-        success, value = self.cml.cmd(cmd)
-
-        if(success):
-            return success, value
-        else:
-            if(self.debug):
-                print(self.space+"[pass_CMD] Error: failure to excute input 'cmd': "+cmd)
-            return success
-
-
-    def enter_dir(self, fiche):
-
-        if(not isinstance(fiche, str)):
-            if(self.debug):
-                print(self.space+"[enter_dir] Error: 'fiche' must be a string\n")
+    def convert_endline(self, lines, style='dos2unix', **kwargs):
+        if(self.__not_strarr_print__(lines, varID='lines', firstError=True, **pkwargs)):
             return False
 
-        if(fiche in self.cml.varPath_Folders):
-            success, value = self.cml.cmd("cd "+fiche)
-            if(success == False):
-                if(self.debug):
-                    err_msg = "Error: "+fiche+" was found in the current directory, but could not be accessed\n"
-                    print(self.space+"[enter_dir] "+err_msg)
-                return False
-        else:
-            if(self.debug):
-                print(self.space+"[enter_dir] Error: 'fiche' could not be found in the current directory\n")
-            return False
-        return True
-
-
-    def moveup_dir(self):
-
-        if(len(self.cml.varPath_List) > 1):
-            success, value = self.cml.cmd("cd ..")
-            if(success == False):
-                if(self.debug):
-                    err_msg = "Error: could not move up the pathway\n"
-                    print(self.space+"[moveup_dir] "+err_msg)
-                return False
-        return True
-
-
-    ############################################################33##
-
-    # File Functions
-
-    def convert_endline(self, file, style = 'dos2unix'):
-             
-        lines = iop.flat_file_read(file) 
-        if(lines == False):
-            if(self.debug):
-                print(self.space+"[convert_endline] Error: could not read input 'file' : "+str(file)) 
-            return False       
-         
         if(style == 'dos2unix'):
             end_Line = "\n"
         elif(style == 'unix2dos'):
@@ -221,9 +73,7 @@ class cmdUtil(object):
         elif(style == None):
             end_Line = ""
         else:
-            if(self.debug):
-                print(self.space+"[convert_endline] Error: 'style' not reconginzed")
-            return False  
+            return self.__err_print__("not reconginzed: use 'dos2unix' or 'unix2dos'", varID='style', **kwargs)
 
         out_Lines = [line.rstrip()+end_Line for line in lines]  
         return out_Lines
@@ -232,7 +82,7 @@ class cmdUtil(object):
     ############################################################33##
 
 
-    def empty_folder(self, fiche, select = 'all'):
+    def empty_folder(self, dir, select='all'):
         '''
         Notes: 
 
@@ -242,10 +92,9 @@ class cmdUtil(object):
           
             Variables:
 	    
-                fiche : string, corresponding to a file name
+                dir : string, corresponding to a file name
                 select : string, narrows files to be deleted  
         '''
-         
 
         if(not isinstance(select, str)):
             if(self.debug):
@@ -319,57 +168,64 @@ class cmdUtil(object):
         return True
 
 
-    def convert_file_endline(self, fileNames, style = 'dos2unix', foldName = None):
+    def convert_file_endline(self, fileNames, style='dos2unix', foldName=None, **kwargs):
 
         # checking 'fileNames' input for proper formatting
         if(isinstance(fileNames,str)):
             fileNames = [fileNames]
-        elif(isinstance(fileNames,(list,tuple))):
-            if(all([isinstance(entry,str) for entry in fileNames])):
-                pass
-            else:
-                if(self.debug):
-                    print(self.space+"[convert_file_endline] Error: all entries in 'fileNames' must be strings")
-                else:
-                    pass
+        elif(isinstance(fileNames, (list,tuple))):
+            if(self.__not_strarr_print__(fileNames, firstError=True, **kwargs)):
                 return False
         else:
-            if(self.debug):
-                print(self.space+"[convert_file_endline] Error: 'fileNames' must be either a string or an array\n")
+            return self.__err_print__("type must be either string or list of strings: "+str(type(fileNames)), varID='fileNames', **kwargs)
 
         # actions based upon 'foldName' input
         if(foldName == None):
             for entry in fileNames:
-                if(entry in self.cml.varPath_Files):
-                    success = self.convert_endline(entry, style = style)
-                    if(success == False):
-                        if(self.debug):
-                            print(self.space+"[convert_file_endline] Warning: '"+str(entry)+"' not resolved\n")
-                        return False
-        elif(foldName in self.cml.varPath_Folders):
-            fold_node = self.cml.joinNode(self.cml.varPath, foldName)
-            if(fold_node == False):
-                if(self.debug):
-                    print(self.space+"[convert_file_endline] Error: "+str(foldName)+" not reconginzed\n")
-                return False
-            fold_contents = self.cml.contentPath(fold_node, objType='file')
-            if(fold_contents == False):
-                if(self.debug):
-                    print(self.space+"[convert_file_endline] Error: '"+str(fold_node)+"' contents not retrieved\n")
-                return False               
-            for entry in fileNames:                
-                if(entry in fold_contents):
-                    change_node = self.cml.joinNode(fold_node,entry) 
-                    if(change_node == False):
-                        if(self.debug):
-                            msg = "[convert_file_endline] Warning: file path, '"+str(fold_node)+"' not added to pathway\n"
-                            print(self.space+msg)
+                if(entry in self.varPath_Files):
+                    pathway = self.joinNode(self.varPath, entry, **kwargs)
+                    if(pathway == False):
+                        self.__err_print__("could not be joined to the current pathway", varID=str(entry), **kwargs)
                         continue
-                    success = self.convert_endline(change_node, style = style)
+                    lines = iop.flat_file_read(pathway, **kwargs)
+                    if(lines == False):
+                        self.__err_print__("lines could not be joined to the current pathway", varID=str(entry), **kwargs)
+                        continue
+                    newlines = self.convert_endline(lines, style, **kwargs)
+                    if(newlines == False):
+                        self.__err_print__("endlines could not be converted", varID=str(entry), **kwargs)
+                        continue
+                    success = iop.flat_file_write(pathway, add_list=newlines, **kwargs)
                     if(success == False):
-                        if(self.debug):
-                            msg="[convert_file_endline]Warning: file path, '"+str(change_node)+"' not resolved\n"
-                            print(self.space+msg)
+                        self.__err_print__("converted lines could not be written to file", varID=str(entry), **kwargs)
+                        continue
+            return True
+        elif(foldName in self.varPath_Folders):
+            fold_node = self.cml.joinNode(self.varPath, foldName)
+            if(fold_node == False):
+                return self.__err_print__("could not be joined to current pathway", varID=str(foldName), **kwargs)
+            fold_contents = self.contentPath(fold_node, objType='file')
+            if(fold_contents == False):
+                return self.__err_print__("content could not be retrieved", varID=str(foldName), **kwargs)
+
+            for entry in fileNames:
+                if(entry in fold_contents):
+                    pathway = self.joinNode(fold_node, entry, **kwargs)
+                    if(pathway == False):
+                        self.__err_print__("could not be joined to the '"+fold_node+"' pathway", varID=str(entry), **kwargs)
+                        continue
+                    lines = iop.flat_file_read(pathway, **kwargs)
+                    if(lines == False):
+                        self.__err_print__("lines could not be joined to the '"+fold_node+"' pathway", varID=str(entry), **kwargs)
+                        continue
+                    newlines = self.convert_endline(lines, style, **kwargs)
+                    if(newlines == False):
+                        self.__err_print__("endlines could not be converted", varID=str(entry), **kwargs)
+                        continue
+                    success = iop.flat_file_write(pathway, add_list=newlines, **kwargs)
+                    if(success == False):
+                        self.__err_print__("converted lines could not be rewritten to file", varID=str(entry), **kwargs)
+                        continue
+            return True
         else:
-            if(self.debug):
-                print(self.space+"[convert_file_endline] Error: '"+str(foldName)+"' not reconginzed\n")
+            return self.__err_print__("not reconginzed: "+str(foldName), varID='foldName', **kwargs)

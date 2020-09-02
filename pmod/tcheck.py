@@ -780,9 +780,9 @@ class imprimerTemplate(imprimer):
         if(isinstance(varID, str)):
             pkwargs["varName"] = varID
         if(descriptiveMode):
-            return self.numarrCheck(var, firstError, descriptiveMode, **pkwargs)
+            return self.strarrCheck(var, firstError, descriptiveMode, **pkwargs)
         else:
-            return not self.numarrCheck(var, numStyle, arrStyle, firstError, **pkwargs)
+            return not self.strarrCheck(var, firstError, **pkwargs)
 
     def __update_funcName__(self, newFuncName, **pkwargs):
         pkwargs = self.update_funcName(newFuncName, **pkwargs)
