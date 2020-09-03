@@ -1779,7 +1779,7 @@ class PathParse(imprimerTemplate):
             kwargs['funcName'] = None
             self.__err_print__(["The following object pathways were found in the current directory:"]+value, heading="Info", **kwargs)
 
-        return (True, values)
+        return (True, value)
 
 
     def cmd_cd(self, tup, **kwargs):
