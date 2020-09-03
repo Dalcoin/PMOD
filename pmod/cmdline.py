@@ -9,6 +9,17 @@ A module containing a class which allows for linux command-line inspired
 strings to be passed as commands to a class-function. Options for moving
 copying, deleting, creating and modifying files and directories.
 
+
+Warnings:
+
+    Changes from the previous 'cmdline' module:
+
+        1) 'cmd' spacings are now by spaces instead of the ';' character
+        2) object names can no longer contain spaces
+        3) 'help' is no longer an internal command, instead use the python help function
+        4) 'PathParse' is now a 'imprimerTemplate' subclass
+        5) 'cmd' uses regex parsing of the input
+
 0--------------0
 | Dependencies |
 0--------------0
@@ -21,7 +32,7 @@ This module is dependent on the following internal dependencies:
 
 This module is dependent on the following PMOD dependencies:
 
-    tcheck  : PathParse is a super class of 'imprimerTemplate'
+    tcheck  : PathParse is a subclass of 'imprimerTemplate'
     ioparse : used for file reading/writing
     strlist : used for parsing strings and arrays
 
@@ -34,7 +45,7 @@ This module is dependent on the following PMOD dependencies:
     scripts, allowing functionality in the image of Linux command-line inputs.
     Perform manipulations on the location of files and directories from within
     python scripts.
-    
+
        The main function in the class is 'cmd' : PathParse.cmd(). This
     function allows commands to be passed which, among other things, return the
     contents of the current stored directory string, change the current stored
@@ -42,9 +53,17 @@ This module is dependent on the following PMOD dependencies:
     directories. The class allows for pathway information to be stored and
     returned as string objects.
 
----------------
-| guidelines: |
----------------
+    The most common options are as follows:
+
+        rename : Set to true to ensure that moved files are automatically renamed if
+                 the file name conflicts
+
+        shellPrint : prints complete debugging information to the console for each
+                     call of the 'cmd' function
+
+0-------------0
+| Guidelines: |
+0--------------
 
 1) Dundar functions use the internal pathway, non-Dundar functions do not.
 2) Functions performing file and pathway manipulations take full pathways.
@@ -61,7 +80,6 @@ This module is dependent on the following PMOD dependencies:
 
 Naming Convention: Variables
 
-1)
     * Internal pathways variables start with 'var'
     * Internal non-pathway variables must not start with 'var'
 
