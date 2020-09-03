@@ -9,11 +9,6 @@ A module containing a class which allows for linux command-line inspired
 strings to be passed as commands to a class-function. Options for moving
 copying, deleting, creating and modifying files and directories.
 
-The following modules are dependent on 'cmdline':
-
-    cmdutil
-
-
 0--------------0
 | Dependencies |
 0--------------0
@@ -22,6 +17,7 @@ This module is dependent on the following internal dependencies:
 
     os     : Retrieving/Resolving/Parsing System Pathways
     shutil : Moving/Coping/Deleting Files and Directories
+    re     : regex parsing
 
 This module is dependent on the following PMOD dependencies:
 
@@ -73,6 +69,7 @@ Naming Convention: Variables
 
 import os
 import shutil
+import re
 
 from pmod.tcheck import imprimerTemplate
 import pmod.ioparse as iop
@@ -166,10 +163,10 @@ class PathParse(imprimerTemplate):
         self.HELP_DICT_INIT = False
 
         self.cdList = ['ls', 'pwd', 'dir', 'cd', 'chdir', 'mv', 'rm', 'cp',
-                       'mkdir','rmdir', 'find', 'match', 'help', 'vi']
+                       'mkdir','rmdir', 'find', 'match', 'vi']
 
         self.singleCommandList = ['ls', 'pwd']
-        self.singlePathListNoGroup = ['cd', 'chdir', 'vi', 'help']
+        self.singlePathListNoGroup = ['cd', 'chdir', 'vi']
         self.singlePathListGroup = ['rm', 'rmdir', 'mkdir', 'dir', 'find', 'match']
         self.doublePathList = ['mv', 'cp', 'cpdir']
 
@@ -206,8 +203,6 @@ class PathParse(imprimerTemplate):
         self.varPath_Files    = None
         self.varPath_Folders  = None
 
-        self.helpDict = None
-
         if(self.varOS in ('windows', 'web', 'net', 'internet')):
             self.delim = '\\'
         elif(self.varOS in ('linux', 'unix')):
@@ -234,7 +229,7 @@ class PathParse(imprimerTemplate):
                 success = False
 
         if(success):
-            updateTest = self.__updatePath__(self.varPath)
+            updateTest = self.__updatePath__(self.varPath, **kwargs)
             if(updateTest == False):
                 self.SET_INIT_PATH = False
             else:
@@ -249,6 +244,12 @@ class PathParse(imprimerTemplate):
         ---------------------
         | __cmdInputParse__ |
         ---------------------
+
+        Description:
+
+            An updated string parsing function. Takes an input string and
+            converts it to a cmd tuple. If the string cannot be properly
+            parsed, then the tuple, ('',[],''), is returned.
 
         Input:
 
@@ -266,106 +267,197 @@ class PathParse(imprimerTemplate):
 
         '''
 
-        def combine_list_str(array, span, ignore=None, space=False):
+        cmd_list = re.findall(r'(\S+)\s*', string)
+        
+        if(len(cmd_list) < 1):
+            self.__err_print__(["could not be parsed into a 'cmd' tuple:", "'string' : '"+string+"'"], varID='string', **kwargs)
+            return ('',[],'')
 
-            out_string = ''
-            count = 0
-            if(ignore != None):
-                for i in array:
-                    if(count not in ignore):
-                        if(space):
-                            if(count < len(array)-len(ignore)-1):
-                                out_string = out_string+i+' '
-                            else:
-                                out_string = out_string+i
-                        else:
-                            out_string = out_string+i
-                    count+=1
-                return out_string
-            else:
-                if(span[1] == 'End' or span[1] == 'end' or span[1] == '' or span[1] == -1):
-                    abridged_list = array[span[0]:]
-                else:
-                    abridged_list = array[span[0]:span[1]]
-
-                count = 0
-                for i in abridged_list:
-                    if(space):
-                        if(count < len(abridged_list)-1):
-                            out_string = out_string+i+' '
-                        else:
-                            out_string = out_string+i
-                    else:
-                        out_string = out_string + i
-                    count += 1
-                return out_string
-
-        # Function Start
-        if(self.__not_str_print__(string, varID="string", **kwargs)):
-            return ('', [], '')
-
-        inputList = filter(lambda entry: entry != '',string.split(" "))
-        cmdInst = inputList[0]
+        cmdInst = cmd_list[0].lower()
 
         if(cmdInst in self.singleCommandList):
-            outInst = (cmdInst, [], '')
-            return outInst
+            return (cmdInst, [], '')
 
-        if(cmdInst in self.singlePathListNoGroup):
-            outInst_str = combine_list_str(inputList,[1,'End'],space=True)
+        elif(cmdInst in self.singlePathListNoGroup):
+            if(len(cmd_list) < 2):
+                errmsg = ["command must contain an additional target object:", "'string' : '"+string+"'", "'cmd_list' : '"+str(cmd_list)+"'"]
+                self.__err_print__(errmsg, varID='cmd_list', **kwargs)
+                return ('',[],'')
+            tarVal = cmd_list[1]
             if(cmdInst != 'vi'):
-                outInst = (cmdInst, [], outInst_str)
+                return (cmdInst, [], tarVal)
             else:
-                outInst = (cmdInst, [outInst_str], '')
-            return outInst
+                return (cmdInst, [tarVal], '')
 
-        if(cmdInst in self.singlePathListGroup):
-            if(';' in string):
-                inst_str = combine_list_str(inputList, [1,'End'], space=True)
-                outInst_list = inst_str.split(';')
-                outInst_list = filter(lambda l: l != '', outInst_list)
-                outInst = (cmdInst, outInst_list, '')
-                return outInst
-            else:
-                outInst_str = combine_list_str(inputList, [1,'End'], space=True)
-                outInst = (cmdInst, [outInst_str], '')
-                return outInst
+        elif(cmdInst in self.singlePathListGroup):
+            if(len(cmd_list) < 2):
+                errmsg = ["command must contain an additional target object:", "'string' : '"+string+"'", "'cmdInst' : '"+cmdInst+"'"]
+                self.__err_print__(errmsg, varID='cmdInst', **kwargs)
+                return ('',[],'')
+            tarVal = cmd_list[1:]
+            return (cmdInst, tarVal, '')
 
-        if(cmdInst in self.doublePathList):
-            if(';' in string):
-                dest_list = []
-                while(';' not in inputList[-1]):
-                    dest_list.append(inputList.pop(-1))
-                dest_list = dest_list[::-1]
-                destStr = combine_list_str(dest_list, [0,'End'], space=True)
-                inst_str = combine_list_str(inputList, [1,'End'], space=True)
-                outInst_list = inst_str.split(';')
-                outInst_list = filter(lambda l: l != '', outInst_list)
-                outInst = (cmdInst, outInst_list, destStr)
-                return outInst
-            else:
-                if(len(inputList) == 3):
-                    outInst = (cmdInst, [inputList[1]], inputList[2])
-                elif('.' in string):
-                    dest_list = []
-                    while('.' not in inputList[-1]):
-                        dest_list.append(inputList.pop(-1))
-                    print(inputList)
-                    dest_list = dest_list[::-1]
-                    destStr = combine_list_str(dest_list,[0,'End'], space=True)
-                    inst_str = combine_list_str(inputList,[1,'End'], space=True)
-                    outInst = (cmdInst, [inst_str], destStr)
-                else:
-                    errArray = ["The input spaceing or object style created ambiguity for the indexer:"]
-                    errArray.append("The following is an echo of the input string which caused the issue: ")
-                    errArray.append("'"+string+"'")
-                    __err_print__(errArray, **kwargs)
-                    outInst = (cmdInst, [], '')
+        elif(cmdInst in self.doublePathList):
+            if(len(cmd_list) < 3):
+                errmsg = ["command must contain an additional target object:", "'string' : '"+string+"'", "'cmdInst' : '"+cmdInst+"'"]
+                self.__err_print__(errmsg, varID='cmdInst', **kwargs)
+                return ('',[],'')
+            tarVal = cmd_list[1:-1]
+            destVal = cmd_list[-1]
+            return (cmdInst, tarVal, destVal)
 
-                return outInst
+        else:
+            errmsg = ["not recognized:", "'string' : '"+string+"'", "'cmdInst' : '"+cmdInst+"'"]
+            self.__err_print__(errmsg, varID=str(cmdInst), **kwargs)
+            return ('',[],'')
 
-        __err_print__("not recognized, use 'help' to view available functions", varID=str(cmdInst), **kwargs)
-        return ('',[],'')
+
+
+#    def __cmdInputParse__(self, string, **kwargs):
+#        '''
+#        ---------------------
+#        | __cmdInputParse__ |
+#        ---------------------
+#
+#        Input:
+#
+#            string : a string, formatted for use in the .cmd() function
+#
+#        output:
+#
+#            outInst : a tuple formatted for parsing in the .cmd() function
+#                       takes the form: (cmdInst, [objStrs], destStr)
+#            cmdInst : a string, corrosponding to a valid cmd command
+#            objStrs: one or more strings, corrosponding to instances
+#                        upon which the cmdInst acts
+#            destStr : a string, corrosponding to a valid destination
+#                       (used only when applicable)
+#
+#        '''
+#
+#        def combine_list_str(array, span, ignore=None, space=False):
+#
+#            out_string = ''
+#            count = 0
+#            if(ignore != None):
+#                for i in array:
+#                    if(count not in ignore):
+#                        if(space):
+#                            if(count < len(array)-len(ignore)-1):
+#                                out_string = out_string+i+' '
+#                            else:
+#                                out_string = out_string+i
+#                        else:
+#                            out_string = out_string+i
+#                    count+=1
+#                return out_string
+#            else:
+#                if(span[1] == 'End' or span[1] == 'end' or span[1] == '' or span[1] == -1):
+#                    abridged_list = array[span[0]:]
+#                else:
+#                    abridged_list = array[span[0]:span[1]]
+#
+#                count = 0
+#                for i in abridged_list:
+#                    if(space):
+#                        if(count < len(abridged_list)-1):
+#                            out_string = out_string+i+' '
+#                        else:
+#                            out_string = out_string+i
+#                    else:
+#                        out_string = out_string + i
+#                    count += 1
+#                return out_string
+#
+#        # Function Start
+#        if(self.__not_str_print__(string, varID="cmd input", **kwargs)):
+#            return ('', [], '')
+#
+#        inputList = filter(lambda entry: entry != '',string.split(" "))
+#        cmdInst = inputList[0]
+#
+#        if(cmdInst in self.singleCommandList):
+#            outInst = (cmdInst, [], '')
+#            return outInst
+#
+#        if(cmdInst in self.singlePathListNoGroup):
+#            outInst_str = combine_list_str(inputList,[1,'End'],space=True)
+#            if(cmdInst != 'vi'):
+#                outInst = (cmdInst, [], outInst_str)
+#            else:
+#                outInst = (cmdInst, [outInst_str], '')
+#            return outInst
+#
+#        if(cmdInst in self.singlePathListGroup):
+#            if(';' in string):
+#                inst_str = combine_list_str(inputList, [1,'End'], space=True)
+#                outInst_list = inst_str.split(';')
+#                outInst_list = filter(lambda l: l != '', outInst_list)
+#                outInst = (cmdInst, outInst_list, '')
+#                return outInst
+#            else:
+#                outInst_str = combine_list_str(inputList, [1,'End'], space=True)
+#                outInst = (cmdInst, [outInst_str], '')
+#                return outInst
+#
+#        if(cmdInst in self.doublePathList):
+#            if(';' in string):
+#                dest_list = []
+#                while(';' not in inputList[-1]):
+#                    dest_list.append(inputList.pop(-1))
+#                dest_list = dest_list[::-1]
+#                destStr = combine_list_str(dest_list, [0,'End'], space=True)
+#                inst_str = combine_list_str(inputList, [1,'End'], space=True)
+#                outInst_list = inst_str.split(';')
+#                outInst_list = filter(lambda l: l != '', outInst_list)
+#                outInst = (cmdInst, outInst_list, destStr)
+#                return outInst
+#            else:
+#                if(len(inputList) == 3):
+#                    outInst = (cmdInst, [inputList[1]], inputList[2])
+#                elif('.' in string):
+#                    dest_list = []
+#                    while('.' not in inputList[-1]):
+#                        dest_list.append(inputList.pop(-1))
+#                    print(inputList)
+#                    dest_list = dest_list[::-1]
+#                    destStr = combine_list_str(dest_list,[0,'End'], space=True)
+#                    inst_str = combine_list_str(inputList,[1,'End'], space=True)
+#                    outInst = (cmdInst, [inst_str], destStr)
+#                else:
+#                    errarray = ["The input spaceing or object style created ambiguity for the indexer:"]
+#                    errarray.append("'"+string+"'")
+#                    __err_print__(errarray, **kwargs)
+#                    outInst = (cmdInst, [], '')
+#
+#                return outInst
+#
+#        self.__err_print__("not recognized, use 'help' to view available functions", varID=str(cmdInst), **kwargs)
+#        return ('',[],'')
+
+
+    def joinNode(self, oldPath, newNode, **kwargs):
+        '''
+        Description: Adds a new node onto a string Pathway
+
+        Input :
+
+            oldPath : [string], pathway formatted string
+            newPath : [string], node
+
+        Output : [string], pathway formatted string
+        '''
+
+        kwargs = self.__update_funcNameHeader__("joinNode", **kwargs)
+        if(self.__not_str_print__(oldPath, varID='oldPath', **kwargs)):
+            return False
+        if(self.__not_str_print__(newNode, varID='newNode', **kwargs)):
+            return False
+        if(self.__not_str_print__(self.delim, varID='delim', **kwargs)):
+            return self.__err_print__("The internal delimiter needs to be set to a string value", **kwargs)
+
+        newPath = oldPath+self.delim+newNode
+        return newPath
 
 
     def Arr2Str(self, inPath, **kwargs):
@@ -433,7 +525,7 @@ class PathParse(imprimerTemplate):
 
         kwargs = self.__update_funcNameHeader__("convertPath", **kwargs)
 
-        if(__not_str_print__(outType, varID='outType', **kwargs)):
+        if(self.__not_str_print__(outType, varID='outType', **kwargs)):
             return False
         else:
             outType = outType.lower()
@@ -463,164 +555,6 @@ class PathParse(imprimerTemplate):
         else:
             return self.__err_print__("not of a recognized type, should be a 'Str' or an 'Array'", varID='inPath', **kwargs)
         return self.__err_print__("path conversion failed", **kwargs)
-
-
-    def uniqueName(self, destPath, objName, uniqueNameLimit=500, **kwargs):
-        '''
-        Description: 
-
-        Inputs: 
-
-            destPath : [string], [array],
-                       A pathway formatted string or array which points to a directory
-
-            objName  : [string]
-                       A string corrosponding to an object,
-                       The string will be checked against
-                       the names of objects in the destPath
-                       directory, if there is overlap the
-                       a indexer number will be added until
-                       there is no overlap or index limit
-                       number is exceeded.
-
-        output: A string if no error is detected, else False
-        '''
-
-        kwargs = self.__update_funcNameHeader__("uniqueName", **kwargs)
-
-        contents = self.contentPath(destPath, **kwargs)
-        if(contents == False):
-            return self.__err_print__("must be a valid directory pathway", varID='destPath', **kwargs)
-
-        nameList = strl.str_to_list(objName, spc='.')
-        if(nameList == False):
-            return self.__err_print__("was not properly parsed", varID='objName', **kwargs)
-
-        name = ''
-
-        # Checks if there is a file ending on 'objName', if there isn't one unique name is determined
-        if(len(nameList) > 1):
-            pass
-        elif(len(nameList) == 1):
-            name = nameList[0]
-            if(len(name) > 0):
-                count = 1
-                outName = name
-                while(outName in contents):
-                    if(count > uniqueNameLimit):
-                        return self.__err_print__("name ID overflow; too many files with the same name ID", **kwargs)                   
-                    outName = name+"_"+str(count)
-                    count += 1
-                return outName
-            else:
-                return self.__err_print__("is empty; should be string corrosponding to new object name", varID='objName', **kwargs)
-        else:
-            return self.__err_print__("is empty; should be string corrosponding to the new object name", varID='objName', **kwargs)
-
-        # If there is a file ending attached to 'objName', the unique name is generated
-        count = 1
-        name = objName
-        pad = nameList[-2]
-        while(name in contents):
-            if(count > uniqueNameLimit):
-                return self.__err_print__("name ID overflow; too many files with the same name ID", **kwargs)
-            nameList[-2] = pad+"_"+str(count)
-            name = strl.array_to_str(nameList, spc='.', **kwargs)
-            count+=1
-        return name
-
-
-    def joinNode(self, oldPath, newNode, **kwargs):
-        '''
-        Description: Adds a new node onto a string Pathway
-
-        Input :
-
-            oldPath : [string], pathway formatted string
-            newPath : [string], node
-
-        Output : [string], pathway formatted string
-        '''
-
-        kwargs = self.__update_funcNameHeader__("joinNode", **kwargs)
-        if(self.__not_str_print__(oldPath, varID='oldPath', **kwargs)):
-            return False
-        if(self.__not_str_print__(newNode, varID='newNode', **kwargs)):
-            return False
-
-        newPath = oldPath+self.delim+newNode
-        return newPath
-
-
-    def delNode(self, oldPath, nodeID=None, **kwargs):
-        '''
-        Description: deletes node onto a pathway, starting at the end
-
-        Input :
-
-            oldPath : [string], pathway formatted string
-            nodeID  : [None or Int], nodes to be deleted from end
-
-        Output : [string], pathway formatted string
-        '''
-
-        kwargs = self.__update_funcNameHeader__("delNode", **kwargs)
-
-        oldPath = self.convertPath(oldPath, outType="list", **kwargs)
-        if(oldPath == False):
-            return False
-
-        n = len(oldPath)
-
-        if(n < 1):
-            return self.__err_print__("does not contain a valid pathway", varID='oldPath', **kwargs)
-        elif(n == 1):
-            self.__err_print__("home directory reached, cannot delete home node", heading='warning', **kwargs)
-            return self.convertPath(oldPath, **kwargs)
-        else:
-            pass
-
-        if(nodeID == -1 or nodeID == None):
-            newPath = oldPath[:-1]
-            strPath = self.Arr2Str(newPath, **kwargs)
-            return strPath
-        elif(isinstance(nodeID, int)):
-            try:
-                if(nodeID != 0):
-                    newPath = oldPath[:nodeID]
-                else:
-                    newPath = oldPath
-                strPath = self.Arr2Str(newPath)
-            except:
-                strPath = self.__err_print__("is out of range", varID='nodeID', **kwargs)
-            return strPath
-        else:
-            return self.__err_print__("is not recognized", varID='nodeID', **kwargs)
-        return False
-
-
-    def getNode(self, inPath, nodeID=None, **kwargs):
-
-        kwargs = self.__update_funcNameHeader__("getNode", **kwargs)
-
-        pathList = self.convertPath(inPath, outType='list')
-        if(pathList == False):
-            return False
-
-        if(nodeID == None or nodeID == -1):
-            if(len(pathList) > 0):
-                return pathList[-1]
-            else:
-                return self.__err_print__("does not contain a valid pathway", varID='inPath', **kwargs)
-        elif(isinstance(nodeID, int)):
-            try:
-                nodeValue = pathList[nodeID]
-                return nodeValue
-            except:
-                return self.__err_print__("is out of range", varID='nodeID', **kwargs)
-        else:
-            return self.__err_print__("is not recognized: '"+str(nodeID)+"'", varID='nodeID', **kwargs)
-        return False
 
 
     def contentPath(self, inPath, objType='all', fileStyle=None, **kwargs):
@@ -661,14 +595,14 @@ class PathParse(imprimerTemplate):
             if(path == False):
                 return False
         else:
-            return self.__err_print__("must be either an 'Array' or 'Str' type", varID='inpath', **kwargs)
+            return self.__err_print__("must be either an 'Array' or 'Str' type : "+str(type(inPath)), varID='inpath', **kwargs)
 
         if(os.path.isdir(path) == False):
             errmsg = ["does not corrospond to a directory", "Pathway : "+str(path)]
             return self.__err_print__(errmsg, varID = 'inPath', **kwargs)
 
         if(self.__not_str_print__(objType, varID='objType', heading='Warning', **kwargs)):
-            self.__err_print__("will be defaulted to a value of : 'all'", varID='objType', **kwargs)
+            self.__err_print__("will be defaulted to a value of : 'all'", varID='objType', heading='Warning', **kwargs)
             objType = 'all'
         else:
             objType = objType.lower()
@@ -676,7 +610,7 @@ class PathParse(imprimerTemplate):
         try:
             pathContents = os.listdir(path)
         except:
-            return self.__err_print__(["content is irretrievable","pathway: "+path])
+            return self.__err_print__(["content is irretrievable","pathway: "+path], varID='inPath' **kwargs)
 
         if(objType.lower() == 'all'):
             output = pathContents
@@ -726,22 +660,33 @@ class PathParse(imprimerTemplate):
 
         if(isinstance(newPath, str)):
             if(newPath == ''):
-                return self.__err_print__("is an empty string and not a pathway", varID='newPath', **kwargs)
+                return self.__err_print__("is an empty string", varID='newPath', **kwargs)
+            if(os.path.isdir(newPath)):
+                self.varPath = newPath
+            else:
+                errmsg = ["does not corrospond to a valid directory pathway", "'newPath' : "+str(newPath)]
+                return self.__err_print__(errmsg, varID='newPath', **kwargs)
             __oldval__ = self.varPath_List
             self.varPath_List = self.Str2Arr(newPath, **kwargs)
             if(self.varPath_List == False):
                 self.varPath_List = __oldval__
                 return self.__err_print__("failed to be updated", varID='varPath_List', **kwargs)
-            self.varPath = newPath
         elif(isinstance(newPath, (list,tuple))):
             if(len(newPath) < 1):
-                return self.__err_print__("is an empty array and not a pathway array", varID='newPath', **kwargs)
+                return self.__err_print__("is an empty array", varID='newPath', **kwargs)
+
             __oldval__ = self.varPath
-            self.varPath = self.Arr2Str(newPath)
+            self.varPath = self.Arr2Str(newPath, **kwargs)
             if(self.varPath == False):
                 self.varPath = __oldval__
                 return self.__err_print__("failed to be updated", varID='varPath', **kwargs)
-            self.varPath_List = list(newPath)
+
+            if(os.path.isdir(self.varPath)):
+                self.varPath_List = list(newPath)
+            else:
+                self.varPath = __oldval__
+                errmsg = ["does not corrospond to a valid directory pathway", "'newPath' : "+str(newPath)]
+                return self.__err_print__(errmsg, varID='newPath', **kwargs)
         else:
             return self.__err_print__("not a recognized type", varID='newPath', **kwargs)
 
@@ -769,6 +714,142 @@ class PathParse(imprimerTemplate):
             return self.__err_print__("failure to get directories from current pathway", **kwargs)
 
         return True
+
+
+    def uniqueName(self, destPath, objName, uniqueNameLimit=500, **kwargs):
+        '''
+        Description: 
+
+        Inputs: 
+
+            destPath : [string], [array],
+                       A pathway formatted string or array which points to a directory
+
+            objName  : [string]
+                       A string corrosponding to an object,
+                       The string will be checked against
+                       the names of objects in the destPath
+                       directory, if there is overlap the
+                       a indexer number will be added until
+                       there is no overlap or index limit
+                       number is exceeded.
+
+        output: A string if no error is detected, else False
+        '''
+
+        kwargs = self.__update_funcNameHeader__("uniqueName", **kwargs)
+
+        contents = self.contentPath(destPath, **kwargs)
+        if(contents == False):
+            return self.__err_print__("must be a valid directory pathway", varID='destPath', **kwargs)
+
+        nameList = strl.str_to_list(objName, spc='.', **kwargs)
+        if(nameList == False):
+            return self.__err_print__("was not properly parsed", varID='objName', **kwargs)
+
+        name = ''
+
+        # Checks if there is a file ending on 'objName', if there isn't one unique name is determined
+        if(len(nameList) > 1):
+            pass
+        elif(len(nameList) == 1):
+            name = nameList[0]
+            if(len(name) > 0):
+                count = 1
+                outName = name
+                while(outName in contents):
+                    if(count > uniqueNameLimit):
+                        return self.__err_print__("name ID overflow; too many files with the same name ID", **kwargs)                   
+                    outName = name+"_"+str(count)
+                    count += 1
+                return outName
+            else:
+                return self.__err_print__("is empty; should be string corrosponding to new object name", varID='objName', **kwargs)
+        else:
+            return self.__err_print__("is empty; should be string corrosponding to the new object name", varID='objName', **kwargs)
+
+        # If there is a file ending attached to 'objName', the unique name is generated
+        count = 1
+        name = objName
+        pad = nameList[-2]
+        while(name in contents):
+            if(count > uniqueNameLimit):
+                return self.__err_print__("name ID overflow; too many files with the same name ID", **kwargs)
+            nameList[-2] = pad+"_"+str(count)
+            name = strl.array_to_str(nameList, spc='.', **kwargs)
+            count+=1
+        return name
+
+
+    def delNode(self, oldPath, nodeID=None, **kwargs):
+        '''
+        Description: deletes node from a pathway, starting at the end
+
+        Input :
+
+            oldPath : [string], pathway formatted string
+            nodeID  : [None or Int], nodes to be deleted from end
+
+        Output : [string], pathway formatted string
+        '''
+
+        kwargs = self.__update_funcNameHeader__("delNode", **kwargs)
+
+        oldPath = self.convertPath(oldPath, outType="list", **kwargs)
+        if(oldPath == False):
+            return False
+
+        n = len(oldPath)
+
+        if(n < 1):
+            return self.__err_print__("contains an empty pathway", varID='oldPath', **kwargs)
+        elif(n == 1):
+            self.__err_print__("home directory reached, cannot delete home node", heading='warning', **kwargs)
+            return self.convertPath(oldPath, **kwargs)
+        else:
+            pass
+
+        if(nodeID == -1 or nodeID == None):
+            newPath = oldPath[:-1]
+            strPath = self.Arr2Str(newPath, **kwargs)
+            return strPath
+        elif(isinstance(nodeID, int)):
+            try:
+                if(nodeID != 0):
+                    newPath = oldPath[:nodeID]
+                else:
+                    newPath = oldPath
+                strPath = self.Arr2Str(newPath, **kwargs)
+            except:
+                strPath = self.__err_print__("is out of range", varID='nodeID', **kwargs)
+            return strPath
+        else:
+            return self.__err_print__("is not recognized", varID='nodeID', **kwargs)
+        return False
+
+
+    def getNode(self, inPath, nodeID=None, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("getNode", **kwargs)
+
+        pathList = self.convertPath(inPath, outType='list')
+        if(pathList == False):
+            return False
+
+        if(nodeID == None or nodeID == -1):
+            if(len(pathList) > 0):
+                return pathList[-1]
+            else:
+                return self.__err_print__("does not contain a valid pathway", varID='inPath', **kwargs)
+        elif(isinstance(nodeID, int)):
+            try:
+                nodeValue = pathList[nodeID]
+                return nodeValue
+            except:
+                return self.__err_print__("is out of range", varID='nodeID', **kwargs)
+        else:
+            return self.__err_print__("is not recognized: '"+str(nodeID)+"'", varID='nodeID', **kwargs)
+        return False
 
 
     def climbPath(self, oldpath, node, **kwargs):
@@ -1211,9 +1292,9 @@ class PathParse(imprimerTemplate):
                 return self.__err_print__("failure to generate renamed object at destination pathway", **kwargs)
         else:
             if(isinstance(dirName, str)):
-                destPath = self.joinNode(destPath, dirName, **kwargs)
+                destPath = self.joinNode(dirPath, dirName, **kwargs)
             else:
-                destPath = destPath
+                destPath = dirPath
 
         try:
             os.mkdir(destPath)
@@ -1530,7 +1611,7 @@ class PathParse(imprimerTemplate):
         else:
             blue,black=('','')
 
-        headln = self.space+"The current pathway is: '"+str(self.varPath)+"'"+self.endline
+        headln = self.space+"The current pathway is: "+self.endline
         bodyln = self.space+'The content of the current directory is as follows: '+self.endline
 
         print(headln)
@@ -1597,29 +1678,32 @@ class PathParse(imprimerTemplate):
         else:
             return self.__err_print__("failure to update current pathway", **kwargs)
 
-    def __cmdUpdater__(self, newPath, value=None, **kwargs):
-        utest = self.__updatePath__(newPath, **kwargs)                 
-        success = __cmdPrintFunc__(utest, **kwargs)
+    def __cmdUpdater__(self, newPath, value=None, noPrint=False, **kwargs):
+        utest = self.__updatePath__(newPath, **kwargs)
+        if(noPrint):
+            success = utest
+        else:
+            success = self.__cmdPrintFunc__(utest, **kwargs)
         result = (success, value)
         return result
 
-    def __cmd_current_files__(self, fileList, cmdInst=None, **kwargs):
-
-        if(fileList == []):
-            return []
-        outfiles = []
-
-        errlist = []
-        for file in fileList:
-            if(file not in self.varPath_Files and cmdInst not in self.singlePathListGroup and cmdInst not in self.singlePathListNoGroup):
-                errlist.append(str(file))
-            else:
-                outfiles.append(file)
-        if(len(outfiles) == 0):
-            self.__err_print__("none of the files were found in the current directory", heading='Warning', **kwargs)
-        if(len(errlist) > 0):
-            self.__err_print__(["the following files were not found in the current directory"]+errlist, **kwargs)        
-        return outfiles
+#    def __cmd_current_files__(self, fileList, cmdInst=None, **kwargs):
+#
+#        if(fileList == []):
+#            return []
+#        outfiles = []
+#
+#        errlist = []
+#        for file in fileList:
+#            if(file not in self.varPath_Files and cmdInst not in self.singlePathListGroup and cmdInst not in self.singlePathListNoGroup):
+#                errlist.append(str(file))
+#            else:
+#                outfiles.append(file)
+#        if(len(outfiles) == 0):
+#            self.__err_print__("none of the files were found in the current directory", heading='Warning', **kwargs)
+#        if(len(errlist) > 0):
+#            self.__err_print__(["the following files were not found in the current directory"]+errlist, **kwargs)        
+#        return outfiles
 
     def cmd_pwd(self, tup, **kwargs):
         # 'cmd' Function preamble
@@ -1688,12 +1772,14 @@ class PathParse(imprimerTemplate):
         value = new_file_list
 
         if(len(errlist)>0 and self.shellPrint):
-            self.__err_print__(["The following files were not found in the current directory:"]+errlist, heading='Warning' **kwargs)
+            kwargs['funcName'] = None
+            self.__err_print__(["The following objects were not found in the current directory:"]+errlist, heading='Warning', **kwargs)
 
         if(len(value)>0 and self.shellPrint):
-            self.__err_print__(["The following list of object pathways were found:"]+value, heading="Info", **kwargs)
+            kwargs['funcName'] = None
+            self.__err_print__(["The following object pathways were found in the current directory:"]+value, heading="Info", **kwargs)
 
-        return (True, value)
+        return (True, values)
 
 
     def cmd_cd(self, tup, **kwargs):
@@ -1703,7 +1789,7 @@ class PathParse(imprimerTemplate):
             cmdInst, file_list, destStr = tup
         except:
             self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
-        success, value = self.__cmdUpdater__(self.varPath_List, **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
         if(success == False):
             return (False, None)
         # Function start
@@ -1732,7 +1818,8 @@ class PathParse(imprimerTemplate):
                 newPath_list = list(self.varPath_List)
                 newPath_list.append(destStr)
             else:
-                success = self.__err_print__("is not a folder within the current directory", varID=dest_loc **kwargs)
+                errmsg = ["is not a folder within the current directory", "pathway : "+str(dest_loc)]
+                success = self.__err_print__(errmsg, varID='dest_loc', **kwargs)
                 return (success, value)
             result = self.__cmdUpdater__(newPath_list, value, **kwargs)
 
@@ -1775,14 +1862,14 @@ class PathParse(imprimerTemplate):
             cmdInst, file_list, destStr = tup
         except:
             self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
-        success, value = self.__cmdUpdater__(self.varPath_List, **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
         if(success == False):
             return (False, None)
         # Function start
 
         success, value = self.__cmdUpdater__(destStr, **kwargs)
         if(success == False):
-            self.__err_print__(["is not a valid pathway:","pathway : "+str(destStr)], varID='destStr', **kwargs)
+            self.__err_print__(["is not a valid pathway:","'destStr' : "+str(destStr)], varID='destStr', **kwargs)
         return (success, value)
 
 
@@ -1818,7 +1905,7 @@ class PathParse(imprimerTemplate):
             cmdInst, file_list, destStr = tup
         except:
             self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
-        success, value = self.__cmdUpdater__(self.varPath_List, **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
         if(success == False):
             return (False, None)
         # Function start
@@ -1828,7 +1915,7 @@ class PathParse(imprimerTemplate):
 
         # parsing destination in list format
         if(destStr == '..'):
-            if(__headCheck__()):
+            if(self.__headCheck__()):
                 self.__err_print__("'home' directory reached, no action taken", heading='Warning', **kwargs)
                 return (success, value)
             else:
@@ -1839,17 +1926,17 @@ class PathParse(imprimerTemplate):
             dpath_list = list(self.varPath_List)
             dpath_list.append(destStr)
 
-        elif(len(file_list) == 1 and destStr not in self.varPath_Folders):
-            dpath_list = list(self.varPath_List)
-            dpath_list.append(destStr)
-            rename = True
-
         elif(destStr[0] == '/' or destStr[0] == '\\'):
             destStr = destStr[1:]
             dpath_list = self.climbPath(self.varPath, destStr)
             if(dpath_list == False):
                 self.__err_print__("failure to find '"+str(destStr)+"' while climbing current pathway", **kwargs)
                 return (False, value)
+
+        elif(len(file_list) == 1 and destStr not in self.varPath_Folders):
+            dpath_list = list(self.varPath_List)
+            dpath_list.append(destStr)
+            rename = True
 
         elif(destStr == '~'):
             dpath_list = [self.varPath_Head]
@@ -1862,22 +1949,23 @@ class PathParse(imprimerTemplate):
         if(len(dpath_list) == 0):
             success = self.__err_print__("destination pathway list could not be parsed", **kwargs)
             return (success, value)
-        self.__move_object_2_path__(dpath_list, file_list, rename=rename, **kwargs)
+        __move_object_2_path__(dpath_list, file_list, rename=rename, **kwargs)
 
         # Update
-        result = self.__cmdUpdater__(self.varPath_List, value, **kwargs)
-        return result
+        return self.__cmdUpdater__(self.varPath_List, value, **kwargs)
 
 
     def cmd_rm(self, tup, **kwargs):
-                  
-        success = True            
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_rm", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         if(not isinstance(self.varPath_Files, (list, tuple))):
             success = self.__err_print__("pathway files have not been set, no action taken", **kwargs)
@@ -1896,7 +1984,7 @@ class PathParse(imprimerTemplate):
         if(len(errlist)>0):
             self.__err_print__(["The following files were not found in the current directory"]+errlist, **kwargs)
 
-        result = __cmdUpdater__(self.varPath_List, value)
+        result = self.__cmdUpdater__(self.varPath_List, value)
         return result
 
 
@@ -1931,35 +2019,37 @@ class PathParse(imprimerTemplate):
                 ctest = self.__copyFile__(old_inst, path_str, objName=cp_inst, **kwargs)
                 if(not ctest):
                     success = self.__err_print__("The file, '"+str(file)+"', could not be copied", **kwargs)
-
-            result = __cmdUpdater__(self.varPath_List, value)
+            if(self.varPath == path_str):
+                result = self.__cmdUpdater__(self.varPath_List, value, **kwargs)
+            else:
+                result = self.__cmdUpdater__(self.varPath_List, value, noPrint=True, **kwargs)
             return result
 
-        success = True
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_cp", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         if(destStr == '.'):
-            result = help_func(file_list, self.varPath)
-            return result
+            return help_func(file_list, self.varPath)
 
         elif(destStr == '..'):
-            if(__headCheck__()):
+            if(self.__headCheck__()):
                 return (success,value)
             else:
                 up_path_list = list(self.varPath_List)[:-1]
             up_path_str = self.convertPath(up_path_list, **kwargs)
-            result = help_func(file_list, up_path_str)
-            return result
+            return help_func(file_list, up_path_str)
 
         elif(destStr in self.varPath_Contains):
             path_str = self.joinNode(self.varPath, destStr, **kwargs)
-            result = help_func(file_list, path_str)
-            return result
+            return help_func(file_list, path_str)
 
         elif(destStr[0] == '/' or destStr[0] == '\\'):
             node_inst = destStr[1:]
@@ -1967,8 +2057,7 @@ class PathParse(imprimerTemplate):
             if(path_str == False):
                 success = self.__err_print__("the folder: '"+str(node_inst)+"' was not found within the current pathway", **kwargs)
                 return (success,value)
-            result = help_func(file_list, path_str)
-            return result
+            return help_func(file_list, path_str)
 
         elif(destStr == '~'):
             path_str = self.varPath_Head
@@ -1977,23 +2066,23 @@ class PathParse(imprimerTemplate):
             except:
                 success = self.__err_print__("directory could not be accessed", varID='home', **kwargs)
                 return (success, value)
-            result = help_func(file_list, path_str)
-            return result
+            return help_func(file_list, path_str)
         else:
             success = self.__err_print__("is not a valid destination", varID=str(destStr), **kwargs)
-        result = (success, value)
-        return result
+        return (success, value)
 
 
     def cmd_mkdir(self, tup, **kwargs):
-
-        success = True
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_mkdir", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         for file in file_list:
             file_path_str = self.joinNode(self.varPath, file)
@@ -2001,18 +2090,20 @@ class PathParse(imprimerTemplate):
             if(not ctest):
                 success = self.__err_print__("directory could not be created", varID=str(file), **kwargs)
 
-        return __cmdUpdater__(self.varPath_List, value, **kwargs)
+        return self.__cmdUpdater__(self.varPath_List, value, **kwargs)
 
 
     def cmd_rmdir(self, tup, **kwargs):
-
-        success = True            
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_rmdir", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         for file in file_list:
             if(file in self.varPath_Folders):
@@ -2023,7 +2114,7 @@ class PathParse(imprimerTemplate):
             else:
                 self.__err_print__("'"+str(file)+"' does not corrospond to a folder in the current directory", **kwargs)
 
-        return __cmdUpdater__(self.varPath_List, value)
+        return self.__cmdUpdater__(self.varPath_List, value)
 
 
     def cmd_cpdir(self, tup, **kwargs):
@@ -2032,9 +2123,9 @@ class PathParse(imprimerTemplate):
             if(not isinstance(file_name, str)):
                 return False
             if('.' in file_name):
-                self.__err_print__("contains '.'", varID=file_name, heading="Warning", **kwargs)
+                return self.__err_print__("contains '.'", varID=file_name, heading="Warning", **kwargs)
             if('\\' in file_name or '/' in file_name):
-                self.__err_print__("contains pathway delimiter", varID=file_name, heading="Warning", **kwargs)
+                return self.__err_print__("contains pathway delimiter", varID=file_name, heading="Warning", **kwargs)
             return file_name
 
         def help_func(dir_list, path_str, **kwargs):
@@ -2053,24 +2144,29 @@ class PathParse(imprimerTemplate):
                 if(not ctest):
                     success = self.__err_print__("The folder, '"+str(dir)+"', could not be copied", **kwargs)
 
-            result = __cmdUpdater__(self.varPath_List, value)
-            return result
+            if(path_str == self.varPath):
+                return self.__cmdUpdater__(self.varPath_List, value, **kwargs)
+            else:
+                return self.__cmdUpdater__(self.varPath_List, value, noPrint=True, **kwargs)
 
-        # cmd_cpdir MAIN   
-        success = True
-        value = None
-        cmdInst, dir_list, destStr = tup
-
+        # cmd_cpdir MAIN
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_cpdir", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, dir_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         if(destStr == '.'):
             result = help_func(dir_list, self.varPath, **kwargs)
             return result
 
         elif(destStr == '..'):
-            if(__headCheck__()):
+            if(self.__headCheck__()):
                 return (success,value)
             else:
                 up_path_list = list(self.varPath_List)[:-1]
@@ -2100,14 +2196,16 @@ class PathParse(imprimerTemplate):
 
 
     def cmd_find(self, tup, **kwargs):
-
-        success = True
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_find", **kwargs)
-
-        self.__updatePath__(self.varPath)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         value = self.__find__(file_list, **kwargs)
         if(value == False):
@@ -2115,26 +2213,33 @@ class PathParse(imprimerTemplate):
             return (success, value)
 
         if(self.shellPrint):
+            kwargs['funcName'] = None
             if(all(i == True for i in value)):
                 self.__err_print__("All searched objects have been found in the current directory!", heading='Info', **kwargs)
             else:
+                not_found = []
                 for found in value:
                     if(value[found] == False):
-                        self.__err_print__("not found in current directory.", varID=str(found), heading='Info', **kwargs)
+                        not_found.append(found)
+                if(len(not_found) > 0):
+                    print_list = ["The following objects were not found in the current directory:"]+not_found
+                    self.__err_print__(print_list, heading='Info', **kwargs)
 
         result = (success, value)
         return result
 
 
     def cmd_match(self, tup, **kwargs):
-
-        success = True
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_match", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         match_dict = self.__match__(file_list, **kwargs)
         if(match_dict == False):
@@ -2153,35 +2258,37 @@ class PathParse(imprimerTemplate):
 
 
     def cmd_vi(self, tup, **kwargs):
-
-        success = True            
-        value = None
-        cmdInst, file_list, destStr = tup
-
+        # 'cmd' Function preamble
         kwargs = self.__update_funcNameHeader__("cmd_vi", **kwargs)
-
-        self.__updatePath__(self.varPath, **kwargs)
+        try:
+            cmdInst, file_list, destStr = tup
+        except:
+            self.__err_print__(["could not be parsed into the three required input objects", "input: "+str(tup)], varID='tup', **kwargs)
+        success, value = self.__cmdUpdater__(self.varPath_List, noPrint=True, **kwargs)
+        if(success == False):
+            return (False, None)
+        # Function start
 
         if(len(file_list) > 1):
             self.__err_print__("Only one file can be grabbed at a time", heading='Warning', **kwargs)         
 
-        file_name = file_list[0] 
-        file_path_str = self.joinNode(self.varPath, file_name, **kwargs)            
-               
+        file_name = file_list[0]
+        file_path_str = self.joinNode(self.varPath, file_name, **kwargs)
+
         if(file_name in self.varPath_Files):
-            try: 
+            try:
                 value = iop.flat_file_grab(file_path_str, **kwargs)
             except:
-                success = __err_print__("contents could not be retrieved", varID=file_name, **kwargs)         
+                success = __err_print__("contents could not be retrieved", varID=file_name, **kwargs)
         elif(file_name not in self.varPath_Contains):
             try:
                 value = iop.flat_file_write(file_path_str, **kwargs)
             except:
-                success = self.__err_print__("[cmd_vi] Error: The file '"+file_name+"' could not be opened", funcAdd='cmd')
+                success = self.__err_print__("[cmd_vi] Error: The file '"+str(file_name)+"' could not be opened", **kwargs)
         else:
-            success = self.__err_print__("not found in the current directory", varID=file_name **kwargs)
+            success = self.__err_print__("not found in the current directory", varID=file_name, **kwargs)
 
-        result = __cmdUpdater__(self.varPath_List, value, **kwargs)
+        result = self.__cmdUpdater__(self.varPath_List, value, **kwargs)
         return result
 
 
@@ -2249,22 +2356,26 @@ class PathParse(imprimerTemplate):
             return result
 
         cmd_tuple = self.__cmdInputParse__(cmd_string, **kwargs)
+        if(cmd_tuple == ('', [], '')):
+            if(self.shellPrint):
+                errmsg = ["could not be properly parsed. Below is a summary of the input/output:",
+                          "'cmd_string' = '"+str(cmd_string)+"'",
+                          "'cmdInst' = '"+str(cmdInst)+"'",
+                          "'cmd_tuple' = '"+str(cmd_tuple)+"'"]
+                self.__err_print__(errmsg, varID='cmd_string', **kwargs)
+            return result
 
         cmdInst, fileList, destStr = cmd_tuple
-        fileList = self.__cmd_current_files__(fileList, cmdInst=cmdInst, **kwargs)
-        cmd_tuple = (cmdInst, fileList, destStr)
-
         cmdCmd = self.cmdDict.get(cmdInst)
 
         if(isinstance(cmdCmd, str)):
             exec_string = "result = "+cmdCmd+"(cmd_tuple, **kwargs)"
             exec(exec_string)
         else:
-            self.__err_print__("Input '"+cmd_string+"' not resolved", **kwargs)
             if(self.shellPrint):
-                errmsg = [": '"+str(cmd_string)+"', could not be properly parsed. Below is a summary of the output:",
+                errmsg = ["could not be properly parsed. Below is a summary of the input/output:",
+                          "'cmd_string' = '"+str(cmd_string)+"'",
                           "'cmdInst' = '"+str(cmdInst)+"'",
                           "'cmd_tuple' = '"+str(cmd_tuple)+"'"]
                 self.__err_print__(errmsg, varID='cmd_string', **kwargs)
-
         return result
