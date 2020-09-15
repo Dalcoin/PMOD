@@ -1,114 +1,157 @@
-import pmod.ioparse as iop 
+import itertools
+
+import pmod.ioparse as iop
 import pmod.strlist as strl
 import pmod.pinax as px
 
+from pmod.tcheck import imprimerTemplate
+from pmod.mathops import spline
+
 # conversion functions
 
-def kf2den(kf,gam):
-    return gam*(kf*kf*kf)/(3.0*pi2)
+class eos(spline):
 
-def den2kf(den,gam):
-    return pow((3.0*pi2*den/gam),1.0/3.0)
+    def __init__(self, state, energy):
+
+        super(eos, self).__init__(self, space="    ",
+                                        endline="\n",
+                                        failPrint=True,
+                                        x_vec=None,
+                                        y_vec=None,
+                                        new_x_vec=None)
+
+        self.__set_funcNameHeader__("eos", **kwargs)
+        self.state = state
+        self.energy = energy
 
 
-def convertFunc(value, convert, round_Value = None, debug = True, space = '    '):
-    '''
-    
-    notes: possible convert option
-            
-        convert = 'sym2den'
-        convert = 'asym2den'
-        convert = 'den2sym'
-        convert = 'den2asym'
-        convert = 'sym2asym'
-        convert = 'asym2sym'           
 
-    '''
-    
-    listopt = False
-    if(isinstance(convert,str)):
-        convert = convert.lower()
-    else:
-        if(debug):
-            print(space+"[convertFunc] Error: 'convert' must be a string")
 
-    if(isinstance(value,(str,int,float,long))):
-        try:
-            value = float(value)
-        except:
-            if(debug):
-                print(space+"[convertFunc] Error: input could not be coerced into a string\n")
-            return False         
-    elif(isinstance(value,(tuple,list))):
-        try:
-            value = [float(entry) for entry in value]
-        except:
-            if(debug):
-                print(space+"[convertFunc] Error: input list could not be coerced into a list of floats\n")
-            return False   
-        listopt = True 
-    else:
-        if(debug):
-            print(space+"[convertFunc] Error: input 'convert' not a recongnized conversion\n")    
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        kwargs = {}
+        kwargs = self.__update_funcNameHeader__("state", **kwargs)
+        if(self.__not_numarr_print__(value, **kwargs)):
+            return None
+        else:
+            self._state = value
+            self.x_vec = self._state
+
+    @property
+    def energy(self):
+        return self._energy
+
+    @energy.setter
+    def energy(self, value):
+        kwargs = {}
+        kwargs = self.__update_funcNameHeader__("energy", **kwargs)
+        if(self.__not_numarr_print__(value, **kwargs)):
+            return None
+        else:
+            self._energy = value
+            self.y_vec = self._energy
+
+    def convert_kf(self, gam=2.0):
+        self.state = np.array(list(map(lambda x: self.kf2den(x, gam), self.state)))
+        return self.state
+
+    def convert_den(self, gam=2.0):
+        self.state = np.array(list(map(lambda x: self.den2kf(x, gam), self.state)))
+        return self.state
+
+    def kf2den(self, kf, gam):
+        return gam*(kf*kf*kf)/(3.0*pi2)
+
+    def den2kf(self, den, gam):
+        return pow((3.0*pi2*den/gam),1.0/3.0)
+
+
+def read_eos(file_name, header=False, entete=False, transpose=True, genre=float, **pkwargs):
+
+    table = flat_file_intable(file_name, header, entete, transpose, genre, funcName=['read_eos'])
+    if(table == False):
         return False
 
-    if(isinstance(round_Value,int)):
-        rnd = True 
+    if(len(table) == 2):
+        return [eos(table[0],table[1])]
+    elif(len(table) == 3):
+        return [eos(table[0],table[1]),eos(table[0],table[2])]
+    elif(len(table) == 4):
+        return [eos(table[0],table[1]),eos(table[2],table[3])]
     else:
-        rnd = False    
-     
+        return False
+
+
+
+def convert(self, value, style, roundValue=None):
+    '''
+    
+    notes: possible 'style' option
+            
+        style = 'sym2den'
+        style = 'asym2den'
+        style = 'den2sym'
+        style = 'den2asym'
+        style = 'sym2asym'
+        style = 'asym2sym'           
+
+    '''
+
+    if(isinstance(roundValue, int)):
+        if(roundValue >= 0):
+            rnd = True
     if(convert == 'sym2den'):
         if(listopt):
             if(rnd):
-                return [round(kf2den(entry,2.0),round_Value) for entry in value]
+                return [round(kf2den(entry,2.0),roundValue) for entry in value]
             else:
                 return [kf2den(entry,2.0) for entry in value]        
         else:
             if(rnd):
-                return round(kf2den(value,2.0),round_Value)
+                return round(kf2den(value,2.0),roundValue)
             else:
                 return kf2den(value,2.0)
-
     elif(convert == 'asym2den'):
         if(listopt):
             if(rnd):
-                return [round(kf2den(entry,1.0),round_Value) for entry in value]  
+                return [round(kf2den(entry,1.0),roundValue) for entry in value]  
             else:
                 return [kf2den(entry,1.0) for entry in value]
         else:
             if(rnd):
-                return round(kf2den(value,1.0),round_Value)
+                return round(kf2den(value,1.0),roundValue)
             else:
                 return kf2den(value,1.0)    
-
     elif(convert == 'den2sym'):
         if(listopt):
             if(rnd):
-                return [round(den2kf(entry,2.0),round_Value) for entry in value]
+                return [round(den2kf(entry,2.0),roundValue) for entry in value]
             else:
                 return [den2kf(entry,2.0) for entry in value]
         else:
             if(rnd):
-                return round(den2kf(value,2.0),round_Value)
+                return round(den2kf(value,2.0),roundValue)
             else:
                 return den2kf(value,2.0)
-
     elif(convert == 'den2asym'):
         if(listopt):
             if(rnd):
-                return [round(den2kf(entry,1.0),round_Value) for entry in value]
+                return [round(den2kf(entry,1.0),roundValue) for entry in value]
             else:
                 return [den2kf(entry,1.0) for entry in value]
         else:
             if(rnd):
-                return round(den2kf(value,1.0),round_Value)
+                return round(den2kf(value,1.0),roundValue)
             else:
                 return den2kf(value,1.0)  
-
     elif(convert == 'sym2asym'):
         if(listopt):
             if(rnd):
-                return [round(pow(2,1.0/3.0)*entry,round_Value) for entry in value]
+                return [round(pow(2,1.0/3.0)*entry,roundValue) for entry in value]
             else:
                 return [pow(2,1.0/3.0)*entry for entry in value]
         else:
@@ -116,26 +159,22 @@ def convertFunc(value, convert, round_Value = None, debug = True, space = '    '
                 return round(pow(2,1.0/3.0)*value)            
             else:
                 return pow(2,1.0/3.0)*value
-
     elif(convert == 'asym2sym'):
         if(listopt):
             if(rnd):
-                return [round(entry/pow(2,1.0/3.0),round_Value) for entry in value]
+                return [round(entry/pow(2,1.0/3.0),roundValue) for entry in value]
             else:
                 return [entry/pow(2,1.0/3.0) for entry in value]  
         else:
             if(rnd):
-                return round(value/pow(2,1.0/3.0),round_Value) 
+                return round(value/pow(2,1.0/3.0),roundValue) 
             else:
                 return value/pow(2,1.0/3.0) 
-
     else:
-        if(debug):
-            print(space+"[convertFunc] Error: 'convert' not a recongnized value")
         return False  
 
 
-def file2Convert(fileName, style, header = False, newFile = None):
+def fileConvert(fileName, style, header = False, newFile = None):
     '''
 
     notes: 
@@ -162,16 +201,16 @@ def file2Convert(fileName, style, header = False, newFile = None):
     outLines = map(lambda x: strl.array_to_str(x,spc ='    ',endline=True), newLines)
 
     if(newFile == None):
-        iop.flat_file_write(fileName,outLines)        
+        iop.flat_file_write(fileName,outLines)
     elif(isinstance(newFile,str)):
         iop.flat_file_write(newFile,outLines)
     else:
         return outLines
-    return True  
-    
- 
+    return True
+
+
 # Constants
-     
+
 pi = 3.141592653589793 # pi - 16 digits 
 hc = 197.327           # hc - Standard Nuclear Conversion Constant
 pi2 = pi*pi            # pi squared

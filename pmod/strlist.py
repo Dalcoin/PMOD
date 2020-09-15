@@ -2,6 +2,7 @@
 
 import itertools
 import collections
+import re
 
 import tcheck as check
 
@@ -48,6 +49,7 @@ def __err_print__(errmsg, varID=None, **pkwargs):
     if(isinstance(varID, str)):
         pkwargs["varName"] = varID
     printer.errPrint(errmsg, **pkwargs)
+    return False
 
 def __not_str_print__(var, varID=None, **pkwargs):
     if(isinstance(varID, str)):
@@ -63,6 +65,22 @@ def __not_num_print__(var, varID=None, style=None, **pkwargs):
     if(isinstance(varID, str)):
         pkwargs["varName"] = varID
     return not printer.numCheck(var, style, **pkwargs)
+
+def __not_numarr_print__(var, varID=None, numStyle=None, arrStyle=None, firstError=False, descriptiveMode=False, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    if(descriptiveMode):
+        return printer.numarrCheck(var, numStyle, arrStyle, firstError, descriptiveMode, **pkwargs)
+    else:
+        return not printer.numarrCheck(var, numStyle, arrStyle, firstError, **pkwargs)
+
+def __not_strarr_print__(var, varID=None, firstError=False, descriptiveMode=False, **pkwargs):
+    if(isinstance(varID, str)):
+        pkwargs["varName"] = varID
+    if(descriptiveMode):
+        return printer.strarrCheck(var, firstError, descriptiveMode, **pkwargs)
+    else:
+        return not printer.strarrCheck(var, firstError, **pkwargs)
 
 def __update_funcName__(newFuncName, **pkwargs):
     pkwargs = printer.update_funcName(newFuncName, **pkwargs)
@@ -741,6 +759,9 @@ def str_set_spacing(string, space=' ', **pkwargs):
         return False
 
 
+
+
+
 ### Formatting and Printing Functions
 
 def format_fancy(obj, header=None, newln=True, indt=4, err=True, list_return=False, **pkwargs):
@@ -873,3 +894,65 @@ def print_ordinal(n, **pkwargs):
     else:
         return str(n)+'th'
 
+
+
+# String match functions
+
+def replace_char(strings, characters, replacement, test=False, return_string=True, **pkwargs):
+    pkwargs = __update_funcName__("replace_char", **pkwargs)
+    if(test):
+
+        if(__not_strarr_print__(strings, varID='strings', **pkwargs)):
+            if(__not_str_print__(strings, varID='strings', **pkwargs)):
+                return False
+            else:
+                strings = [strings]
+
+        if(__not_strarr_print__(characters, varID='characters', **pkwargs)):
+            if(__not_str_print__(characters, varID='characters', **pkwargs)):
+                return False
+            else:
+                characters = [characters]
+
+        if(__not_str_print__(replacement, varID='replacement', **pkwargs)):
+            return False
+    else:
+        if(not isinstance(strings, (tuple,list))):
+            strings = [strings]
+        if(not isinstance(characters, (tuple,list))):
+            characters = [characters]
+
+    return_list = []
+    for string in strings:
+        if(any(character in string for character in characters)):
+            if(return_string):
+                return_list.append(array_to_str([replacement if entry in characters else entry for entry in string], spc=''))
+            else:
+                return_list.append([replacement if entry in characters else entry for entry in string])
+        else:
+            return_list.append(string)
+    return return_list
+
+
+def get_floats_from_str(string, option=None, **pkwargs):
+
+    pkwargs = __update_funcName__("get_floats_from_str", **pkwargs)
+
+    if(__not_str_print__(string, varID='string', **pkwargs)):
+        return False
+
+    if(option == None or option == 'charfloat'):
+        return re.findall(recharffloat, string)
+    elif(option == 'float'):
+        return re.findall(reffloat, string)
+    elif(option == 'integer' or option == 'int'):
+        return re.findall(reint, string)
+    else:
+        return __err_print__("should be one of the following: ['charfloat', 'float', 'int']", varID='option', **pkwargs)
+
+
+
+refloat = r'([+-]*\d+\.*\d*)'
+reffloat = r'(?:[+-]*\d+\.*\d*)+(?:[edED]+[+-]*\d+)?'
+recharffloat = r'(?:[a-zA-Z]+)?(?:[+-]*\d+\.*\d*)+(?:[edED]+[+-]*\d+)?'
+reint = r'[+-]*\d+'

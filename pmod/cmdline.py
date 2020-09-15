@@ -1392,7 +1392,7 @@ class PathParse(imprimerTemplate):
 
         success = self.delFile(delPath, **kwargs)
         if(not success):
-            return self.__err_print__("failure to perform move operation", **kwargs)
+            return self.__err_print__("failure to perform delete operation", **kwargs)
 
         try:
             startDir = self.convertPath(delPath,"list")[-2]

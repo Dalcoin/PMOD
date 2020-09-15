@@ -556,7 +556,7 @@ class imprimer(object):
 
 
     def strCheck(self, var, **kwargs):
-        isString = isinstance(var, str)
+        isStringTest = isinstance(var, str)
 
         if(not isinstance(kwargs.get('heading'), str)):
             kwargs['heading'] = "Error"
@@ -564,12 +564,12 @@ class imprimer(object):
         if(not isinstance(kwargs.get('varName'), str)):
             kwargs['varName'] = True
 
-        if(isString == False):
+        if(isStringTest == False):
             printString = "should be a string, not: "+str(type(var))
             self.__stringParse__(printString, **kwargs)
-            return isString
+            return isStringTest
         else:
-            return isString
+            return isStringTest
 
 
     def typeCheck(self, var, sort, **kwargs):
@@ -675,7 +675,7 @@ class imprimer(object):
                 return True
 
 
-    def strarrCheck(self, var, firstError=False, descriptiveMode=False, **kwargs):
+    def strarrCheck(self, var, arrStyle=None, firstError=False, descriptiveMode=False, **kwargs):
 
         switch=False
         if(not self.arrCheck(var, style=arrStyle, **kwargs)):
@@ -689,11 +689,12 @@ class imprimer(object):
         else:
             var_name = 'var'
 
+        isStringTest = False
         fail_list = ["contains errors at the following indices:"]
         for i,entry in enumerate(var):
-            isString = isinstance(entry, str)
+            isStringTest = isinstance(entry, str)
 
-            if(isString == False):
+            if(isStringTest == False):
                 fail_line = "'"+str(i)+"' index"
                 if(firstError):
                     if(descriptiveMode):

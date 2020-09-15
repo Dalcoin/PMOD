@@ -43,11 +43,13 @@ def __err_print__(errmsg, varID=None, **pkwargs):
     if(isinstance(varID, str)):
         pkwargs["varName"] = varID
     printer.errPrint(errmsg, **pkwargs)
+    return False
 
 def __warn_print__(errmsg, varID=None, **pkwargs):
     if(isinstance(varID, str)):
         pkwargs["varName"] = varID
     printer.warnPrint(errmsg, **pkwargs)
+    return False
 
 def __not_str_print__(var, varID=None, **pkwargs):
     if(isinstance(varID, str)):
@@ -621,6 +623,39 @@ def flat_file_copy(file_in, file_out, grab_list=[], repeat=False, group=0, count
 
     result = flat_file_write(file_out, out_lines, ptype=ptype, **pkwargs)
     return result
+
+
+def flat_file_numeric(file_in, option='float', clean=True, float_convert=False, **pkwargs):
+    '''
+    Purpose: To read in a well constrained table from a text file.
+
+    Inputs:
+
+        file_in : string, corrosponding to a file pathway
+
+        option : string, type of numeric data to be parsed from each line of 'file_in'
+
+    '''
+
+    pkwargs = printer.update_funcName("flat_file_innumeric", **pkwargs)
+    pkwargs = printer.setstop_funcName(**pkwargs)
+
+    table_lines = flat_file_grab(file_in, scrub=True, **pkwargs)
+    if(table_lines == False):
+        return False
+
+    try:
+        numeric_lines = map(lambda x: strl.get_floats_from_str(x, option, **pkwargs), table_lines)
+    except:
+        return __err_print__("failure extract numeric values from '"+str(file_in)+"' line strings", **pkwargs)
+
+    if(clean):
+        for i,line in enumerate(numeric_lines):
+            if(isinstance(line, (list,tuple))):
+                numeric_lines[i] = [strl.replace_char([entry],('d','D'),'e')[0] if 'd' in entry.lower() else entry for entry in line]
+    if(float_convert):
+        numeric_lines = map(lambda x : [float(entry) for entry in x] if isinstance(x,(list,tuple)) else x, numeric_lines)
+    return numeric_lines
 
 
 def flat_file_intable(file_in, header=False, entete=False, transpose=True, genre=float, **pkwargs):
