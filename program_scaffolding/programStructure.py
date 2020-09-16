@@ -4,17 +4,17 @@
 
 programStructure : 
 
-    - Contains a class progStruct
+    - Contains class progStruct (a subclass of 'cmdUtil')
 
 Purpose :
 
     This file contains the class progStruct which is a 
     part of the programScaffold package. This package
     is meant to facilitate the creation of consistant
-    program structure so as to facilitate automation of
-    simple shell based programs
+    program structure so as to reduce the time required
+    for automation of simple shell based programs
 
-File Structure : 
+File Structure :
 
     The file structure described in the programScaffold
     package is shown graphically below :
@@ -78,6 +78,7 @@ import time
 import pmod.ioparse as iop 
 import pmod.strlist as strl
 from pmod.cmdutil import cmdUtil
+import pmod.regdict as regex
 
 
 class progStruct(cmdUtil):
@@ -89,7 +90,7 @@ class progStruct(cmdUtil):
                 dat_fold_name='dat',
                 opt_file_name='options.don',
                 initialize=True,
-                kernel='linux'
+                osFormat='linux',
                 newPath=None,
                 rename=False,
                 debug=True,
@@ -99,24 +100,21 @@ class progStruct(cmdUtil):
                 endline='\n',
                 moduleNameOverride="progStruct",
                 **kwargs):
-                ):
 
-        super(progStruct, self).__init__(kernel,
-                                        newPath,
-                                        rename,
-                                        debug,
-                                        shellPrint,
-                                        colourPrint,
-                                        space,
-                                        endline,
-                                        moduleNameOverride,
-                                        **kwargs):
+        super(progStruct, self).__init__(osFormat,
+                                         newPath,
+                                         rename,
+                                         debug,
+                                         shellPrint,
+                                         colourPrint,
+                                         space,
+                                         endline,
+                                         moduleNameOverride,
+                                         **kwargs):
 
-        # Constants
+        kwargs = self.__update_funcNameHeader__("init", **kwargs)
 
-        self.s4 = "    " # spaceing for print
-
-        # File and folder names  
+        # File and folder names
 
         self.DIRNAME = dir_fold_name
         self.DIRPATH = ''
@@ -146,22 +144,12 @@ class progStruct(cmdUtil):
 
         self.BIN_DICT = {}
 
-        # Regex codes
-        RE_DIGIT    = "(\d+)"
-        RE_DIGITSPC = DIGIT+"\s+"
-        RE_FLOATER  = "(\d+.+\d*)\s*"
-        RE_BOOL     = "([T,F,t,f]\D+)"
-
-        # Compiling regex code
-        #self.compiled_regex = re.compile("")
-
         #-------#----------------#-------#
         # debug #                # debug #
         #-------#----------------#-------#
 
-#        # Run time : move to programExecution
-#        self.time_start = time.time()
-#        self.time_end = 0.0
+        self.time_start = time.time()
+        self.time_end = 0.0
 
         # Initialization
         self.INITIALIZATION = False
@@ -192,16 +180,11 @@ class progStruct(cmdUtil):
         self.FILEPATH_SET_LIST = [self.OPTPATH_SET]
         self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
-        # Other intial task errors
+        # Intial task errors
         self.INTERNAL_CML_ERROR = False
-
-        # Execution Errors : move to programExecution
         self.EXIT_ERROR = False
 
-        # internal variables : move to programExecution
         self.cycle = 0
-
-        # looping variables : move to programExecution
         self.option_menu_lines = []
 
         #initialization (optional)
@@ -213,22 +196,22 @@ class progStruct(cmdUtil):
             print("Error messages and test results shown below")
             print("Initialization sequence will now begin...\n")
 
-            self.init_internal_pathway()
+            proceed = self.init_internal_pathway(**kwargs)
 
-            # Checking for folders
-            self.src_check()
-            self.bin_check()
-            self.dat_check()
+            if(proceed):
+                # Checking for folders
+                self.src_check(**kwargs)
+                self.bin_check(**kwargs)
+                self.dat_check(**kwargs)
 
-            # Checking for files
-            self.opt_check()
+                # Checking for files
+                self.opt_check(**kwargs)
 
             self.assess_initialization()
             self.update_dicts()
             print("Initialization sequence complete.\n")
             if(self.EXIT_ERROR):
-                print("A fatal error was detected in the initialization sequence...the script will now terminate\n")
-                self.exit_function("during initalization...see E-error checks for details")
+                print("A fatal error was detected in the initialization sequence...the program will now terminate:\n")
             else:
                 print("Runtime warnings and errors will be printed below: \n")
 
@@ -237,8 +220,9 @@ class progStruct(cmdUtil):
     # Verify Directories #                # Verify Directories #
     #--------------------#----------------#--------------------#
 
-
     def init_internal_pathway(self, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("init_internal_pathway", **kwargs)
 
         if(isinstance(self.varPath, str) and isinstance(self.varPath_Contains, list)):
             self.DIRPATH = self.varPath
@@ -260,9 +244,13 @@ class progStruct(cmdUtil):
         return True
 
     def src_check(self, **kwargs):
+        kwargs = self.__update_funcNameHeader__("src_check", **kwargs)
         if(self.INTERNAL_CML_SET and self.DIRPATH_SET):
             if(self.SRCFOLD in self.DIR_FOLDERS):
                 self.SRCPATH = self.joinNode(self.DIRPATH,self.SRCFOLD, **kwargs)
+                if(self.SRCPATH == False):
+                    self.SRCPATH_ERROR = True
+                    return False
                 self.SRCPATH_SET = True
                 return True
             else:
@@ -272,18 +260,29 @@ class progStruct(cmdUtil):
             return False
 
     def bin_check(self, **kwargs):
+        kwargs = self.__update_funcNameHeader__("bin_check", **kwargs)
         if(self.INTERNAL_CML_SET and self.DIRPATH_SET):
             if(self.BINFOLD in self.DIR_FOLDERS):
                 self.BINPATH = self.joinNode(self.DIRPATH,self.BINFOLD, **kwargs)
+                if(self.BINPATH == False):
+                    self.BINPATH_ERROR = True
+                    return False
                 self.BINPATH_SET = True
                 return True
             else:
                 self.BINPATH_ERROR = True
+                return False
+        else:
+            return False
 
     def dat_check(self, **kwargs):
+        kwargs = self.__update_funcNameHeader__("dat_check", **kwargs)
         if(self.INTERNAL_CML_SET and self.DIRPATH_SET):
             if(self.DATFOLD in self.DIR_FOLDERS):
                 self.DATPATH = self.joinNode(self.DIRPATH,self.DATFOLD, **kwargs)
+                if(self.DATPATH == False):
+                    self.DATPATH_ERROR = True
+                    return False
                 self.DATPATH_SET = True
                 return True
             else:
@@ -293,9 +292,13 @@ class progStruct(cmdUtil):
             return False
 
     def opt_check(self, **kwargs):
+        kwargs = self.__update_funcNameHeader__("opt_check", **kwargs)
         if(self.INTERNAL_CML_SET and self.DIRPATH_SET):
             if(self.OPTFILE in self.DIR_FILES):
                 self.OPTPATH = self.joinNode(self.DIRPATH,self.OPTFILE, **kwargs)
+                if(self.OPTPATH == False):
+                    self.OPTPATH_ERROR = True
+                    return False
                 self.OPTPATH_SET = True
                 return True
             else:
@@ -310,7 +313,9 @@ class progStruct(cmdUtil):
     #--------------------------#----------------#--------------------------#
 
 
-    def update_dicts(self, dict_type = 'all'):
+    def update_dicts(self, dict_type='all', **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("update_dicts", **kwargs)
 
         if(dict_type == 'all'):	    
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
@@ -343,14 +348,12 @@ class progStruct(cmdUtil):
 
         else:
             return self.__err_print__("type not recognizned : "+str(type(dict_type)), varID='dict_type', **kwargs)
-            if(self.debug):
-                print(self.s4+"[update_dicts] Error: input, dict_type, not recognizned\n")
-            return False
         return True
 
 
     def init_fold_in_main(self, fold_name, auto_check=True, **kwargs):
 
+        kwargs = self.__update_funcNameHeader__("init_fold_in_main", **kwargs)
         if(self.__not_str_print__(fold_name, varID='fold_name', **kwargs)):
             return False
 
@@ -368,6 +371,7 @@ class progStruct(cmdUtil):
 
     def init_file_in_main(self, file_name, auto_check=True, **kwargs):
 
+        kwargs = self.__update_funcNameHeader__("init_file_in_main", **kwargs)
         if(self.__not_str_print__(file_name, varID='file_name', **kwargs)):
             return False
 
@@ -383,19 +387,17 @@ class progStruct(cmdUtil):
         return True
 
 
-    def fold_check_in_main(self, fold_name):
-        if(not isinstance(fold_name,str)):
-            if(self.debug):
-                print(self.s4+"[fold_check_in_main] Error: input variable, 'fold_name', must be a strings\n")
+    def fold_check_in_main(self, fold_name, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("fold_check_in_main", **kwargs)
+        if(self.__not_str_print__(fold_name, varID='fold_name', **kwargs)):
             return False
 
-        if(not isinstance(self.cmv,cml.PathParse)):
-            if(self.debug):
-                print(self.s4+"[fold_check_in_main] Error: internal pathway has not been set\n")
-            return False
+        if(not self.INITIALIZATION or self.INTERNAL_CML_ERROR or not self.INTERNAL_CML_SET):
+            return self.__err_print__("pathway must be set prior to adding internal directory structure", **kwargs)
 
         if(fold_name in self.FOLDNAME_LIST):
-            self.FOLDPATH_DICT[fold_name] = self.cmv.joinNode(self.DIRPATH, fold_name)
+            self.FOLDPATH_DICT[fold_name] = self.joinNode(self.DIRPATH, fold_name)
             self.FOLDPATH_SET_DICT[fold_name] = True
             self.PATH_ERROR_DICT[fold_name] = False
             return True
@@ -406,16 +408,14 @@ class progStruct(cmdUtil):
             return False
 
 
-    def file_check_in_main(self, file_name):
-        if(not isinstance(file_name,str)):
-            if(self.debug):
-                print(self.s4+"[file_check_in_main] Error: input variable, 'file_name', must be a strings\n")
+    def file_check_in_main(self, file_name, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("file_check_in_main", **kwargs)
+        if(self.__not_str_print__(file_name, varID='file_name', **kwargs)):
             return False
 
-        if(not isinstance(self.cmv,cml.PathParse)):
-            if(self.debug):
-                print(self.s4+"[file_check_in_main] Error: internal pathway has not been set\n")
-            return False
+        if(not self.INITIALIZATION or self.INTERNAL_CML_ERROR or not self.INTERNAL_CML_SET):
+            return self.__err_print__("pathway must be set prior to adding internal file structure", **kwargs)
 
         if(file_name in self.FILENAME_LIST):
             self.FILEPATH_DICT[file_name] = self.cmv.joinNode(self.DIRPATH,file_name)
@@ -427,9 +427,9 @@ class progStruct(cmdUtil):
             self.FILEPATH_SET_DICT[file_name] = False
             self.FILEPATH_ERROR_DICT[file_name] = True
             return False
-        
 
-    def init_binary(self, bin_name):
+
+    def init_binary(self, bin_name, **kwargs):
         '''
         Description:
 
@@ -448,24 +448,21 @@ class progStruct(cmdUtil):
             success : [bool], True if successful, else False
         '''
 
+        kwargs = self.__update_funcNameHeader__("init_binary", **kwargs)
+
         if(isinstance(bin_name,(array,tuple))):
-            if(not all([isinstance(bin,str) for bin in bin_name])):
-                if(self.debug):
-                    print(self.s4+"[init_binary] Error: input, 'bin_name', should be an array of strings\n")
+            if(__not_strarr_print__(bin_name, varID='bin_name', **kwargs)):
                 return False
-        elif(isinstance(bin_name,str)):
+        elif(isinstance(bin_name, str)):
             bin_name = [bin_name]
         else:
-            if(self.debug):
-                print(self.s4+"[init_binary] Error: input, 'bin_name', not a recognizned type\n")
-            return False
+            return self.__err_print__("type not recognizned : "+str(type(bin_name)), varID='bin_name', **kwargs)
 
         for bin in bin_name:
-            if(bin in self.cmv.contentPath(self.BINPATH)):
+            if(bin in self.contentPath(self.BINPATH)):
                 self.BIN_DICT[bin] = self.cmv.joinNode(self.BINPATH,bin)
             else:
-                if(self.debug):
-                    print(self.s4+"[init_binary] Warning: binary file, '"+bin+"', not found in 'bin' folder\n")
+                self.__err_print__("not found in 'bin' folder", varID=str(bin), heading='Warning', **kwargs)
         return True
 
 
@@ -473,7 +470,8 @@ class progStruct(cmdUtil):
     # Debug and Error Functions #                # Debug and Error Functions #
     #---------------------------#----------------#---------------------------#
 
-    # move to programExecution
+    # Self-contained error messages (don't use **kwargs or imprimerTemplate functions)
+
     def get_run_time(self, type='str'):
         self.time_end = time.time()
         run_time = self.time_end - self.time_start
@@ -482,110 +480,86 @@ class progStruct(cmdUtil):
         elif(type == 'int'):
             return int(run_time)
         else:
-            return str(run_time)
+            return str(round(run_time,3))+" s"
 
-    # move to programExecution
     def exit_function(self, action_msg, failure=True):
         if(failure):
             print("ExitError: '"+self.DIRNAME+"' failed "+action_msg)
-        print("Run Number upon exit:  "+str(self.cycle))
-        print("Script run-time :  "+self.get_run_time(type='str'))
-        print("   ")
+        print("Number of runs upon exit :  "+str(self.cycle))
+        print("Script run-time :  "+self.get_run_time()+"\n")
         sys.exit()
 
-
     def assess_initialization(self):
-             
+
         err0 = self.INTERNAL_CML_ERROR
         err1 = self.DIRPATH_ERROR
         err2 = self.SRCPATH_ERROR
         err3 = self.BINPATH_ERROR
         err4 = self.DATPATH_ERROR
         err5 = self.OPTPATH_ERROR
-        err6 = self.CML_UTIL_ERROR
 
-        path0 = self.INTERNAL_CML_SET 
+        path0 = self.INTERNAL_CML_SET
         path1 = self.DIRPATH_SET
         path2 = self.SRCPATH_SET
         path3 = self.BINPATH_SET
         path4 = self.DATPATH_SET
         path5 = self.OPTPATH_SET
-        path6 = self.CML_UTIL_SET
-             
-        time.sleep(0.5)
-        print(" ")
+
         if(err0):
-            print(self.s4+"E0 Internal Command Line Test :          Failed")
+            print(self.space+"E0 Internal Command Line Test :          Failed")
         else:
             if(path0):
-                print(self.s4+"E0 Internal Command Line Test :          Succeeded") 
+                print(self.space+"E0 Internal Command Line Test :          Succeeded") 
             else:
-                print(self.s4+"E0 Internal Command Line Test :          ...command line not set")     
-        time.sleep(0.5)             
-           
+                print(self.space+"E0 Internal Command Line Test :          ...command line not set")     
+
         if(err1):
-            print(self.s4+"E1 Main Directory Path Test :            Failed")
+            print(self.space+"E1 Main Directory Path Test :            Failed")
         else:   
             if(path1):         
-                print(self.s4+"E1 Main Directory Path Test :            Succeeded") 
+                print(self.space+"E1 Main Directory Path Test :            Succeeded") 
             else:
-                print(self.s4+"E1 Main Directory Path Test :            ...path not found")      
-        time.sleep(0.5)          
+                print(self.space+"E1 Main Directory Path Test :            ...path not found")
 
         if(err2):
-            print(self.s4+"E2 Source Directory Path Test :                Failed")
+            print(self.space+"E2 Source Directory Path Test :                Failed")
         else:
             if(path2):
-                print(self.s4+"E2 Source Directory Path Test :                Succeeded") 
+                print(self.space+"E2 Source Directory Path Test :                Succeeded") 
             else:
-                print(self.s4+"E2 Source Directory Path Test :                ...path not found") 
-        time.sleep(0.5)
+                print(self.space+"E2 Source Directory Path Test :                ...path not found")
 
         if(err3):
-            print(self.s4+"E3 Binary Directory Pathway Test :          Failed")
+            print(self.space+"E3 Binary Directory Pathway Test :          Failed")
         else:
             if(path3):
-                print(self.s4+"E3 Binary Directory Pathway Test :          Succeeded") 
+                print(self.space+"E3 Binary Directory Pathway Test :          Succeeded") 
             else:
-                print(self.s4+"E3 Binary Directory Pathway Test :          ...path not found") 
-        time.sleep(0.5)
+                print(self.space+"E3 Binary Directory Pathway Test :          ...path not found")
 
         if(err4):
-            print(self.s4+"E4 Data Directory Path Test :          Failed")
+            print(self.space+"E4 Data Directory Path Test :          Failed")
         else:
             if(path4):
-                print(self.s4+"E4 Data Directory Path Test :          Succeeded") 
+                print(self.space+"E4 Data Directory Path Test :          Succeeded") 
             else:
-                print(self.s4+"E4 Data Directory Path Test :          ...path not found")             
-        time.sleep(0.5)
+                print(self.space+"E4 Data Directory Path Test :          ...path not found")             
 
         if(err5):
-            print(self.s4+"E5 Option File Path Test : Failed")
+            print(self.space+"E5 Option File Path Test : Failed")
         else:
             if(path5):
-                print(self.s4+"E5 Option File Path Test : Succeeded") 
+                print(self.space+"E5 Option File Path Test : Succeeded") 
             else:
-                print(self.s4+"E5 Option File Path Test : Skipped")                 
-        time.sleep(0.5)
-
-        if(err6):
-            print(self.s4+"E6 Command Line Utility Test :          Failed")
-        else:
-            if(path6):
-                print(self.s4+"E6 Command Line Utility Test :          Succeeded") 
-            else:
-                print(self.s4+"E6 Command Line Utility Test :          ...command line utility not set")     
-        time.sleep(0.5)              
+                print(self.space+"E5 Option File Path Test : Skipped")      
 
         print(" ")
-        if(err0 or err1 or err3):
-            print(self.s4+"Fatal Error Test: Failed")
+        if(any((err0,err1,err2,err3,err4,err5))):
+            print(self.space+"Fatal Error Test: Failed\n")
             self.EXIT_ERROR = True
         else:
-            print(self.s4+"Fatal Error Test: Succeeded")
-        print(" ")
-        time.sleep(0.5)
-        
+            print(self.space+"Fatal Error Test: Succeeded\n")
+
         return True
 
 
@@ -595,41 +569,41 @@ class progStruct(cmdUtil):
 
 
     def clear_data_folder(self, **kwargs):
+        kwargs = self.__update_funcNameHeader__("clear_data_folder", **kwargs)
         if(not self.INTERNAL_CML_SET):
             return self.__err_print__("internal pathway has not yet been initialized", **kwargs)
-
-        self.clearDir
-
-        success, value = self.cmv.cmd("cd ..")
-        return success
-
+        if(self.DATPATH_ERROR or not isinstance(self.DATPATH,str) or not self.DATPATH_SET):
+            return self.__err_print__("data folder pathway was not set", varID=str(self.DATFOLD), **kwargs)
+        return self.clearDir(self.DATFOLD, **kwargs)
 
     #------------------------#----------------#------------------------#
     # Program Loop Functions #                # Program Loop Functions #
     #------------------------#----------------#------------------------#
 
 
-    def set_option_menu(self, lines):
+    def set_option_menu(self, lines, titleBanner=True, **kwargs):
         '''
-            
+            Description: Sets the lines to be printed for the program interface
         '''
+
+        kwargs = self.__update_funcNameHeader__("set_option_menu", **kwargs)
         if(isinstance(lines,(array,tuple))):
-            if(not all([isinstance(line,str) for line in lines])):
-                if(self.debug):
-                    print(self.s4+"[set_option_menu] Error: input, 'lines', should be an array of strings\n")
+            if(self.__not_strarr_print__(lines, varID='lines', **kwargs)):
                 return False
         elif(isinstance(lines,str)):
             lines = [lines]
         else:
-            if(self.debug):
-                print(self.s4+"[set_option_menu] Error: input, 'lines', not a recognizned type\n")
-            return False
-        
-        self.option_menu_lines = [self.s4+line+"\n" for line in lines]
+            return self.__err_print__("type not a recognizned : "+str(type(lines)), varID='lines', **kwargs)
+
+        self.option_menu_lines = ['    ']+[self.space+line for line in lines]
+        if(titleBanner):
+            self.option_menu_lines = strl.print_border(str(self.DIRNAME), newln=False, cushion=1 ,**kwargs) + self.option_menu_lines
         return True
 
 
-    def print_option_menu(self):
+    def print_option_menu(self, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("print_option_menu", **kwargs)
         if(self.option_menu_lines != []):
             try:
                 print(" ")
@@ -638,25 +612,21 @@ class progStruct(cmdUtil):
                 print(" ")
                 return True
             except:
-                if(self.debug):
-                    print(self.s4+"[print_option_menu] Error: failure to print menu lines, cause unknown\n")
-                return False
+                return self.__err_print__("failure to print menu lines", **kwargs)
         else:
-            if(self.debug):
-                print(self.s4+"[print_option_menu] Error: 'option_menu_lines' hasn't been set yet\n")
-            return False
+            return self.__err_print__("have not been set", varID='option_menu_lines' **kwargs)
 
 
-    def program_loop(self, action_function, program_name='Main'):
+    def program_loop(self, action_function, program_name='Main', **kwargs):
         '''
-        Description: 
+        Description:
 
             A simple program loop template
 
-        Input(s): 
+        Input(s):
 
             action_function : [function], action_function must take one argument (string)
-                              which will result in one action being completed. If 
+                              which will result in one action being completed. If
                               action_function returns the string 'quit' than the program
                               loop terminates. If action_function returns False, then an
                               error message is printed.
@@ -665,38 +635,37 @@ class progStruct(cmdUtil):
 
             success : [bool], True if successfully exited, else False
         '''
-  
+
+        kwargs = self.__update_funcNameHeader__("program_loop", **kwargs)
+
         run = True
 
         success = self.print_option_menu()
         if(success == False):
-            if(self.debug):
-                print(s4+"["+program_name+"] Error: input menu not properly formatted\n")
-            return False
+            self.exit_function("failure to actualize option menu")
 
         while(run):
 
-            action = raw_input(self.s4+"Input a choice from the option menu: ")
+            action = raw_input(self.space+"Input a choice from the option menu: ")
             print(' ')
 
             try:
-                formatted_action = action.lower().rstrip()
+                formatted_action = strl.str_clean(action.lower())
             except:
-                if(self.debug):
-                    print(s4+"["+program_name+"] Error: input could not be parsed, please try again\n")
-                continue
+                formatted_action = False
+            finally:
+                if(formatted_action == False or not isinstance(formatted_action, str)):
+                    self.__err_print__("could not be parsed into a string", varID='action', **kwargs)
+                    continue
 
             if(formatted_action == 'quit' or formatted_action == 'exit'):
                 print(" ")
                 run = False
 
             success = self.action_function(formatted_action)
-            if(success):
-                if(self.debug):
-                    print(s4+"["+program_name+"] Success: formatted input, '"+formatted_action+"', successfully completed\n")
-            else:
-                if(self.debug):
-                    print(s4+"["+program_name+"] Error: formatted input, "+formatted_action+" is not a valid command\n")
-                continue
+            if(not success):
+                self.__err_print__("is not a valid command", varID=str(formatted_action), **kwargs)
+            continue
 
+        self.exit_function("exiting program", failure=False)
         return True

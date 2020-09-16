@@ -9,6 +9,8 @@ from pmod.mathops import spline
 
 # conversion functions
 
+# Work in progress...
+
 class eos(spline):
 
     def __init__(self, state, energy):

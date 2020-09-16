@@ -1,4 +1,5 @@
 import cmdline as cl
+#import eos
 import ioparse as iop 
 import mathops as mops
 import opti

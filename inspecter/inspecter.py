@@ -1,10 +1,6 @@
 import inspect
 import intertools
 
-
-import inspect
-import itertools
-
 import sys
 import StringIO
 import contextlib

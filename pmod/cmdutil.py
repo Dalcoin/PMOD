@@ -7,26 +7,26 @@ from pmod.cmdline import PathParse
 
 
 # File Utility Functions
-
-def convert_endline(file, style='dos2unix', space='    '):
-
-    lines = iop.flat_file_read(file)
-    if(lines == False):
-        print("could not read input 'file' : "+str(file))
-        return False
-
-    if(style == 'dos2unix'):
-        end_Line = "\n"
-    elif(style == 'unix2dos'):
-        end_Line = "\r\n"
-    elif(style == None):
-        end_Line = ""
-    else:
-        print(space+"[convert_endline] Error: 'style' not reconginzed")
-        return False  
-     
-    out_Lines = [i.rstrip()+end_Line for i in lines]  
-    return out_Lines
+#
+#def convert_endline(file, style='dos2unix', space='    '):
+#
+#    lines = iop.flat_file_read(file)
+#    if(lines == False):
+#        print("could not read input 'file' : "+str(file))
+#        return False
+#
+#    if(style == 'dos2unix'):
+#        end_Line = "\n"
+#    elif(style == 'unix2dos'):
+#        end_Line = "\r\n"
+#    elif(style == None):
+#        end_Line = ""
+#    else:
+#        print(space+"[convert_endline] Error: 'style' not reconginzed")
+#        return False  
+#     
+#    out_Lines = [i.rstrip()+end_Line for i in lines]  
+#    return out_Lines
 
 
 
@@ -333,10 +333,14 @@ class cmdUtil(PathParse):
                         if(objPath == False):
                             fail_dirs.append(dir+self.delim+obj)
                             continue
-                        success = self.deldir(objPath, **kwargs)
+                        success = self.delDir(objPath, **kwargs)
                         if(success == False):
                             fail_dirs.append(dir+self.delim+obj)
         if(len(fail_dirs) > 0):
             errmsg = ["The following objects could not be cleared:"]+fail_dirs
             self.__err_print__(errmsg, **kwargs)
         return True
+
+    # def transfer_folder_content():
+
+    # def read_files_from_folder():

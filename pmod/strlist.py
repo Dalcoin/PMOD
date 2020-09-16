@@ -949,10 +949,3 @@ def get_floats_from_str(string, option=None, **pkwargs):
         return re.findall(reint, string)
     else:
         return __err_print__("should be one of the following: ['charfloat', 'float', 'int']", varID='option', **pkwargs)
-
-
-
-refloat = r'([+-]*\d+\.*\d*)'
-reffloat = r'(?:[+-]*\d+\.*\d*)+(?:[edED]+[+-]*\d+)?'
-recharffloat = r'(?:[a-zA-Z]+)?(?:[+-]*\d+\.*\d*)+(?:[edED]+[+-]*\d+)?'
-reint = r'[+-]*\d+'
