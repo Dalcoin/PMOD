@@ -78,7 +78,6 @@ import time
 import pmod.ioparse as iop 
 import pmod.strlist as strl
 from pmod.cmdutil import cmdUtil
-import pmod.regdict as regex
 
 
 class progStruct(cmdUtil):
@@ -89,6 +88,7 @@ class progStruct(cmdUtil):
                 bin_fold_name='bin',
                 dat_fold_name='dat',
                 opt_file_name='options.don',
+                log_file_name='logfile.don'
                 initialize=True,
                 osFormat='linux',
                 newPath=None,
@@ -131,12 +131,15 @@ class progStruct(cmdUtil):
         self.OPTFILE = opt_file_name
         self.OPTPATH = ''
 
+        self.LOGFILE = log_file_name
+        self.LOGPATH = ''
+
         self.FOLDNAME_LIST = [self.SRCFOLD, self.BINFOLD, self.DATFOLD]
         self.FOLDPATH_LIST = [self.SRCPATH, self.BINPATH, self.DATPATH]
         self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
 
-        self.FILENAME_LIST = [self.OPTFILE]
-        self.FILEPATH_LIST = [self.OPTPATH]
+        self.FILENAME_LIST = [self.OPTFILE, self.LOGFILE]
+        self.FILEPATH_LIST = [self.OPTPATH, self.LOGPATH]
         self.FILEPATH_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_LIST))
 
         self.DIR_FOLDERS = []
@@ -160,11 +163,12 @@ class progStruct(cmdUtil):
         self.BINPATH_ERROR = False
         self.DATPATH_ERROR = False
         self.OPTPATH_ERROR = False
+        self.LOGPATH_ERROR = False
 
         self.FOLDPATH_ERROR_LIST = [self.SRCPATH_ERROR, self.BINPATH_ERROR, self.DATPATH_ERROR]
         self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
 
-        self.FILEPATH_ERROR_LIST = [self.OPTPATH_ERROR]
+        self.FILEPATH_ERROR_LIST = [self.OPTPATH_ERROR, self.LOGPATH_ERROR]
         self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
 
         # Set Pathways
@@ -173,11 +177,12 @@ class progStruct(cmdUtil):
         self.BINPATH_SET = False
         self.DATPATH_SET = False
         self.OPTPATH_SET = False
+        self.LOGPATH_SET = False
 
         self.FOLDPATH_SET_LIST = [self.SRCPATH_SET, self.BINPATH_SET, self.DATPATH_SET]
         self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
 
-        self.FILEPATH_SET_LIST = [self.OPTPATH_SET]
+        self.FILEPATH_SET_LIST = [self.OPTPATH_SET, self.LOGPATH_SET]
         self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
         # Intial task errors
@@ -206,6 +211,7 @@ class progStruct(cmdUtil):
 
                 # Checking for files
                 self.opt_check(**kwargs)
+                self.log_check(**kwargs)
 
             self.assess_initialization()
             self.update_dicts()
@@ -249,6 +255,7 @@ class progStruct(cmdUtil):
             if(self.SRCFOLD in self.DIR_FOLDERS):
                 self.SRCPATH = self.joinNode(self.DIRPATH,self.SRCFOLD, **kwargs)
                 if(self.SRCPATH == False):
+                    self.SRCPATH = ''
                     self.SRCPATH_ERROR = True
                     return False
                 self.SRCPATH_SET = True
@@ -265,6 +272,7 @@ class progStruct(cmdUtil):
             if(self.BINFOLD in self.DIR_FOLDERS):
                 self.BINPATH = self.joinNode(self.DIRPATH,self.BINFOLD, **kwargs)
                 if(self.BINPATH == False):
+                    self.BINPATH = ''
                     self.BINPATH_ERROR = True
                     return False
                 self.BINPATH_SET = True
@@ -281,6 +289,7 @@ class progStruct(cmdUtil):
             if(self.DATFOLD in self.DIR_FOLDERS):
                 self.DATPATH = self.joinNode(self.DIRPATH,self.DATFOLD, **kwargs)
                 if(self.DATPATH == False):
+                    self.DATPATH = ''
                     self.DATPATH_ERROR = True
                     return False
                 self.DATPATH_SET = True
@@ -297,12 +306,30 @@ class progStruct(cmdUtil):
             if(self.OPTFILE in self.DIR_FILES):
                 self.OPTPATH = self.joinNode(self.DIRPATH,self.OPTFILE, **kwargs)
                 if(self.OPTPATH == False):
+                    self.OPTPATH = ''
                     self.OPTPATH_ERROR = True
                     return False
                 self.OPTPATH_SET = True
                 return True
             else:
                 self.OPTPATH_ERROR = True
+                return False
+        else:
+            return False
+
+    def log_check(self, **kwargs):
+        kwargs = self.__update_funcNameHeader__("log_check", **kwargs)
+        if(self.INTERNAL_CML_SET and self.DIRPATH_SET):
+            if(self.LOGFILE in self.DIR_FILES):
+                self.LOGPATH = self.joinNode(self.DIRPATH, self.LOGFILE, **kwargs)
+                if(self.LOGPATH == False):
+                    self.LOGPATH = ''
+                    self.LOGPATH_ERROR = True
+                    return False
+                self.LOGPATH_SET = True
+                return True
+            else:
+                self.LOGPATH_ERROR = True
                 return False
         else:
             return False
@@ -336,7 +363,6 @@ class progStruct(cmdUtil):
             self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
 
         elif(dict_type == 'path'):
-
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
             self.FILEPATH_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_LIST))
 
@@ -497,6 +523,7 @@ class progStruct(cmdUtil):
         err3 = self.BINPATH_ERROR
         err4 = self.DATPATH_ERROR
         err5 = self.OPTPATH_ERROR
+        err6 = self.LOGPATH_ERROR
 
         path0 = self.INTERNAL_CML_SET
         path1 = self.DIRPATH_SET
@@ -504,6 +531,7 @@ class progStruct(cmdUtil):
         path3 = self.BINPATH_SET
         path4 = self.DATPATH_SET
         path5 = self.OPTPATH_SET
+        path6 = self.LOGPATH_SET
 
         if(err0):
             print(self.space+"E0 Internal Command Line Test :          Failed")
@@ -533,7 +561,7 @@ class progStruct(cmdUtil):
             print(self.space+"E3 Binary Directory Pathway Test :          Failed")
         else:
             if(path3):
-                print(self.space+"E3 Binary Directory Pathway Test :          Succeeded") 
+                print(self.space+"E3 Binary Directory Pathway Test :          Succeeded")
             else:
                 print(self.space+"E3 Binary Directory Pathway Test :          ...path not found")
 
@@ -541,20 +569,28 @@ class progStruct(cmdUtil):
             print(self.space+"E4 Data Directory Path Test :          Failed")
         else:
             if(path4):
-                print(self.space+"E4 Data Directory Path Test :          Succeeded") 
+                print(self.space+"E4 Data Directory Path Test :          Succeeded")
             else:
-                print(self.space+"E4 Data Directory Path Test :          ...path not found")             
+                print(self.space+"E4 Data Directory Path Test :          ...path not found")
 
         if(err5):
             print(self.space+"E5 Option File Path Test : Failed")
         else:
             if(path5):
-                print(self.space+"E5 Option File Path Test : Succeeded") 
+                print(self.space+"E5 Option File Path Test : Succeeded")
             else:
-                print(self.space+"E5 Option File Path Test : Skipped")      
+                print(self.space+"E5 Option File Path Test : Skipped")
+
+        if(err6):
+            print(self.space+"E6 Option File Path Test : Failed")
+        else:
+            if(path6):
+                print(self.space+"E6 Option File Path Test : Succeeded")
+            else:
+                print(self.space+"E6 Option File Path Test : Skipped")
 
         print(" ")
-        if(any((err0,err1,err2,err3,err4,err5))):
+        if(any((err0,err1,err2,err3,err4,err5,err6))):
             print(self.space+"Fatal Error Test: Failed\n")
             self.EXIT_ERROR = True
         else:
@@ -575,6 +611,30 @@ class progStruct(cmdUtil):
         if(self.DATPATH_ERROR or not isinstance(self.DATPATH,str) or not self.DATPATH_SET):
             return self.__err_print__("data folder pathway was not set", varID=str(self.DATFOLD), **kwargs)
         return self.clearDir(self.DATFOLD, **kwargs)
+
+    def get_options(self, **kwargs):
+        '''
+        Reads 'OPTFILE' data from the internal pathway.
+        This function should only be called once.
+        '''
+
+        if(self.OPTPATH_SET == False or self.OPTPATH_ERROR == True):
+            return self.__err_print__("pathway was not properly initialized", varID=self.OPTFILE, **kwargs)
+
+        lines = iop.flat_file_grab(self.OPTPATH, scrub=True, **kwargs)
+        return lines
+
+    def get_logs(self, **kwargs):
+        '''
+        Reads 'OPTFILE' data from the internal pathway.
+        This function should only be called once.
+        '''
+
+        if(self.LOGPATH_SET == False or self.LOGPATH_ERROR == True):
+            return self.__err_print__("pathway was not properly initialized", varID=self.LOGFILE, **kwargs)
+
+        lines = iop.flat_file_grab(self.LOGPATH, scrub=True, **kwargs)
+        return lines 
 
     #------------------------#----------------#------------------------#
     # Program Loop Functions #                # Program Loop Functions #
@@ -662,7 +722,7 @@ class progStruct(cmdUtil):
                 print(" ")
                 run = False
 
-            success = self.action_function(formatted_action)
+            success = action_function(formatted_action)
             if(not success):
                 self.__err_print__("is not a valid command", varID=str(formatted_action), **kwargs)
             continue

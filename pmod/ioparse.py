@@ -533,8 +533,9 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
         return False
     else:
         if(scrub):
-            for i,entry in enumerate(file_lines):
-                file_lines[i] = entry.rstrip()
+            file_lines = [entry.rstrip() for entry in file_lines]
+#            for i,entry in enumerate(file_lines):
+#                file_lines[i] = entry.rstrip()
     if(grab_list == []):
         return file_lines
     m = len(file_lines)

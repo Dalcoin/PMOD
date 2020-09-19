@@ -219,9 +219,9 @@ class cmdUtil(PathParse):
                 'folders'
 
         '''
-        select_array = ['all']+self.dirNames+self.fileNames
-
         kwargs = self.__update_funcNameHeader__("clearDir", **kwargs)
+
+        select_array = ['all']+self.dirNames+self.fileNames
 
         if(self.__not_str_print__(select, varID='select', **kwargs)):
             return False
@@ -232,7 +232,7 @@ class cmdUtil(PathParse):
                 return self.__err_print__(errmsg, varID='select', **kwargs)
 
         # dirs parsed as a array of string(s)
-        if(self.strarrCheck(dirs, varName='dirs', heading='Warning', **kwargs)):
+        if(self.strarrCheck(dirs, varName='dirs', failPrint=False, **kwargs)):
             pass
         elif(isinstance(dirs, str)):
             dirs = [dirs]
@@ -341,6 +341,145 @@ class cmdUtil(PathParse):
             self.__err_print__(errmsg, **kwargs)
         return True
 
-    # def transfer_folder_content():
 
-    # def read_files_from_folder():
+    def transfer_folder_content(self, start_dir, end_dir, select='all', style=None, copy=False, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("transfer_folder_content", **kwargs)
+
+        option = None
+        if(isinstance(select, str)):
+            if(select.lower() in self.dirNames or select.lower() in self.fileNames or select.lower() == 'all'):
+                select = select.lower()
+                option = 'str'
+            else:
+                select = [select]
+                option = 'arr'
+        elif(self.strarrCheck(select, failPrint=False)):
+            option = 'arr'
+        else:
+            return self.__err_print__("should be either a string or array of strings", varID='select', **kwargs)
+
+        if(self.__not_str_print__(start_dir, varID='start_dir', **kwargs)):
+            return False
+
+        if(self.__not_str_print__(end_dir, varID='start_dir', **kwargs)):
+            return False
+
+        if(start_dir not in self.varPath_Folders):
+            return self.__err_print__("not a folder in the current directory", varID=start_dir, **kwargs)
+        if(end_dir not in self.varPath_Folders):
+            return self.__err_print__("not a folder in the current directory", varID=end_dir, **kwargs)
+
+        start_path = self.joinNode(self.varPath, start_dir, **kwargs)
+        if(start_path == False):
+            return False
+
+        end_path = self.joinNode(self.varPath, end_dir, **kwargs)
+        if(end_path == False):
+            return False
+
+        if(option == 'str'):
+            if(select == 'all'):
+                start_content = self.contentPath(start_path, **kwargs)
+                if(start_content == False):
+                    return self.__err_print__(["content could not be retrieved", "'start_dir' : "+start_dir], varID='start_dir', **kwargs)
+            elif(select in self.fileNames):
+                start_content = self.contentPath(start_path, objType='file', **kwargs)
+                if(start_content == False):
+                    return self.__err_print__(["content could not be retrieved", "'start_dir' : "+start_dir], varID='start_dir', **kwargs)
+            elif(select in self.dirNames):
+                start_content = self.contentPath(start_path, objType='dir', **kwargs)
+                if(start_content == False):
+                    return self.__err_print__(["content could not be retrieved", "'start_dir' : "+start_dir], varID='start_dir', **kwargs)
+            else:
+                return self.__err_print__("which files to transfer could not be resolved", **kwargs)
+
+            failure_to_move = []
+            for entry in start_content:
+                start_obj_path = self.joinNode(start_path, entry, **kwargs)
+                if(start_path == False):
+                    failure_to_move.append(entry)
+                    continue
+                end_obj_path = self.joinNode(end_path, entry, **kwargs)
+                if(end_path == False):
+                    failure_to_move.append(entry)
+                    continue
+                if(copy):
+                    if(os.path.isfile(start_obj_path)):
+                        move_success = self.copyFile(start_obj_path, end_obj_path, **kwargs)
+                    elif(os.path.isdir(start_obj_path)):
+                        move_success = self.copyDir(start_obj_path, end_obj_path, **kwargs)
+                    else:
+                        failure_to_move.append(entry)
+                else:
+                    move_success = self.moveObj(start_obj_path, end_obj_path, **kwargs)
+                if(move_success == False):
+                    failure_to_move.append(entry)
+            if(len(failure_to_move) > 0):
+                self.__err_print__(["Below is a list of objects reporting error(s) during the move operation:"]+failure_to_move, **kwargs)
+        elif(option == 'arr'):
+            failure_to_move = []
+            for entry in select:
+                start_obj_path = self.joinNode(start_path, entry, **kwargs)
+                if(start_path == False):
+                    failure_to_move.append(entry)
+                    continue
+                end_obj_path = self.joinNode(end_path, entry, **kwargs)
+                if(end_path == False):
+                    failure_to_move.append(entry)
+                    continue
+                if(copy):
+                    if(os.path.isfile(start_obj_path)):
+                        move_success = self.copyFile(start_obj_path, end_obj_path, **kwargs)
+                    elif(os.path.isdir(start_obj_path)):
+                        move_success = self.copyDir(start_obj_path, end_obj_path, **kwargs)
+                    else:
+                        failure_to_move.append(entry)
+                else:
+                    move_success = self.moveObj(start_obj_path, end_obj_path, **kwargs)
+                if(move_success == False):
+                    failure_to_move.append(entry)
+            if(len(failure_to_move) > 0):
+                self.__err_print__(["Below is a list of objects which encoutered an error during the move operation:"]+failure_to_move, **kwargs)
+        else:
+            return self.__err_print__("which files to transfer could not be resolved", **kwargs)
+        return True
+
+
+    def read_files_from_folder(self, directory, files_to_read, clean=False, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("read_files_from_folder", **kwargs)
+
+        if(self.__not_str_print__(directory, varID='directory', **kwargs)):
+            return False
+
+        if(isinstance(files_to_read, str)):
+            files_to_read = [files_to_read]
+        elif(self.strarrCheck(files_to_read, failPrint=False)):
+            pass
+        else:
+            return self.__err_print__("should be either a string or an array of strings", varID='files_to_read', **kwargs)
+
+        filepathway = self.joinNode(self.varPath, directory)
+        if(filepathway == False):
+            return False
+
+        filetext_dict = {}
+        failure_to_read = []
+
+        for file in files_to_read:
+            entrypathway = self.joinNode(filepathway, file, **kwargs)
+            if(entrypathway == False):
+                continue
+            lines = iop.flat_file_read(entrypathway)
+            if(lines == False):
+                failure_to_read.append(file)
+                continue
+            if(clean):
+                filetext_dict[file] = [line.rstrip() for line in lines]
+            else:
+                filetext_dict[file] = lines
+        if(len(failure_to_move) > 0):
+            self.__err_print__(["Below is a list of files which encoutered an error during the read operation:"]+failure_to_read, **kwargs)
+        return filetext_dict
+
