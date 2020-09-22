@@ -383,7 +383,7 @@ class progStruct(cmdUtil):
         if(self.__not_str_print__(fold_name, varID='fold_name', **kwargs)):
             return False
 
-        if(fold_name not in FOLDNAME_LIST):
+        if(fold_name not in self.FOLDNAME_LIST):
             self.FOLDNAME_LIST.append(fold_name)
         else:
             return False
@@ -401,7 +401,7 @@ class progStruct(cmdUtil):
         if(self.__not_str_print__(file_name, varID='file_name', **kwargs)):
             return False
 
-        if(file_name not in FILENAME_LIST):
+        if(file_name not in self.FILENAME_LIST):
             self.FILENAME_LIST.append(file_name)
         else:
             return False
@@ -476,6 +476,9 @@ class progStruct(cmdUtil):
 
         kwargs = self.__update_funcNameHeader__("init_binary", **kwargs)
 
+        if(self.BINPATH_ERROR or not self.BINPATH_SET):
+            return self.__err_print__("pathway has not been set", varID=self.BINFOLD, **kwargs)
+
         if(isinstance(bin_name,(array,tuple))):
             if(__not_strarr_print__(bin_name, varID='bin_name', **kwargs)):
                 return False
@@ -484,11 +487,16 @@ class progStruct(cmdUtil):
         else:
             return self.__err_print__("type not recognizned : "+str(type(bin_name)), varID='bin_name', **kwargs)
 
+        not_in_bin = []
+        bincontent = self.contentPath(self.BINPATH)
         for bin in bin_name:
-            if(bin in self.contentPath(self.BINPATH)):
-                self.BIN_DICT[bin] = self.cmv.joinNode(self.BINPATH,bin)
+            if(bin in bincontent):
+                self.BIN_DICT[bin] = self.joinNode(self.BINPATH,bin)
             else:
-                self.__err_print__("not found in 'bin' folder", varID=str(bin), heading='Warning', **kwargs)
+                not_in_bin.append(bin)
+        if(len(not_in_bin) > 0):
+            not_in_bin = ["The follow files were not found in '"+self.BINFOLD+"' folder"]+not_in_bin
+            self.__err_print__(not_in_bin, heading='Warning', **kwargs)
         return True
 
 

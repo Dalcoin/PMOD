@@ -14,10 +14,13 @@ import pmod.mathops as mops
 class benv(progStruc):
 
     def __init__(self,
+                 eos_fold_name='eos'
                  par_file_name='par.don',
                  val_file_name='nucleus.don',
-                 ope_file_name='opt_par.etr',
+                 vrb_file_name='opt_par.etr',
                  skn_file_name='skin.srt',
+                 xeb_bin_name='xeb_server'
+                 aux_bin_name='aux',
                  osFormat='linux',
                  newPath=None,
                  rename=True,
@@ -51,36 +54,65 @@ class benv(progStruc):
         # File and folder names #
         #########################
 
+        # EoS
+        self.EOSFOLD = eos_fold_name
+        self.EOSPATH = ''
+
         # Bin Files #
 
+        # Bin Files
+        self.AUXNAME = aux_bin_name
+        self.AUXPATH = ''
+
+        self.XEBNAME = xeb_bin_name
+        self.XEBPATH = ''
+
         # Input Files
-        self.PAR_FILE_NAME = par_file_name
-        self.VAL_FILE_NAME = val_file_name
+        self.PARFILE = par_file_name
+        self.PARPATH = ''
+
+        self.VALFILE = val_file_name
+        self.VALPATH = ''
 
         # Output Files
-        self.OPTPARS = ope_file_name
-        self.SKINVAL = skn_file_name
+        self.VRBFILE = vrb_file_name
+        self.VRBPATH = ''
+
+        self.SKNFILE = skn_file_name
+        self.SKNPATH = ''
 
         ###############
         # REGEX codes #
         ###############
 
+        # General Regex codes
+        self.RE_INT      = re.compile(r'([+-]*\d+)')
+        self.RE_DIGITS   = re.compile(r"(\d+)")
+        self.RE_DIGITSPC = re.compile(DIGIT+r"\s+")
+
+        self.RE_FLOAT        = re.compile(r'([+-]*\d+\.*\d*)')
+        self.RE_SCIFLOAT     = re.compile(r'(?:[+-]*\d+\.*\d*)+(?:[edED]+[+-]*\d+)?')
+        self.RE_CHARFLOAT    = re.compile(r'(?:[a-zA-Z]+)?(?:[+-]*\d+\.*\d*)+')
+        self.RE_CHARSCIFLOAT = re.compile(r'(?:[a-zA-Z]+)?(?:[+-]*\d+\.*\d*)+(?:[edED]+[+-]*\d+)?')
+
+        self.RE_BOOL = re.compile(r'(?:TRUE|True|true|FALSE|False|false)')
+        self.RE_BOOL_FR = re.compile(r'(?:VRAI|Vrai|vrai|FAUX|Faux|faux)')
+
         # SKVAL regex codes
-        self.INCLOOP = re.compile("\s*INCloop\s*:\s*(TRUE|True|true|FALSE|False|false)")
-        self.AZPAIRS = re.compile("\s*AZpairs\s*:\s*(TRUE|True|true|FALSE|False|false)")
-        self.MIRRORS = re.compile("\s*Mirrors\s*:\s*(TRUE|True|true|FALSE|False|false)")
-        self.INITPAR = re.compile("\s*Initpar\s*:\s*(TRUE|True|true|FALSE|False|false)")
-        self.EOSPARS = re.compile("\s*EOSpars\s*:\s*(TRUE|True|true|FALSE|False|false)")
-        self.EOSGRUP = re.compile("\s*EOSgrup\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.INCLOOP = re.compile(r"\s*INCloop\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.AZPAIRS = re.compile(r"\s*AZpairs\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.MIRRORS = re.compile(r"\s*Mirrors\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.INITPAR = re.compile(r"\s*Initpar\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.EOSPARS = re.compile(r"\s*EOSpars\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.EOSGRUP = re.compile(r"\s*EOSgrup\s*:\s*(TRUE|True|true|FALSE|False|false)")
 
+        self.SKVAL_HEADER = re.compile(r"#\-+([^\-]+)\-+#")
+        self.SKVAL_NUCLEI = re.compile(r"\s*(\d+)\s*,\s*(\d+)")
+        self.SKVAL_LOOP   = re.compile(r"\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")
 
-        # Parameter error checks
-        self.INITIAL_PAR_SET = False
-        self.PAR_FORMAT_ERROR = False
-
-        # Skval errors
-        self.SKVAL_FORMAT_ERROR = False 
-        self.SKVAL_CONTROL_ERROR = False
+        self.parln1 = re.compile(r"\s*"+9*self.RE_DIGITSPC+"(\d+\.+\d+)\s+(\d+)")
+        self.parln2 = re.compile(r"\s*"+2*self.RE_DIGITSPC+self.RE_DIGITS)
+        self.parln34= re.compile(r"\s*(\d+\.\d+)\s+(\d+\.\d+)")
 
         # EoS errors 
         self.EOS_SPLIT_FILE_ERROR = False
@@ -89,11 +121,11 @@ class benv(progStruc):
         self.EOS_PASS_ERROR = False
         self.INITIAL_PARS_ERROR = False
 
-
         # BENV Parameters---------------|
 
         # initial data 
-        self.initial_pars = ''
+        self.initial_pars = []
+        self.initial_nucs = []
         self.initial_a = 0
         self.initial_z = 0
 
@@ -105,17 +137,57 @@ class benv(progStruc):
                            'EOSpars':False,
                            'EOSgrup':False}
 
+        self.BENV_SET_BINARIES = self.init_binary([self.PARFILE, self.VALFILE, self.AUX, self.XEB])
+        self.BENV_SET_PATHWAYS = self.benv_structure(**kwargs)
+
+
+    ##########################
+    # Initiate BENV STRUCTRE #
+    ##########################
+
+    def benv_structure(self, **kwargs):
+
+        success = True
+
+        eosset = self.init_fold_in_main(self.EOSFOLD, **kwargs)
+        if(eosset == False):
+            return False
+        self.EOSPATH = self.FOLDPATH_DICT[self.EOSFOLD]
+
+        if(self.PARFILE in self.BIN_DICT):
+            self.PARPATH = self.BIN_DICT[self.PARFILE]
+        else:
+            success = self.__err_print__("not found in '"+self.BINFOLD+"'", varID=self.PARFILE, **kwargs)
+
+        if(self.VALFILE in self.BIN_DICT):
+            self.VALPATH = self.BIN_DICT[self.VALFILE]
+        else:
+            success = self.__err_print__("not found in '"+self.BINFOLD"'", varID=self.VALFILE, **kwargs)
+
+        if(self.AUXFILE in self.BIN_DICT):
+            self.AUXPATH = self.BIN_DICT[self.AUXFILE]
+        else:
+            success = self.__err_print__("not found in '"+self.BINFOLD"'", varID=self.AUXFILE, **kwargs)
+
+        if(self.XEBFILE in self.BIN_DICT):
+            self.XEBPATH = self.BIN_DICT[self.XEBFILE]
+        else:
+            success = self.__err_print__("not found in '"+self.BINFOLD"'", varID=self.XEBFILE, **kwargs)
+
+        return success
+
+
     #########
     # SKVAL #
     #########
 
-    def format_skval(self, lines, **kwargs):
+    def parse_skval(self, lines, **kwargs):
         '''
         Converts 'skval' file lines, from 'skval.don' option file, into 'skavl data'
         This function should only be called once.
         '''
 
-        if(self.__not_strarr_print__(lines)):
+        if(self.__not_strarr_print__(lines, **kwargs)):
             return False
 
         # variables
@@ -138,145 +210,336 @@ class benv(progStruc):
 
         n = len(lines)
 
+        parlist = []
+        nuclist = []
+
         # Parsing Options from SKVAL
 
+        lab_bool = False
+        par_bool = False
+        nuc_bool = False
+        hed_bool = False
+
+        pairs = False
+
+        par_trv = False
+        nuc_trv = False
+
+        par_set_dict = {'par_ln1_set' : True, 'par_ln2_set' : True, 'par_ln3_set' : True, 'par_ln4_set' : True}
+        par_lgn_dict = {'par_ln1_set' : self.parln1, 
+                        'par_ln2_set' : self.parln2, 
+                        'par_ln3_set' : self.parln34, 
+                        'par_ln4_set' : self.parln34}
+
         for i,line in enumerate(lines):
-#            if(all([self.skval_dict[entry] for entry in self.skval_dict])):
-#                break
 
-            if(any([test in line for test in test_list])):
-                for value in reg_dict:
-                    key = reg_dict[value].findall(line)
-                    if(key != []):
-                        self.skval_dict[value] = (key[0].lower() == 'true')
-                        del reg_dict[value]
-            elif('')
+            if(self.SKVAL_HEADER.findall(line) != []):
+                resh = self.SKVAL_HEADER.findall(line)[0].lower()
+                if(resh == 'loop' or resh == 'special')
+                    hed_bool = True
+                elif(resh == 'nuclei'):
+                    nuc_bool = True
+                    if(self.skval_dict['INCLOOP']):
+                        pairs = False
+                    elif(self.skval_dict['AZPAIRS']):
+                        pairs = True
+                    else:
+                        return self.__err_print__("one of the 'Loop' options should be set to 'True'", **kwargs)
+                elif(resh == 'pars'):
+                    par_bool = True
+                else:
+                    par_bool, hed_bool, nuc_bool = (False, False, False)
+                continue
 
-        if(index+1 == n and not all([self.skval_dict[entry] for entry in self.skval_dict])):
-            for entry in self.skval_dict:
-                if(self.skval_dict[entry] == False):
-                    self.__err_print__("parameter was found in 'skval'", varID=entry, heading='Warning' **kwargs)
+            if(hed_bool):
+                if(any([test in line for test in test_list])):
+                    for value in reg_dict:
+                        key = reg_dict[value].findall(line)
+                        if(key != []):
+                            self.skval_dict[value] = (key[0].lower() == 'true')
+                            del reg_dict[value]
+            elif(par_bool):
+                for entry in par_set_dict:
+                    key = []
+                    if(par_set_dict[entry]):
+                        key = par_lgn_dict[entry].findall(line)
+                    else:
+                        continue
+                    if(len(key) > 0):
+                        parlist.append(key[0])
+                        del par_set_dict[entry]
+                        break
+            elif(nuc_bool):
+                if(pairs):
+                    key = self.SKVAL_NUCLEI.findall(line)
+                    if(len(key) > 0):
+                        nuclist.append(key[0])
+                else:
+                    key = self.SKVAL_LOOP.findall(line)
+                    if(len(key) > 0):
+                        nuclist.append(key[0])
+                    nuc_bool = False
+            else:
+                pass
 
-        pars = []
+        if(len(parlist) == 4):
+            self.initial_pars = parlist
+
+        if(len(nuclist) > 0):
+            self.initial_nucs = nuclist
+
+        if(self.skval_dict["INCLOOP"] and self.skval_dict["AZPAIRS"]):
+            self.__err_print__("INCLOOP takes precedent over AZPAIRS", heading="warning", **kwargs)
+
         doubles = []
         loop = []
-        output = ()
 
-        if(self.incloop and self.azpairs):
-            print(self.s4+"[format_skval] Warning: both skval looping and nuclei pairs detected")
-            print(self.s4+"                             skval looping takes precedent over paring\n")
-            self.SKVAL_CONTROL_ERROR = True
-
-        # If incloop is True
-        if(self.incloop):
-            for i in xrange(len(skval_lines)):
-
-                looplist = self.LOOPS.findall(skval_lines[i])
-                if(len(looplist) > 0):
-                    loop.append(looplist[0])
-                if(self.eospars):
-                    looplist = self.EOSPARS.findall(skval_lines[i])
-                    if(len(looplist)>0):
-                        pars.append(looplist[0])
-
-            if(len(loop) > 0):
-                if(len(loop) > 1):
-                    print(self.s4+"[format_skval] Warning: Multiple loop options detected, only the first one will be executed\n")
-                loop_data = loop[0]
-                loop_type = "loop"
-                self.azpairs = False
-            else:
-                print(self.s4+"[format_skval] Warning: Loop option selected; no loops detected, defaulting to a pair-wise search\n")
-                self.SKVAL_FORMAT_ERROR = True
-                self.azpairs = True
-                self.incloop = False
-
-        # If azpairs is True and if incloop is False
-        if(self.azpairs and self.incloop == False):
-            for i in xrange(len(skval_lines)):
-
-                if(not isinstance(skval_lines[i],str)):
-                    print_Text = " entry of 'skval_lines' is not a string\n"
-                    print(self.s4+"[format_skval] Warning: the "+strl.print_ordinal(str(i+1))+print_Text)
-                    continue
-
-                double = self.PAIRS.findall(skval_lines[i])
-                if(len(double)>0):
-                    if(len(double)>1): 
-                        print(self.s4+"[format_skval] Warning: More than one 'pair' value found in the string: ")
-                        print(self.s4+"'"+str(skval_lines[i])+"'")
-                        print(self.s4+"Only the first pair will be appended to the stack\n")
-                    var = double[0]
-                    var = map(lambda x: float(strl.str_clean(x)), var)
-                    doubles.append(var)
-
-                if(self.eospars):
-                    looplist = self.EOSPARS.findall(skval_lines[i])
-                    if(len(looplist)>0):
-                        pars.append(looplist[0])
-
-            if(len(doubles) > 0):
-                loop_data = doubles
-                loop_type = "pair"
-            else:                    
-                self.SKVAL_FORMAT_ERROR = True
-                print(self.s4+"[format_skval] Error: No 'pair' values could be found\n")
-                return False
-                 
-        if(not self.incloop and not self.azpairs):
-            print(self.s4+"[format_skval] Warning: No skval functionality detected...\n") 
-            return False
-        
-        output = (loop_data,loop_type,pars)                           
-        return output  
-
-
-    def skval_loop_line_parse(self, line):
-
-        
-        if(isinstance(line,str)):      
-            loop = strl.str_to_list(line, filtre=True)
-            if(loop == False or len(loop) < 4):
-                print(self.s4+"[skval_loop_line_parse] Error: couldn't coerce input string, 'line' into array of at least 4 values\n")
-                return False
-        elif(isinstance(line,(list,tuple))):
-            if(len(line) < 4):
-                print(self.s4+"[skval_loop_line_parse] Error: if input 'line' is an array it must be at least 4 values long\n")
-                return False
-            else:
-                loop = line 
+        if(pairs):
+            loop_type = 'pairs'
         else:
-            print(self.s4+"[skval_loop_line_parse] Error: input 'line' must either be a string or an array\n")
-            return False
-             
-        try:
-#            output_list = [int(loop[0]), int(loop[1]), int(loop[2]), bool(int(loop[3])), bool(int(loop[4])), bool(int(loop[5]))]
-            output_list = [int(loop[0]), int(loop[1]), int(loop[2]), bool(int(loop[3]))]
-        except:
-            print(self.s4+"[skval_loop_line_parse] Error: could not coerce 'loop' list into a skval-loop list\n")
-            return False
-             
-        return output_list
+            loop_type  = 'loop'
+
+        output = (nuclist, loop_type, parlist)
+        return output
 
 
-    def parse_paramters(self, **kwargs)
+    ##############
+    # Parameters #
+    ##############
 
-        self.initial_pars, self.initial_vals = self.data_from_pars()
-        if((self.initial_pars, self.initial_vals) == ('','')):
-            print("[benv] Error: 'PARSFILE' file contains invalid formatting\n")
-            self.PAR_FORMAT_ERROR = True
+    def create_parline(self, eos,
+                         density = 2,
+                         microscopic = True,
+                         e0_rho0 = True,
+                         phenom_esym = False,
+                         k0 = 220,
+                         rho0 = 0.16,
+                         fff = 65,
+                         addn=True,
+                         *lengths,
+                         **kwargs):
+
+        '''
+        A function which creates a 'par' formatted string
+
+        The input consists of an eos identifier variable and optional
+        variables corrosponding to each possible 'par' modifier
+
+        '''
+
+        if(isinstance(eos,str)):
+            if(eos == '0' or eos.lower() == 'combined' or eos.lower() == 'com'):
+                pos_3 = 0
+            elif(eos == '1' or eos.lower() == 'seperate' or eos.lower() == 'sep'):
+                pos_3 = 1
+            elif(eos == '2' or eos.lower() == 'symmetric' or eos.lower() == 'sym'):
+                pos_3 = 2
+            else:
+                pos_3 = 0
+        elif(isinstance(eos,int)):
+            if(eos == 0):
+                pos_3 = eos
+            elif(eos == 1):
+                pos_3 = eos
+            elif(eos == 2):
+                pos_3 = eos
+            else:
+                pos_3 = 0
         else:
-            self.initial_pars = self.initial_pars[0]
+            pos_3 = 0
 
-        try:
-            self.initial_a, self.initial_z = strl.str_to_list(self.initial_vals[-1], filtre=True)
-            self.initial_a = int(float(strl.str_clean(self.initial_a)))
-            self.initial_z = int(float(strl.str_clean(self.initial_z)))
-            self.INITIAL_PAR_SET = True
-        except:
-            print("[benv] Error: failure to parse isotope values A and Z to integers (the last parameter line)\n")
-            self.PAR_FORMAT_ERROR = True
+        if(isinstance(density,str)):
+            options_list_2 = ['2pf', 'thomas-fermi', 'fermi', 'tf']
+            options_list_3 = ['2py', 'folded-yukawa', 'yukawa', 'fy']
+            options_list_4 = ['3pf', 'extended-thomas-fermi', 'extened-fermi','efermi', 'etf']
+            if(density == '2' or density.lower() in options_list_2):
+                pos_2 = 2
+            elif(density == '3' or density.lower() in options_list_3):
+                pos_2 = 3
+            elif(density == '4' or density.lower() in options_list_4):
+                pos_2 = 4
+            else:
+                pos_2 = 2
+        elif(isinstance(density,int)):
+            if(eos == 2):
+                pos_2 = eos
+            elif(eos == 3):
+                pos_2 = eos
+            elif(eos == 4):
+                pos_2 = eos
+            else:
+                pos_2 = 2
+        else:
+            pos_2 = 2
 
+        if(microscopic):
+            pos_6 = 1
+        else:
+            pos_6 = 0
+
+        if(e0_rho0):
+            pos_7 = 1
+        else:
+            pos_7 = 0
+
+        if(phenom_esym):
+            pos_8 = 1
+        else:
+            pos_8 = 0
+
+        if(self.__not_num_print__(k0, varID='k0', **kwargs)):
+            try:
+                k0 = int(k0)
+            except:
+                msg = "could not be converted to an integer, setting to default: 220"
+                self.__err_print__(msg, varID='k0', heading='warning', **kwargs)
+                k0 = 220
+        else:
+            k0 = int(k0)
+        pos_9  = k0
+
+        if(self.__not_num_print__(rho0, varID='rho0', **kwargs)):
+            try:
+                rho0 = float(rho0)
+            except:
+                msg = "could not be converted to a float, setting to default: 0.16"
+                self.__err_print__(msg, varID='rho0', heading='warning', **kwargs)
+                rho0 = 0.16
+        else:
+            rho0 = float(rho0)
+        pos_10 = rho0
+
+        if(self.__not_num_print__(fff, varID='fff', heading='warning', **kwargs)):
+            try:
+                fff = int(fff)
+            except:
+                msg = "could not be converted to an integer, setting to default: 65"
+                self.__err_print__(msg, varID='fff', heading='warning', **kwargs)
+                fff = 65
+        else:
+            fff = int(fff)
+        pos_11  = fff
+
+        lens = [n for n in lengths]
+        n = len(lens)
+
+        if(n == 0 and mic == 1):
+            return self.__err_print__("if a microscopic eos is chosen, file length(s) must be defined", **kwargs)
+        if(mic == 1 and pos_3 == 0 and n < 1):
+            return self.__err_print__("if a combined eos is chosen, the file length must be defined", **kwargs)
+        elif(mic == 1 and pos_3 == 1 and n < 2):
+            return self.__err_print__("if a seperated eos is chosen, file lengths must be defined (e0 first, then e1)", **kwargs)
+        elif(mic == 1 and pos_3 == 2 and n < 1):
+            return self.__err_print__("if a SNM eos only is chosen, the file length must be defined", **kwargs)
+        else:
+            if(mic == 1 and (pos_3 == 0 or pos_3 == 2)):
+                pos_1 = lens[0]
+                pos_4 = 0
+                pos_5 = 0
+            elif(mic == 1 and pos_3 == 1):
+                pos_1 = 0
+                pos_4 = lens[0]
+                pos_5 = lens[0]
+            else:
+                pos_1 = 0
+                pos_4 = 0
+                pos_5 = 0
+
+        outlist = [pos_1,pos_2,pos_3,pos_4,pos_5,pos_6,pos_7,pos_8,pos_9,pos_10,pos_11]
+        parline = strl.array_to_str(outlist)
+
+        if(addn):
+            parline += '\n'
+
+        return parline
+
+
+    def create_vallist(self, a, z, divs='64 64 64', lims='0.0 20.0', addn=True, **kwargs):
+        '''
+        Description : Creats a list compatible with the 'nucleus.don' file.
+                      Takes a 'parline' string along with an 'A' string, 'Z' string,
+                      'divs' string and 'lims' string. 'addn' add the endline character
+                      to each string.
+        '''
+
+        if(__not_str_print__(divs, varID='divs', **kwargs):
+            try:
+                if(isinstance(divs, (list, tuple)):
+                    if(len(divs) == 3):
+                        divs = strl.array_to_str(divs, **kwargs)
+                    else:
+                        return self.__err_print__("should be a string of three integers", varID='divs', **kwargs)
+                else:
+                    return self.__err_print__("should be a string of three integers", varID='divs', **kwargs)
+                if(divs == False):
+                    return divs
+            except:
+                return self.__err_print__("should be a string of three integers", varID='divs', **kwargs)
+
+        if(__not_str_print__(lims, varID='lims', **kwargs):
+            try:
+                if(isinstance(lims, (list, tuple)):
+                    if(len(lims) == 2):
+                        lims = strl.array_to_str(lims, **kwargs)
+                    else:
+                        return self.__err_print__("should be a string of two floats", varID='lims', **kwargs)
+                else:
+                    return self.__err_print__("should be a string of two floats", varID='lims', **kwargs) 
+                if(lims == False):
+                    return lims
+            except:
+                return self.__err_print__("should be a string of two floats", varID='lims', **kwargs)
+
+        a = str(a)
+        z = str(z)
+
+        az = str(a)+'  '+str(z)
+
+        if(addn):
+            divs += '\n'
+            lims += '\n'
+            az += '\n'
+
+        return [divs, lims, az]
+
+
+    def write_parline(self, parline):
+        '''
+        Passes benv parameters to 'par.don' file located in 'bin'
+
+        pars takes the form: [see read-me for details]
+
+            n  nden nread n0 n1 mic isnm k0  rho0 fff
+            11 2    0     19 19 0   1 0  220 0.16 65
+
+        '''
+        success = iop.flat_file_write(self.PARPATH, parline, **kwargs)
+        return success
+
+
+    def write_vallist(self, vallist):
+        '''
+        Passes benv parameters to 'nucleus.don' file located in 'bin'
+
+        vals take the form: [see read-me for details]
+
+            n0 n1 n2
+            vi vf
+            na nz
+
+            e.g.
+
+            64 64 64
+            0.0 20.0
+            208 82
+        '''
+        success = iop.flat_file_write(self.VALPATH, vallist, **kwargs)
+        return success
+
+
+    #########################
+    # Output Data Formatter #
+    #########################
 
     def format_benv_data(self, data, style = None, coerce_to_style = False):
 
@@ -305,7 +568,6 @@ class benv(progStruc):
                 val_String = strl.array_to_str(vals_List,spc='  ')
 
             return (par_String, val_String)
-
 
 
         if(isinstance(style,str)):
@@ -411,248 +673,20 @@ class benv(progStruc):
 
         return output
 
-    ##################################################################################################
-    # functions dealing with the 'parameters.don', 'par.don' and 'nucleus.don' (or equivalent) files #
-    ##################################################################################################      
+    #######
+    # EOS #
+    #######
 
-
-    def parline_style_convert(self, parline):
-
-        if(isinstance(parline,str)):
-            try:
-                outpar = filter(None,[i.rstrip() for i in strl.str_to_list(parline)])
-            except:
-                print(self.s4+"[parline_style_convert] Error: could not convert 'parline' string to list\n")
-                outpar = False
-        elif(isinstance(parline,(list,tuple))):
-            try:
-                outpar = strl.array_to_str(filter(None,parline))
-            except: 
-                print(self.s4+"[parline_style_convert] Error: could not format 'parline' array to list\n")
-                outpar = False
-        else:
-            print(self.s4+"[parline_style_convert] Error: input 'parline' must be either an array or string")
-            print(self.s4+"Attempt to convert 'par' parameter line has failed\n")
-            outpar = False 
-        return outpar  
-
-    
-    def create_pars_line(self, eos, 
-                         density = 2,
-                         microscopic = True, 
-                         e0_rho0 = True,
-                         phenom_esym = False,
-                         k0 = 220, 
-                         rho0 = 0.16,
-                         fff = 65,
-                         *lengths):
-
+    def collect_eos(self, **kwargs):
         '''
-        A function which creates a 'par' formatted string
+        Notes:
 
-        The input consists of an eos identifier variable and optional
-        variables corrosponding to each possible 'par' modifier
-
-        '''  
-
-        if(isinstance(eos,str)):
-            if(eos == '0' or eos.lower() == 'combined' or eos.lower() == 'com'):
-                pos_3 = 0
-            elif(eos == '1' or eos.lower() == 'seperate' or eos.lower() == 'sep'):
-                pos_3 = 1
-            elif(eos == '2' or eos.lower() == 'symmetric' or eos.lower() == 'sym'):
-                pos_3 = 2
-            else: 
-                pos_3 = 0   
-        elif(isinstance(eos,int)):      
-            if(eos == 0):
-                pos_3 = eos
-            elif(eos == 1):
-                pos_3 = eos
-            elif(eos == 2):
-                pos_3 = eos
-            else: 
-                pos_3 = 0      
-        else: 
-            pos_3 = 0
-
-        
-        if(isinstance(density,str)):
-            options_list_2 = ['2pf', 'thomas-fermi', 'fermi', 'tf'] 
-            options_list_3 = ['2py', 'folded-yukawa', 'yukawa', 'fy']
-            options_list_4 = ['3pf', 'extended-thomas-fermi', 'extened-fermi','efermi', 'etf']
-            if(density == '2' or density.lower() in options_list_2):
-                pos_2 = 2
-            elif(density == '3' or density.lower() in options_list_3):
-                pos_2 = 3
-            elif(density == '4' or density.lower() in options_list_4):
-                pos_2 = 4
-            else: 
-                pos_2 = 2
-        elif(isinstance(density,int)):      
-            if(eos == 2):
-                pos_2 = eos
-            elif(eos == 3):
-                pos_2 = eos
-            elif(eos == 4):
-                pos_2 = eos
-            else: 
-                pos_2 = 2
-        else: 
-            pos_2 = 2
-         
-        if(microscopic):
-            pos_6 = 1 
-        else:
-            pos_6 = 0
-         
-        if(e0_rho0):
-            pos_7 = 1
-        else:
-            pos_7 = 0
-
-        if(phenom_esym):
-            pos_8 = 1 
-        else:
-            pos_8 = 0   
-
-        pos_9  = k0
-        pos_10 = rho0
-        pos_11 = fff
-
-        lens = [n for n in lengths] 
-        n = len(lens) 
-
-        if(n == 0 and mic == 1):
-            print(self.s4+"[create_pars_line] Error: if a microscopic eos is chosen, file length(s) must be defined")
-            return False
-        if(mic == 1 and pos_3 == 0 and n < 1):
-            print(self.s4+"[create_pars_line] Error: if a combined eos is chosen, the file length must be defined")
-            return False
-        elif(mic == 1 and pos_3 == 1 and n < 2):
-            print(self.s4+"[create_pars_line] Error: if a seperate eos is chosen, file lengths must be defined (e0 first then e1)")
-            return False
-        elif(mic == 1 and pos_3 == 2 and n < 1):
-            print(self.s4+"[create_pars_line] Error: if a symmetric eos is chosen, the file length must be defined")
-            return False
-        else:
-
-            if(mic == 1 and (pos_3 == 0 or pos_3 == 2)):
-                pos_1 = lens[0]
-                pos_4 = 0
-                pos_5 = 0
-            elif(mic == 1 and pos_3 == 1):
-                pos_1 = 0
-                pos_4 = lens[0]
-                pos_5 = lens[0]
-            else: 
-                pos_1 = 0
-                pos_4 = 0
-                pos_5 = 0            
-            
-        outlist = [pos_1,pos_2,pos_3,pos_4,pos_5,pos_6,pos_7,pos_8,pos_9,pos_10,pos_11]
-        outline = strl.array_to_str(outlist)
-               
-        return outline      
-
-
-    def format_pars_data(self, parline, a, z, parform = 'str'):
-        '''
-        Takes a valid 'par.don' string and nucleus denoted by integers (A,Z)
-        '''
-
-        if(parform == 'array' or parform == 'list' or parform == 'tuple'):
-            parline = array_to_str(parline, endline=True)
-        else:
-            if(isinstance(parline,str)):
-                if('\n' in parline):
-                    pass 
-                else:
-                    parline = parline + '\n'
-            else:
-                print(self.s4+"[format_pars_data] TypeError: 'parline' type does not match 'parform' \n")
-                return False
-
-        divs = "64 64 64\n"
-        lims = "0.0 20.0\n"
-        az = str(a)+'  '+str(z)+'\n'
-        return [parline, divs, lims, az]
-
-    def data_to_pars(self, dataline):
-        success = iop.flat_file_write(self.parspath, dataline)
-        if(not success):
-            print(self.s4+"[data_to_pars] Errors: failure to write 'dataline'")
-            print(self.s4+"Pathway: '"+str(self.parspath)+"'\n")
-        return success
-
-    def pass_pars(self, pars):
-        '''
-        Passes benv parameters to 'par.don' file located in 'bin'
-
-        pars takes the form: [see read-me for details]
-
-            n  nden nread n0 n1 mic isnm k0  rho0 fff
-            11 2    0     19 19 0   1 0  220 0.16 65
-
-        '''
-
-        #check on 'pars'
-        if(isinstance(pars,(list,tuple))):
-            parslist = pars
-        elif(isinstance(pars,str)):
-            parslist = [pars]
-        else:
-            print(self.s4+"[pass_pars] Error: 'pars' must be an array or string")
-            self.exit_function("running checks on 'pars'")
-                 
-        par_file_path = self.cmv.joinNode(self.binpath,self.PAR_FILE_NAME)   
-        success = iop.flat_file_write(par_file_path,parslist) 
-        if(not success):
-            print(self.s4+"[pass_pars] ExitError: failure when writing the string(s): \n")
-            for i in parslist:
-                print(self.s4+self.s4+"'"+str(i)+"'")
-            print(" ")
-            print(self.s4+"to the path: ")
-            print(self.s4+str(par_file_path)+"'\n") 
-            return False
-        return True
-
-
-    def pass_vals(self, val_list): 
-
-        #check on 'val_list'
-        if(not isinstance(val_list,(list,tuple))):
-            print(self.s4+"[pass_vals] Error: 'val_list' must be an array")
-         
-        val_file_path = self.cmv.joinNode(self.binpath,self.VAL_FILE_NAME)  
-
-        success = iop.flat_file_write(val_file_path,val_list) 
-        if(not success):
-            print(self.s4+"ExitError: failure when writing the string: \n")
-            for i in val_list:
-                print(self.s4+self.s4+str(i)+"'")
-            print(" ")
-            print(self.s4+"to the path: ")
-            print(self.s4+"    '"+str(val_file_path)+"'\n") 
-            return False
-        return True
-
-
-    ###################################################################################
-    # functions dealing with the 'eoses.don', e[x,0,1]_nxlo.don (or equivalent) files #
-    ################################################################################### 
-
-    def collect_eos(self):
-        '''
-        Notes: 
-        
             Collects EoS from 'eos' directory 
-            This function should only be called once per BENV run 
-        
-        ''' 
+            This function should only be called once per BENV run
+        '''
 
-        eos_dir_path = self.cmv.joinNode(self.INITIAL_PATH,self.EOSDIR)
-        eos_file_list = self.cmv.contentPath(eos_dir_path)
+        eos_dir_path = self.joinNode(self.INITIAL_PATH,self.EOSDIR)
+        eos_file_list = self.contentPath(eos_dir_path)
 
         if(eos_file_list == None or eos_file_list == False):
             print("[collect_eos] Error: EoS files could not be found")
@@ -665,7 +699,6 @@ class benv(progStruc):
         egshock = []
         eoslist = []
 
-            
         for i in eos_file_list:
             if('ex' in i.lower() and (('e0' not in i.lower()) and ('e1' not in i.lower()))):
                 exfiles.append(i)
@@ -751,11 +784,10 @@ class benv(progStruc):
                     self.EOS_SPLIT_PARSE_ERROR = True 
                     continue                                     
                 eoslist.append((e0,idbaseline))
-              
+
         return eoslist         
-                    
-         
-            
+
+
     def format_eos_data(self, eos_obj, pl=[], set_pars = True):
     
         eoslist_entry, eosid = eos_obj
@@ -827,8 +859,8 @@ class benv(progStruc):
             print("[format_eos_data] Error: 'eoslist_entry' must be either 2, 3 or 4 numeric lists long")
             output = False          
         return output         
-        
-         
+
+
     def pass_eos(self, formatted_eos):
 
         if(not isinstance(formatted_eos,(list,tuple))):
@@ -901,20 +933,20 @@ class benv(progStruc):
         if(self.SUBPROCESS_PATH_ERROR):
             print("[run_benv] Error: pathway to binary directory has not been set")
             return False
-         
+
         subprocess.call("./run.sh", shell=True)                   
         return True
-                    
 
-    def format_skval_benv_vals(self, benvals, split = True):
-         
+
+    def parse_skval_benv_vals(self, benvals, split = True):
+
         if(split):
             parlines = [] 
             nuclines = []
             azs      = []
         else:
             outlines = []
-                 
+
         for i in xrange(len(benvals)):
             parline = strl.str_to_list(str(benvals[i][0][0]).rstrip(), filtre=True)
             nucline = strl.str_to_list(str(benvals[i][0][1]).rstrip(), filtre=True)
@@ -935,7 +967,7 @@ class benv(progStruc):
             return (parlines, nuclines, azs)
         else: 
             return outlines
-            
+
 
     def clean_up(self, debug = False):
 
@@ -974,17 +1006,17 @@ class benv(progStruc):
         self.pass_vals(vals)
         self.run_benv()
         
-        optpars  = self.data_from_bin(self.OPTPARS,True)
+        optpars  = self.data_from_bin(self.VRBFILE,True)
         if(optpars == False):
-            self.OPTPARS_ERROR = True                   
+            self.VRBFILE_ERROR = True                   
          
-        skinvals = self.data_from_bin(self.SKINVAL,True)
+        skinvals = self.data_from_bin(self.SKNFILE,True)
         if(skinvals == False):
-            self.SKINVAL_ERROR = True 
+            self.SKNFILE_ERROR = True 
          
         if(clean_Run):
-            subprocess.call("rm "+self.OPTPARS, shell = True)
-            subprocess.call("rm "+self.SKINVAL, shell = True)
+            subprocess.call("rm "+self.VRBFILE, shell = True)
+            subprocess.call("rm "+self.SKNFILE, shell = True)
 
         self.run_time+=1
         return (optpars,skinvals)
@@ -1029,7 +1061,7 @@ class benv(progStruc):
                         benvals.append((results,(ax,zx))) 
                         continue 
 
-                    success = self.data_to_pars(parlines)
+                    success = self.write_parlist(parlines)
                     if(not success): 
                         print(self.s4+"[skval_loop] Error: failure when passing 'parameters', current run skipped\n")
                         results = ('False','False')
@@ -1048,7 +1080,7 @@ class benv(progStruc):
                     benvals.append((results,(ax,zx))) 
                     continue 
                  
-                success = self.data_to_pars(parlines)
+                success = self.write_parlist(parlines)
                 if(not success): 
                     print(self.s4+"[skval_loop] Error: failure when passing 'parameters', current run skipped\n")
                     results = ('False','False')
@@ -1062,7 +1094,7 @@ class benv(progStruc):
         return benvals
 
 
-    def benv_eos_loop(self, reset = True):
+    def benv_eos_loop(self, reset=True):
         '''
         !Function which runs the BENV program!
 
@@ -1075,21 +1107,18 @@ class benv(progStruc):
         #Get EoS from 'eos' folder
         eoslist = self.collect_eos()
         if(eoslist == False):
-            print(self.s4+"[benv_eos_loop] Error: could not format skval lines from skval file\n")
-            return False
+            return self.__err_print__("could not collect EoS data from 'eos' folder", heading='Fatal Error', **kwargs)
 
-        # Get line strings from 'skval.don' file 
-        skval_lines = self.get_skval()
+        #Get SKVAL from 'skval.don' file
+        skval_lines = self.get_options(**kwargs)
         if(skval_lines == False):
-            print(self.s4+"[benv_eos_loop] Error: failure to retrieve data from skval file\n")
-            return False
+            return self.__err_print__("could not collect SKVAL data from 'skval.don' file", heading='Fatal Error', **kwargs)
 
         # Format skval lines into data list, type string and pars list
-        packed_format_skval = self.format_skval(skval_lines)
-        if(packed_format_skval == False):
-            print(self.s4+"[benv_eos_loop] Error: could not format skval lines from skval file\n")
-            return False            
-        data, type, pars = packed_format_skval  
+        skval_data = self.parse_skval(skval_lines, **kwargs)
+        if(skval_data == False):
+            return self.__err_print__("failure to format skval lines", **kwargs)  
+        data, type, pars = skval_data  
 
         # Get parameters par 'Parameter.don' file
         initial_pars = self.initial_pars
@@ -1142,7 +1171,7 @@ class benv(progStruc):
 		    
                 # Format data returned by skavl loop routine 
                 try:
-                    formatted_benvals = self.format_skval_benv_vals(benvals)
+                    formatted_benvals = self.parse_skval_benv_vals(benvals)
                 except:
                     print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
                     print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
@@ -1214,7 +1243,7 @@ class benv(progStruc):
 
                 # Format data returned by skavl loop routine
                 try:
-                    formatted_benvals = self.format_skval_benv_vals(benvals)
+                    formatted_benvals = self.parse_skval_benv_vals(benvals)
                 except:
                     print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
                     print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
@@ -1236,6 +1265,6 @@ class benv(progStruc):
             benvals_group = []
 
         if(reset):
-            self.data_to_pars(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
+            self.write_parlist(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
 
         return benvals_cohort

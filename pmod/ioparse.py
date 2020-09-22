@@ -557,6 +557,8 @@ def flat_file_grab(file_in, grab_list=[], scrub=False, repeat=False, count_offse
                 out_lines.append(file_lines[index].rstrip())
             else:
                 out_lines.append(file_lines[index])
+    if(scrub):
+        filter(None, out_lines)
     return out_lines
 
 
