@@ -74,6 +74,11 @@ class benv(progStruc):
         self.VALFILE = val_file_name
         self.VALPATH = ''
 
+        # EOS-BIN FILE
+        self.EXFILE = 'ex_nxlo.don'
+        self.E0FILE = 'e0_nxlo.don'
+        self.E1FILE = 'e1_nxlo.don'
+
         # Output Files
         self.VRBFILE = vrb_file_name
         self.VRBPATH = ''
@@ -105,6 +110,7 @@ class benv(progStruc):
         self.INITPAR = re.compile(r"\s*Initpar\s*:\s*(TRUE|True|true|FALSE|False|false)")
         self.EOSPARS = re.compile(r"\s*EOSpars\s*:\s*(TRUE|True|true|FALSE|False|false)")
         self.EOSGRUP = re.compile(r"\s*EOSgrup\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.RESETIT = re.compile(r"\s*Resetit\s*:\s*(TRUE|True|true|FALSE|False|false)")
 
         self.SKVAL_HEADER = re.compile(r"#\-+([^\-]+)\-+#")
         self.SKVAL_NUCLEI = re.compile(r"\s*(\d+)\s*,\s*(\d+)")
@@ -124,7 +130,8 @@ class benv(progStruc):
         # BENV Parameters---------------|
 
         # initial data 
-        self.initial_pars = []
+        self.initial_parline = ''
+        self.initial_vallist = []
         self.initial_nucs = []
         self.initial_a = 0
         self.initial_z = 0
@@ -135,7 +142,8 @@ class benv(progStruc):
                            'Initpar':False,
                            'Mirrors':False,
                            'EOSpars':False,
-                           'EOSgrup':False}
+                           'EOSgrup':False,
+                           'Resetit':False}
 
         self.BENV_SET_BINARIES = self.init_binary([self.PARFILE, self.VALFILE, self.AUX, self.XEB])
         self.BENV_SET_PATHWAYS = self.benv_structure(**kwargs)
@@ -197,14 +205,16 @@ class benv(progStruc):
                     'Initpar':self.MIRRORS,
                     'Mirrors':self.INITPAR,
                     'EOSpars':self.EOSPARS,
-                    'EOSgrup':self.EOSGRUP}
+                    'EOSgrup':self.EOSGRUP,
+                    'Resetit':self.RESETIT}
 
         test_list = ['INCloop',
                      'AZpairs',
                      'Initpar',
                      'Mirrors',
                      'EOSpars',
-                     'EOSgrup']
+                     'EOSgrup',
+                     'Resetit']
 
         line_ids = ['pars', 'loop', 'special', 'nuclei']
 
@@ -282,10 +292,22 @@ class benv(progStruc):
             else:
                 pass
 
-        if(len(parlist) == 4):
-            self.initial_pars = parlist
+        if(len(parlist) >= 4):
+            self.initial_parline = parlist[0]
+            self.initial_vallist = parlist[1:]
 
+        # Parse the nuclist
         if(len(nuclist) > 0):
+            if(pairs):
+                try:
+                    nuclist = map(lambda lam: (int(lam[0]), int(lam[1])), nuclist)
+                except:
+                    return self.__err_print__("failure to retrieve 'pair' values as integers", varID='nuclist', **kwargs)
+            else:
+                try:
+                    nuclist = map(lambda lam: (int(lam[0]), int(lam[1]), int(lam[2]), bool(lam[3])), nuclist)
+                except:
+                    return self.__err_print__("failure to retrieve 'loop' values as integers", varID='nuclist', **kwargs)
             self.initial_nucs = nuclist
 
         if(self.skval_dict["INCLOOP"] and self.skval_dict["AZPAIRS"]):
@@ -299,7 +321,7 @@ class benv(progStruc):
         else:
             loop_type  = 'loop'
 
-        output = (nuclist, loop_type, parlist)
+        output = (loop_type, nuclist, parlist)
         return output
 
 
@@ -307,7 +329,7 @@ class benv(progStruc):
     # Parameters #
     ##############
 
-    def create_parline(self, eos,
+    def create_parline(self, eos, n, n0, n1,
                          density = 2,
                          microscopic = True,
                          e0_rho0 = True,
@@ -316,7 +338,6 @@ class benv(progStruc):
                          rho0 = 0.16,
                          fff = 65,
                          addn=True,
-                         *lengths,
                          **kwargs):
 
         '''
@@ -324,6 +345,11 @@ class benv(progStruc):
 
         The input consists of an eos identifier variable and optional
         variables corrosponding to each possible 'par' modifier
+
+        pars takes the form: [see read-me for details]
+
+            n  nden nread n0 n1 mic isnm iemp k0  rho0 fff
+            11 2    0     19 19 1   1    0    220 0.16 65
 
         '''
 
@@ -420,12 +446,9 @@ class benv(progStruc):
             fff = int(fff)
         pos_11  = fff
 
-        lens = [n for n in lengths]
-        n = len(lens)
-
-        if(n == 0 and mic == 1):
+        if(all([n==0,n0==0,n1==0]) and mic == 1):
             return self.__err_print__("if a microscopic eos is chosen, file length(s) must be defined", **kwargs)
-        if(mic == 1 and pos_3 == 0 and n < 1):
+        if(mic == 1 and pos_3 == 0 and n == 0):
             return self.__err_print__("if a combined eos is chosen, the file length must be defined", **kwargs)
         elif(mic == 1 and pos_3 == 1 and n < 2):
             return self.__err_print__("if a seperated eos is chosen, file lengths must be defined (e0 first, then e1)", **kwargs)
@@ -433,13 +456,13 @@ class benv(progStruc):
             return self.__err_print__("if a SNM eos only is chosen, the file length must be defined", **kwargs)
         else:
             if(mic == 1 and (pos_3 == 0 or pos_3 == 2)):
-                pos_1 = lens[0]
+                pos_1 = n
                 pos_4 = 0
                 pos_5 = 0
             elif(mic == 1 and pos_3 == 1):
                 pos_1 = 0
-                pos_4 = lens[0]
-                pos_5 = lens[0]
+                pos_4 = n0
+                pos_5 = n1
             else:
                 pos_1 = 0
                 pos_4 = 0
@@ -452,6 +475,75 @@ class benv(progStruc):
             parline += '\n'
 
         return parline
+
+    def parse_parline(self, parline, **kwargs):
+        '''
+            n  nden nread n0 n1 mic isnm iemp k0  rho0 fff
+            11 2    0     19 19 1   1    0    220 0.16 65
+        '''
+
+        if(self.__not_str_print__(parline, varID='parline', **kwargs):
+            return False
+
+        pl = strl.str_to_list(parline, filtre=True, **kwargs)
+        if(self.__not_arr_print__(pl, varID='parlist', **kwargs)):
+            return False
+
+        n = len(pl)
+        if(n != 11):
+            return self.__err_print__("length should be 11 values. Length : "+str(n), varID='parline', **kwargs)
+
+        try:
+            parlist = [int(pl[0]),
+                       int(pl[1]),
+                       int(pl[2]),
+                       int(pl[3]),
+                       int(pl[4]),
+                       int(pl[5]),
+                       int(pl[6]),
+                       int(pl[7]),
+                       int(pl[8]),
+                       float(pl[9]),
+                       int(pl[10])]
+            return parlist
+        except:
+            return self.__err_print__("could not be coerced into appropriate parline values", varID='parlist', **kwargs)
+
+    def update_parline(self, val, pos, parline, **kwargs):
+
+        parsed_parline = self.parse_parline(parline, **kwargs)
+        if(parsed_parline == False):
+            return False
+
+        if(self.__not_num_print__(val, varID='val', style='int', **kwargs)):
+            return False
+
+        if(isinstance(pos, (str, int)):
+            try:
+                pos = int(pos)
+            except:
+                return self.__err_print__("should be an integer ranging between 0-10", varID='pos', **kwargs)
+            if(pos < 0 or pos > 10):
+                return self.__err_print__("should be an integer ranging between 0-10", varID='pos', **kwargs)
+        elif(isinstance(val, (list,tuple)) and isinstance(pos, (list,tuple))):
+            if(not (len(val) == len(pos))):
+                msg = ["'val' and 'pos' should be the same length","'pos' length : "+str(len(val)),"'pos' length : "+str(len(pos))]
+                return self.__err_print__(msg, **kwargs)
+            try:
+                pos = [int(entry) for entry in pos]
+            except:
+                return self.__err_print__("entries should be convertable to integers", varID='pos', **kwargs)
+            if(min(pos) < 0 or max(pos) > 10):
+                return self.__err_print__("should contain integers ranging between 0-10", varID='pos', **kwargs)
+            ward = 'list'
+
+        if(ward == 'list'):
+            for i,entry in enumerate(pos):
+                parsed_parline[entry] = val[i]
+        else:
+            parsed_parline[pos] = val
+
+        return strl.array_to_str(parsed_parline, **kwargs)
 
 
     def create_vallist(self, a, z, divs='64 64 64', lims='0.0 20.0', addn=True, **kwargs):
@@ -503,14 +595,72 @@ class benv(progStruc):
         return [divs, lims, az]
 
 
+    def parse_valline(self, valline, **kwargs):
+        '''
+        64 64 64
+        0.0 20.0
+        208 82
+        '''
+
+        if(self.__not_strarr_print__(valline, varID='valline', **kwargs):
+            return False
+        if(len(valline) != 3):
+            return self.__err_print__("length should contain be 3 strings. Length : "+str(len(valline), varID='valline', **kwargs)
+        divs, lims, anz = valline
+
+        vallist = []
+
+        dv = strl.str_to_list(divs, filtre=True, **kwargs)
+        if(self.__not_arr_print__(dv, varID='divs', **kwargs)):
+            return False
+        n = len(dv)
+        if(n != 3):
+            return self.__err_print__("length should be 3 values. Length : "+str(n), varID='divs', **kwargs)
+        try:
+            dvlist = [int(dv[0]),
+                      int(dv[1]),
+                      int(dv[2])]
+            vallist.append(dvlist)
+        except:
+            return self.__err_print__("could not be coerced into appropriate valline values", varID='divs', **kwargs)
+
+        lm = strl.str_to_list(lims, filtre=True, **kwargs)
+        if(self.__not_arr_print__(lm, varID='lims', **kwargs)):
+            return False
+        n = len(lm)
+        if(n != 2):
+            return self.__err_print__("length should be 2 values. Length : "+str(n), varID='lims', **kwargs)
+        try:
+            lmlist = [float(dv[0]),
+                      float(dv[1])]
+            vallist.append(lmlist)
+        except:
+            return self.__err_print__("could not be coerced into appropriate valline values", varID='lims', **kwargs)
+
+        az = strl.str_to_list(anz, filtre=True, **kwargs)
+        if(self.__not_arr_print__(az, varID='anz', **kwargs)):
+            return False
+        n = len(az)
+        if(n != 2):
+            return self.__err_print__("length should be 2 values. Length : "+str(n), varID='anz', **kwargs)
+        try:
+            azlist = [int(dv[0]),
+                      int(dv[1])]
+            vallist.append(azlist)
+        except:
+            return self.__err_print__("could not be coerced into appropriate valline values", varID='anz', **kwargs)
+
+        return vallist
+
+
     def write_parline(self, parline):
         '''
         Passes benv parameters to 'par.don' file located in 'bin'
 
         pars takes the form: [see read-me for details]
 
-            n  nden nread n0 n1 mic isnm k0  rho0 fff
-            11 2    0     19 19 0   1 0  220 0.16 65
+            n  nden nread n0 n1 mic isnm iemp k0  rho0 fff
+            11 2    0     19 19 0   1    0    220 0.16 65
 
         '''
         success = iop.flat_file_write(self.PARPATH, parline, **kwargs)
@@ -685,18 +835,16 @@ class benv(progStruc):
             This function should only be called once per BENV run
         '''
 
-        eos_dir_path = self.joinNode(self.INITIAL_PATH,self.EOSDIR)
-        eos_file_list = self.contentPath(eos_dir_path)
+        eos_file_list = self.contentPath(self.EOSPATH)
 
         if(eos_file_list == None or eos_file_list == False):
-            print("[collect_eos] Error: EoS files could not be found")
             self.EOS_COLLECT_ERROR = True
-            return False
-    
+            return self.__err_print__("folder contents could not be retrieved", varID='eos', **kwargs)
+
         exfiles = []
         e1files = []
         e0files = []
-        egshock = []
+        eafail = []
         eoslist = []
 
         for i in eos_file_list:
@@ -705,192 +853,207 @@ class benv(progStruc):
             elif('e1' in i.lower() and (('e0' not in i.lower()) and ('ex' not in i.lower()))):
                 e1files.append(i) 
             elif('e0' in i.lower() and (('ex' not in i.lower()) and ('e1' not in i.lower()))):
-                e0files.append(i)        
+                e0files.append(i)
             else:
-                egshock.append(i) 
+                eafail.append(i)
 
-        if(len(egshock) > 0):
-            head_Text = "The following files are not valid 'eos' files:"
-            strl.format_fancy(egshock,header=head_Text)                 
-            
-        for i in exfiles:
-            file_path = self.cmv.joinNode(eos_dir_path,i)  
-            ex = iop.flat_file_intable(file_path) 
+        if(len(eafail) > 0):
+            msg = ["The following files are not valid 'eos' files:"]+eafail
+            self.__err_print__(msg, **kwargs)
+
+        improper_format = []
+        for file in exfiles:
+            file_path = self.joinNode(eos_dir_path, file, **kwargs)
+            ex = iop.flat_file_intable(file_path, **kwargs)
             if(ex != False):
                 if(len(ex) != 3):
-                    print("[collect_eos] Error: the file '"+str(i)+"' does not have three equal data columns")
-                    self.EOS_FILE_FORMAT_ERROR = True
-                    continue 
-                eoslist.append((ex,i))
+                    improper_format.append(ex)
+                    continue
+                eoslist.append((ex, file))
             else:
-                print("[collect_eos] Error: could not read table from '"+str(i)+"'")
-                continue                                     
-              
-        for i in e0files:
-             
-            e1pack = False
-            e1data = False
-            
-            if(len(i.split('e0')) == 2):
-                e1add = 'e1'
-                baselist = i.split('e0') 
-            elif(len(i.split('E0')) == 2):
-                e1add = 'E1'
-                baselist = i.split('E0')                      
-            else:         
-                self.EOS_SPLIT_PARSE_ERROR = True 
                 continue
+        self.__err_print__(["The following 'ex' files were improperly formatted:"]+improper_format, **kwargs)
 
-            if(baselist[0] == ''):
-                e1name = e1add+baselist[1]
-                idbaseline = baselist[1]
+        for file in e0files:
+
+            e1pack = False
+            e1name = ''
+
+            comp_name = self.name_compliment(file, {'e0':'e1', 'E0':'E1'}, **kwargs)
+            if(comp_name == False):
+                self.__err_print__("could not be converted to a name compliment", varID=file, **kwargs)
             else:
-                e1name = baselist[0]+e1add+baselist[1]
-                idbaseline = baselist[0]+baselist[1]
+                if(len(comp_name) > 0):
+                    if(len(comp_name) > 2):
+                        self.__err_print__("has more than one file compliment", varID=file, heading='Warning', **kwargs)
+                    e1name = comp_name[0][0]
+                    idbaseline = comp_name[0][1]
+                else:
+                    self.__err_print__("could not be converted to a name compliment", varID=file, **kwargs)
 
-            e0_file_path = self.cmv.joinNode(eos_dir_path,i)
+            e1data = False
+
+            e0_file_path = self.joinNode(self.EOSPATH, file, **kwargs)
+            e0data = iop.flat_file_intable(e0_file_path, **kwargs)
             if(e1name in e1files):
                 e1pack = True
-                e1_file_path = self.cmv.joinNode(eos_dir_path,e1name)
-
-            e0data = iop.flat_file_intable(e0_file_path)
-            if(e1pack):
-                e1data = iop.flat_file_intable(e1_file_path)
+                e1_file_path = self.joinNode(eos_dir_path, e1name, **kwargs)
+                e1data = iop.flat_file_intable(e1_file_path, **kwargs)
 
             if(not e0data):
                 print("[collect_eos] Error: could not parse the file at path '"+str(e0_file_path)+"' into a table")
-                self.EOS_SPLIT_PARSE_ERROR = True 
-                continue 
-            if(not e1data and e1pack):
+                continue
+            if(e1data == False and e1pack):
                 print("[collect_eos] Error: could not parse the file at path '"+str(e1_file_path)+"' into a table")
-                self.EOS_SPLIT_PARSE_ERROR = True 
                 continue
 
             if(e1pack):
                 e10 = []
                 try:
-                    e10 = [e0data[0],e0data[1],e1data[0],e1data[1]]
+                    e10 = [e0data[0], e0data[1], e1data[0], e1data[1]]
+                    eoslist.append((e10,idbaseline))
                 except:
-                    print("[collect_eos] Error: could not parse '"+str(e0_file_path)+"' and '"+str(e1_file_path)+"' content into data")
-                    self.EOS_SPLIT_PARSE_ERROR = True 
-                    continue                                     
-                eoslist.append((e10,idbaseline)) 
+                    msg = ["failure to coerce data into four arrays, check pathways:", e0_file_path, e1_file_path]
+                    self.__err_print__(msg, **kwargs)
+                    continue
             else:
                 e0 = []
                 try:
-                    e0 = [e0data[0],e0data[1]]
+                    e0 = [e0data[0], e0data[1]]
+                    eoslist.append((e0,idbaseline))
                 except:
-                    print("[collect_eos] Error: could not parse '"+str(e0_file_path)+"' content into data")
-                    self.EOS_SPLIT_PARSE_ERROR = True 
-                    continue                                     
-                eoslist.append((e0,idbaseline))
+                    msg = ["failure to coerce data into two arrays, check pathway:", e0_file_path]
+                    self.__err_print__(msg, **kwargs)
+                    continue
 
-        return eoslist         
+        return eoslist
 
 
-    def format_eos_data(self, eos_obj, pl=[], set_pars = True):
-    
-        eoslist_entry, eosid = eos_obj
+    def format_eos_data(self, eos_obj, parline, **kwargs):
+
+        try:
+            eoslist, eosid = eos_obj
+        except:
+            return self.__err_print__("should be an array of length two", varID='eos_obj',  **kwargs)
 
         output = ()
-        exgp = [] 
-        e0gp = [] 
+        exgp = []
+        e0gp = []
         e1gp = []
 
-        if(len(eoslist_entry) == 3):
+        m = len(eoslist)
+
+        if(m == 3):
             type = 0
-            kf = eoslist_entry[0]
-            e0 = eoslist_entry[1] 
-            e1 = eoslist_entry[2]
-            exgp = map(lambda x,y,z: strl.array_to_str([x,y,z],spc='  ',endline=True),kf,e0,e1)
+            kf = eoslist[0]
+            e0 = eoslist[1]
+            e1 = eoslist[2]
             if(len(kf) == len(e0) and len(e0) == len(e1)):
                 n = len(kf)
-            else: 
-                print("[format_eos_data] Warning: It appears that the input eos entry is improperly formatted")
-                print("                           Further errors will likely occur down the pipeline")
-                n = len(kf)
-            if(set_pars and len(pl) == 7):
-                pars = strl.array_to_str((n,pl[0],type,0,0,pl[1],pl[2],pl[3],pl[4],pl[5],pl[6]))     
-                output = (((type, exgp),pars),eosid)
-            else:          
-                output = ((type, exgp),eosid)     
-   
-        elif(len(eoslist_entry) == 4):
+            else:
+                return self.__err_print__("eos arrays should all be the same length", varID='eos_obj', **kwargs)
+            exgp = map(lambda x,y,z: strl.array_to_str([x,y,z], spc='  ', endline=True), kf,e0,e1)
+            eval = [exgp]
+            neid = 'ex'+eosid
+            parline = self.update_parline([n,0], [0,2], parline, **kwargs)
+
+        elif(m == 4):
             type = 1
-            kf0 = eoslist_entry[0]
-            e0  = eoslist_entry[1]
-            kf1 = eoslist_entry[2]
-            e1  = eoslist_entry[3]
+            kf0 = eoslist[0]
+            e0  = eoslist[1]
+            kf1 = eoslist[2]
+            e1  = eoslist[3]
+
+            if(len(kf0) == len(e0)):
+                n0 = len(kf0)
+            else:
+                return self.__err_print__("and the corrosponding kfs should be arrays with the same length", varID='e0', **kwargs)
+
+            if(len(kf1) == len(e1)):
+                n1 = len(kf1)
+            else:
+                return self.__err_print__("and the corrosponding kfs should be arrays with the same length", varID='e0', **kwargs)
+
             e0gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True),kf0,e0)
             e1gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True),kf1,e1)
+            eval = [e0gp, e1gp]
+            neid = 'e10'+eosid
+            parline = self.update_parline([1, n0, n1], [2, 3, 4], parline, **kwargs)
 
-            if(len(kf0) == len(e0) and len(kf1) == len(e1)):
-                n0 = len(kf0)
-                n1 = len(kf1)
-            else: 
-                print("[format_eos_data] Warning: It appears that the input eos entry is improperly formatted")
-                print("                            Further errors will likely occur down the pipeline")
-                n0 = len(kf0)
-                n1 = len(kf1)
-            if(set_pars and len(pl) == 7):
-                pars = strl.array_to_str((0,pl[0],type,n0,n1,pl[1],pl[2],pl[3],pl[4],pl[5],pl[6]))     
-                output = (((type, e0gp, e1gp),pars),'e10'+eosid)
-            else:          
-                output = ((type, e0gp, e1gp),'e10'+eosid) 
-               
-        elif(len(eoslist_entry) == 2): 
+        elif(m == 2):
             type = 2
-            kf = eoslist_entry[0]
-            e0 = eoslist_entry[1]             
-            e0gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True),kf,e0)
+            kf = eoslist[0]
+            e0 = eoslist[1]
 
             if(len(kf) == len(e0)):
                 n = len(kf)
-            else: 
-                print("[format_eos_data] Warning: It appears that the input eos entry is improperly formatted")
-                print("                           Further errors will likely occur down the pipeline")
-                n = len(kf)
-            if(set_pars and len(pl) == 7):
-                pars = strl.array_to_str((n,pl[0],type,0,0,pl[1],pl[2],pl[3],pl[4],pl[5],pl[6]))     
-                output = (((type, e0gp),pars),'e0'+eosid)
-            else:          
-                output = ((type, e0gp),'e0'+eosid)   
+            else:
+                return self.__err_print__("and the corrosponding kf should be arrays of the same length", varID='e0', **kwargs)
+
+            e0gp = map(lambda x,y: strl.array_to_str([x,y],spc='  ',endline=True), kf,e0)
+            eval = [e0gp]
+            neid = 'e0'+eosid
+            parline = self.update_parline([n, 2], [0, 2], parline, **kwargs)
+
         else:
-            print("[format_eos_data] Error: 'eoslist_entry' must be either 2, 3 or 4 numeric lists long")
-            output = False          
-        return output         
+            return self.__err_print__("must a numeric array of length 2, 3 or 4", varID='eoslist', **kwargs)
+
+        output = (type, eval, parline, neid)
+
+        return output
 
 
-    def pass_eos(self, formatted_eos):
+    def write_eos(self, formatted_eos, **kwargs):
 
-        if(not isinstance(formatted_eos,(list,tuple))):
-            print("[pass_eos] Error: 'formatted_eos' must be either a list or tuple")
-            self.EOS_PASS_ERROR = True
-            return False 
-         
-        type = formatted_eos[0]  
+        ealist = []
+        e0list = []
+        e1list = []
+
+        try:
+            elist, type = formatted_eos
+            try:
+                if(type == 0):
+                    ealist = elist[0]
+                elif(type == 1):
+                    e0list = elist[0]
+                    e1list = elist[1]
+                elif(type == 2):
+                    e0list = elist[0]
+            except:
+                msg = "has an eos component which is not properly formatted"
+                return self.__err_print__(msg, varID='formatted_eos', **kwargs)
+        except:
+            return self.__err_print__("should be an array of length three", varID='formatted_eos', **kwargs)
+
         if(type == 0):
-            eos_path = self.cmv.joinNode(self.binpath,'ex_nxlo.don') 
-            success = iop.flat_file_write(eos_path, formatted_eos[1])  
-            if(not success): 
-                print("[pass_eos] Error: when writing to 'ex_nxlo.don'")          
+            eos_path = self.joinNode(self.BINPATH, self.EXFILE, **kwargs)
+            if(eos_path == False):
+                return self.__err_print__(["could not be added to the 'bin' pathway:", self.BINPATH], varID=self.EXFILE, **kwargs)
+            success = iop.flat_file_write(eos_path, ealist, **kwargs)
+            if(success == False):
+                return False
         elif(type == 1):
-            e0_path = self.cmv.joinNode(self.binpath,'e0_nxlo.don') 
-            success = iop.flat_file_write(e0_path, formatted_eos[1])
-            if(not success): 
-                print("[pass_eos] Error: when writing to 'e0_nxlo.don'")   
-            e1_path = self.cmv.joinNode(self.binpath,'e1_nxlo.don') 
-            success = iop.flat_file_write(e1_path, formatted_eos[2])      
-            if(not success): 
-                print("[pass_eos] Error: when writing to 'e1_nxlo.don'")   
+            e0_path = self.joinNode(self.BINPATH, self.E0FILE, **kwargs)
+            if(e0_path == False):
+                return self.__err_print__(["could not be added to the 'bin' pathway:", self.BINPATH], varID=self.E0FILE, **kwargs)
+            success = iop.flat_file_write(e0_path, e0list, **kwargs)
+            if(success == False):
+                return False
+            e1_path = self.joinNode(self.BINPATH, self.E1FILE, **kwargs)
+            if(e1_path == False):
+                return self.__err_print__(["could not be added to the 'bin' pathway:", self.BINPATH], varID=self.E1FILE, **kwargs)
+            success = iop.flat_file_write(e1_path, e1list, **kwargs)
+            if(success == False):
+                return False
         elif(type == 2):
-            e0_path = self.cmv.joinNode(self.binpath,'e0_nxlo.don') 
-            success = iop.flat_file_write(e0_path, formatted_eos[1])  
-            if(not success): 
-                print("[pass_eos] Error: when writing to 'e0_nxlo.don'")                   
+            e0_path = self.joinNode(self.BINPATH, self.E0FILE, **kwargs)
+            if(e0_path == False):
+                return self.__err_print__(["could not be added to the 'bin' pathway:", self.BINPATH], varID=self.E0FILE, **kwargs)
+            success = iop.flat_file_write(e0_path, e0list, **kwargs)
+            if(success == False):
+                return False
         else:
-            print("[pass_eos] Error: 'formatted_eos' is not properly formatted")
-            return False
+            return self.__err_print__("not properly formatted", varID='formatted_eos', **kwargs)
 
         return True
 
@@ -899,202 +1062,128 @@ class benv(progStruc):
     # functions dealing with benv looping #------------------------------------------------------------|
     #######################################
 
-
-    def data_from_bin(self, file_Name, first_Line, number_Lines = 1):
-
-        '''
-        Function to get data from files found in the 'binpath' directory 
-
-        '''
-                      
-        filepath = self.cmv.joinNode(self.binpath,file_Name)
-        lines = iop.flat_file_grab(filepath)
-
-        if(lines == False or not isinstance(lines,list)):
-            print(self.s4+"[data_from_bin] Error: Failure to get data from file: '"+str(file_Name)+"'")
-            print(self.s4+"Pathway: '"+str(filepath))
-            print(self.s4+"Run number: "+str(self.run_time)+"'\n")
-            return False
-
-        if(len(lines) < number_Lines):
-            print(self.s4+"[data_from_bin] Error: the number of lines found in file less than: "+str(number_Lines))
-            print(self.s4+"File name: '"+str(file_Name)+"'")
-            print(self.s4+"Run number: "+str(self.run_time)+"'\n")
-            return False 
-                    
-        if(first_Line):
-            return lines[0] 
-        else: 
-            return lines   
-
-  
-    def run_benv(self, collect = True):
-
-        if(self.SUBPROCESS_PATH_ERROR):
-            print("[run_benv] Error: pathway to binary directory has not been set")
-            return False
-
-        subprocess.call("./run.sh", shell=True)                   
-        return True
-
-
-    def parse_skval_benv_vals(self, benvals, split = True):
-
-        if(split):
-            parlines = [] 
-            nuclines = []
-            azs      = []
-        else:
-            outlines = []
-
-        for i in xrange(len(benvals)):
-            parline = strl.str_to_list(str(benvals[i][0][0]).rstrip(), filtre=True)
-            nucline = strl.str_to_list(str(benvals[i][0][1]).rstrip(), filtre=True)
-        
-            parline = strl.array_to_str([round(float(j),10) for j in parline], spc = '  ')
-            nucline = strl.array_to_str([round(float(j),10) for j in nucline], spc = '  ')
-
-            if(split):
-                parlines.append(parline) 
-                nuclines.append(nucline)
-                azs.append((str(int(float(benvals[i][1][0]))), str(int(float(benvals[i][1][1])))))
-            else:            
-                isoline = '    '+str(int(float(benvals[i][1][0])))+'  '+str(int(float(benvals[i][1][1])))
-                totline = parline+nucline+isoline+'\n'                
-                outlines.append(totline)
-        
-        if(split): 
-            return (parlines, nuclines, azs)
-        else: 
-            return outlines
-
-
-    def clean_up(self, debug = False):
-
-        if(debug):
-            pass
-        else:
-            if(self.cmv.varPath_Dir != self.BINFILE):          
-                success, output = self.cmv.cmd("cd "+self.BINFILE)
-                if(not success):
-                    print("[clean_up] ExitError: failure to access "+self.BINFILE)
-                    self.exit_function("while changing directories")
-            else:
-                return False            
-    
-            subprocess.call("rm CONSOLE.txt",shell = True)         
+    def clean_up(self):
         
         self.exit_error_check()
         print("")
-        time.sleep(0.5)
         print("No fatal Errors detected")
-        time.sleep(0.5)
         print("Run Number upon exit:  "+str(self.run_time))
-        time.sleep(0.5)
         print("Script run-time :  "+str(round(time.time()-self.time_Start,3))+" seconds")
-        time.sleep(0.5)
         print("   ")
 
         return True
 
     # Running and Looping functions
 
-    def run_once(self, clean_Run = True):
-           
-        pars, vals = self.data_from_pars() 
-        self.pass_pars(pars)
-        self.pass_vals(vals)
-        self.run_benv()
-        
-        optpars  = self.data_from_bin(self.VRBFILE,True)
-        if(optpars == False):
-            self.VRBFILE_ERROR = True                   
-         
-        skinvals = self.data_from_bin(self.SKNFILE,True)
-        if(skinvals == False):
-            self.SKNFILE_ERROR = True 
-         
-        if(clean_Run):
-            subprocess.call("rm "+self.VRBFILE, shell = True)
-            subprocess.call("rm "+self.SKNFILE, shell = True)
+    def single_run(self, parline=None, vallist=None, run_cmd='run.sh', clean_Run=True):
 
-        self.run_time+=1
-        return (optpars,skinvals)
-        
-      
-    def skval_loop(self, parline, skval_data, skval_type):
-        ''' 
-        Notes: 
+        if(isinstance(parline, str)):
+            self.write_parline(parline, **kwargs)
+        if(isinstance(vallist, (tuple, list))):
+            self.write_vallist(vallist, **kwargs)
+
+        self.set_osdir(self.EOSPATH, **kwargs)
+        self.run_commands(run_cmd, **kwargs)
+        self.set_osdir(**kwargs)
+
+        values_dict = self.read_files_from_folder('bin', [self.VRBFILE, self.SKNFILE], clean=True, **kwargs)
+
+        optpars = values_dict.get(self.VRBFILE)
+        skinvals = values_dict.get(self.SKNFILE)
+
+        if(clean_Run):
+            self.clearDir(['eos'], select=[self.VRBFILE, self.SKNFILE], **kwargs)
+
+        self.cycle+=1
+        return (optpars, skinvals)
+
+
+    def skval_loop(self, skval, **kwargs):
+        '''
+        Notes:
 
         '''
-    
-        benvals = []    
-         
-        # Parsing data from the skval data file, default : 'skval.don' 
-        if(not isinstance(skval_data,(list,tuple)) or not isinstance(skval_type,str)):
-            print(self.s4+"[skval_loop] TypeError: check function input variables\n")
+
+        try:
+            nuclist, loop_type, parlist = skval
+        except:
+            return self.__err_print__("should be an array of two values", varID='skval', **kwargs)
+
+        if(self.__not_str_print__(loop_type, varID='loop_type', **kwargs)):
             return False
         else:
-            data = list(skval_data)            
-            type = str(skval_type)              
-        
-        # 'type' determines if BENV values are computed by a skval loop or individual nuclei   
-        if(type == 'loop'):        
-            skval_list = self.skval_loop_line_parse(data)
-            if(skval_list == False):
-                return skval_list
-            if(not isinstance(skval_list[0],int) or not isinstance(skval_list[1],int) or not isinstance(skval_list[2],int)):
-                return False
+            loop_type = loop_type.lower()
+            loop_type = loop_type.rstrip()
+            if(loop_type != 'loop' and loop_type != 'pair'):
+                return self.__err_print__("should be equal to either, 'loop' or 'pair'", varID='loop_type', **kwargs)
 
-            if(skval_list[3]):
-                inv = -1 
-            else:
-                inv = 1                     
-            for i in xrange(skval_list[0]):
-                ax = self.initial_a+inv*skval_list[2]*(i)
-                for j in xrange(skval_list[1]): 
-                    zx = self.initial_z+inv*(skval_list[2])*(j)                                    
-                    parlines = self.format_pars_data(parline, ax, zx)     
-                    if(parlines == False):
-                        print(self.s4+"[skval_loop] Error: failure when formatting 'parameters', current run skipped\n")
-                        results = ('False','False')
-                        benvals.append((results,(ax,zx))) 
-                        continue 
+        if(self.__not_arr_print__(nuclist, varID='nuclist', **kwargs)):
+            return False
 
-                    success = self.write_parlist(parlines)
-                    if(not success): 
-                        print(self.s4+"[skval_loop] Error: failure when passing 'parameters', current run skipped\n")
-                        results = ('False','False')
-                    else:
-                        results = self.run_once()
-                    benvals.append((results,(ax,zx))) 
+        output = []
 
-        elif(type == 'pair'):   
-            for i in data: 
-                ax = i[0]
-                zx = i[1]
-                parlines = self.format_pars_data(parline, ax, zx)
-                if(parlines == False):
-                    print(self.s4+"[skval_loop] Error: failure when formatting 'parameters', current run skipped\n")
-                    results = ('False','False')
-                    benvals.append((results,(ax,zx))) 
-                    continue 
-                 
-                success = self.write_parlist(parlines)
-                if(not success): 
-                    print(self.s4+"[skval_loop] Error: failure when passing 'parameters', current run skipped\n")
-                    results = ('False','False')
+        # 'loop_type' determines if BENV values are computed by a skval loop or individual nuclei
+        if(loop_type == 'loop'):
+
+            for loop in nuclist:
+
+                biga = loop[0]
+                bigz = loop[1]
+                inc =  loop[2]
+                inv =  loop[3]
+
+                if(inv):
+                    inv = -1
                 else:
-                    results = self.run_once()
-                benvals.append((results,(ax,zx)))                
-        else:
-            print(self.s4+"[skval_loop] ValueError: 'type' value not reconignized")
-            benvals = False     
-          
-        return benvals
+                    inv = 1
+                for i in xrange(biga):
+                    ax = self.initial_a+inv*inc*i
+                    for j in xrange(bigz):
+                        zx = self.initial_z+inv*inc*j
+
+                        new_vallist = self.create_vallist(ax, zx, **kwargs)
+                        pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                        if(pass_vallist == False):
+                            msg = ["failure to create and write vallist", "vallist : "+str(new_vallist), ""]
+                            return self.__err_print__(msg, **kwargs)
+
+                        results = self.single_run()
+                        if(results == False):
+                            msg = ["failure to create complete run", "A,Z : "+str(ax)+","+str(zx)]
+                            return self.__err_print__(msg, **kwargs)
+                        output.append((results,(ax,zx)))
+            return output
+
+        if(loop_type == 'pair'):
+
+            for pair in nuclist:
+
+                ax = pair[0]
+                zx = pair[1]
+
+                new_vallist = self.create_vallist(ax, zx, **kwargs)
+                pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                if(pass_vallist == False):
+                    msg = ["failure to create and write vallist", "vallist : "+str(new_vallist), ""]
+                    return self.__err_print__(msg, **kwargs)
+
+                results = self.single_run()
+                if(results == False):
+                    msg = ["failure to create complete run", "A,Z : "+str(ax)+","+str(zx)]
+                    return self.__err_print__(msg, **kwargs)
+                output.append((results,(ax,zx)))
+            return output
 
 
-    def benv_eos_loop(self, reset=True):
+    def eos_loop(self, eoslist,
+                       skval,
+                       parline=None,
+                       initpar=False,
+                       mirrors=False,
+                       eospars=False,
+                       eosgrup=False,
+                       reset=True,
+                       **kwargs):
         '''
         !Function which runs the BENV program!
 
@@ -1102,169 +1191,76 @@ class benv(progStruc):
         '''
 
         benvals_group = []
-        benvals_cohort= []
 
-        #Get EoS from 'eos' folder
-        eoslist = self.collect_eos()
-        if(eoslist == False):
-            return self.__err_print__("could not collect EoS data from 'eos' folder", heading='Fatal Error', **kwargs)
-
-        #Get SKVAL from 'skval.don' file
-        skval_lines = self.get_options(**kwargs)
-        if(skval_lines == False):
-            return self.__err_print__("could not collect SKVAL data from 'skval.don' file", heading='Fatal Error', **kwargs)
-
-        # Format skval lines into data list, type string and pars list
-        skval_data = self.parse_skval(skval_lines, **kwargs)
-        if(skval_data == False):
-            return self.__err_print__("failure to format skval lines", **kwargs)  
-        data, type, pars = skval_data  
-
-        # Get parameters par 'Parameter.don' file
-        initial_pars = self.initial_pars
-        if(initial_pars == ''):
-            self.INITIAL_PARS_ERROR = True
-            print(self.s4+"[benv_eos_loop] Warning: 'inital_pars' have not been set\n")
-         
-        # Convert parameters from (string) to (list of floats), assign list to 'plst'
-        if(self.INITIAL_PARS_ERROR):
-            pass
-        else:
-            pl = self.parline_style_convert(initial_pars) 
-            if(pl == False):
-                self.INITIAL_PARS_ERROR = True
-                print(self.s4+"[benv_eos_loop] Error: could not convert 'pars' to list\n")
+        if(not isinstance(parline ,str)):
+            if(len(self.parline) > 0):
+                parline = self.parline[0]
             else:
-                plst = [pl[1],pl[5],pl[6],pl[7],pl[8],pl[9],pl[10]]   
-             
+                self.__err_print__("could not be properly parsed", varID='parline', **kwargs)
 
         # cycle through each EoS
-        if(self.initpar and not self.INITIAL_PARS_ERROR):
-            for i,entry in enumerate(eoslist):
+        for i,eos in enumerate(eoslist):
 
-                # Convert each EoS object into eos data (eos_obj) and eos id (eosid)  
-                packed_format_eos_data = self.format_eos_data(entry, pl=plst)
-                ith_entry = strl.print_ordinal(str(i+1)) 
-                if(packed_format_eos_data == False):                    
-                    print("[benv_eos_loop] Error: the "+ith_entry+" EoS could not be formatted")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
-                eos_obj,eosid = packed_format_eos_data
-            
-                # Set eos data (eos_instance) and 'par.don' line (parline) 
-                eos_instance, parline = eos_obj
-		         
-                # Pass the eos data to the appropriate file  
-                success = self.pass_eos(eos_instance)
-                if(success == False): 
-                    print(self.s4+"[benv_eos_loop] RuntimeError: could not pass the "+ith_entry+" EoS to the bin folder")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
-		    
-                # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
-                benvals = self.skval_loop(parline, data, type)
-                if(benvals == False):
-                    print(self.s4+"[benv_eos_loop] Error: failure of the 'skval_loop' routine\n")
-                    print(self.s4+"'skval_loop' failure occured for the "+ith_entry+" run of the loop")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
-		    
-                # Format data returned by skavl loop routine 
-                try:
-                    formatted_benvals = self.parse_skval_benv_vals(benvals)
-                except:
-                    print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
-                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
-                    
-                if(formatted_benvals == False):
-                    print(self.s4+"[benv_eos_loop] Error: failure to properly format data from 'skval_loop'\n")
-                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue 
-                      
-                benvals_group.append((formatted_benvals,eosid))
-            benvals_cohort.append(benvals_group)
-            benvals_group = []
-        else:    
-            pass 
-           
-        if(len(pars)>0):
-             
-            if(self.egrprup):
-                out_Iter = pars   
-                inn_Iter = eoslist 
-            else: 
-                out_Iter = eoslist 
-                inn_Iter = pars
+            # Convert each EoS object into eos data (eos_inst) and eos id (eosid)
+            formdat = self.format_eos_data(eos, parline **kwargs)
+            if(formdat == False):
+                ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                msg = "The "+ith_entry+" EoS could not be formatted, cycling to the next eos..."
+                self.__err_print__(msg, **kwargs)
+                continue
+            # Set eos data (eos_instance) and 'par.don' line (parline)
+            type, eos_instance, parline, eosid = formdat
 
-            for i,out_entry in enumerate(out_Iter):
-                for j,inn_entry in enumerate(inn_Iter):
+            # Pass the eos data to the appropriate file
+            success = self.write_eos(eos_instance)
+            if(success == False):
+                ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                msg = "The "+ith_entry+" EoS could not be passed to 'bin', cycling to the next eos..."
+                self.__err_print__(msg, **kwargs)
+                continue
 
-                    if(self.egrprup):
-                        eos_entry = inn_entry 
-                        par_entry = out_entry
-                        ith_entry = strl.print_ordinal(str(i+1)) 
-                        jth_entry = strl.print_ordinal(str(j+1))
-                    else:
-                        eos_entry = out_entry  
-                        par_entry = inn_entry 
-                        ith_entry = strl.print_ordinal(str(j+1)) 
-                        jth_entry = strl.print_ordinal(str(i+1))
+            # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
+            benvals = self.skval_loop(skval, **kwargs)
+            if(benvals == False):
+                ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                msg = "The "+ith_entry+" failed the 'skval_loop' routine, cycling to the next eos..."
+                self.__err_print__(msg, **kwargs)
+                continue
 
-                    # Convert each EoS object into eos data (eos_obj) and eos id (eosid)
-                    packed_format_eos_data = self.format_eos_data(eos_entry, pl=par_entry)
-                    ith_entry = strl.print_ordinal(str(i+1))
-                    jth_entry = strl.print_ordinal(str(j+1))
-                    if(packed_format_eos_data == False):
-                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+ith_entry+" par cycle,"
-                        print(self.s4+"[benv_eos_loop] Error: "+cycle_Info_Text+" could not be formatted")
-                        print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                        continue
-                    eos_obj,eosid = packed_format_eos_data
-                    eos_instance, parline = eos_obj
-
-                    # Pass the eos data to the appropriate file  
-                    success = self.pass_eos(eos_instance)
-                    if(success == False):
-                        cycle_Info_Text = "the "+jth_entry+" EoS, during the "+jth_entry+" par cycle,"
-                        print(self.s4+"[benv_eos_loop] RuntimeError: "+cycle_Info_Text+" could not be passed to the bin folder")
-                        print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                        continue
-
-                    # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
-                    benvals = self.skval_loop(parline, data, type)
-                    if(benvals == False):
-                        print(self.s4+"[benv_eos_loop] Error: failure of the 'skval_loop' routine\n")
-                        print(self.s4+"'skval_loop' failure occured for the "+ith_entry+" run of the loop")
-                        print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                        continue
-
-                # Format data returned by skavl loop routine
-                try:
-                    formatted_benvals = self.parse_skval_benv_vals(benvals)
-                except:
-                    print(self.s4+"[benv_eos_loop] Error: fatal error occured when formating data from 'skval_loop'\n")
-                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue
-
-                if(formatted_benvals == False):
-                    print(self.s4+"[benv_eos_loop] Error: failure to properly format data from 'skval_loop'\n")
-                    print(self.s4+"Formating failure occured for the "+ith_entry+" run of the loop")
-                    print(self.s4+"This execution will be terminated, cycling to the next eos...\n")
-                    continue
-
-                if(self.egrprup):
-                    benvals_group.append((formatted_benvals,"eos_grup_"+str(jth_entry)+"_"+eosid))
-                else:
-                    benvals_group.append((formatted_benvals,"par_var_"+str(ith_entry)+"_"+eosid))
-
-            benvals_cohort.append(benvals_group)
-            benvals_group = []
+            # Format data returned by skavl loop routine
+            formatted_benvals = self.parse_skval_benv_vals(benvals)
+            if(formatted_benvals == False):
+                ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                msg = "The "+ith_entry+" failed the 'skval_loop' formatting routine, cycling to the next eos..."
+                self.__err_print__(msg, **kwargs)
+                continue
+            benvals_group.append((formatted_benvals,eosid))
 
         if(reset):
-            self.write_parlist(self.format_pars_data(self.initial_pars, self.initial_a, self.initial_z, parform = 'str'))
+            self.write_parline(self.initial_parline, **kwargs)
+            self.write_vallist(self.initial_vallist, **kwargs)
 
-        return benvals_cohort
+        return benvals_group
+
+
+    def benv_run(self, reset=True, **kwargs):
+
+        # Get SKVAL from 'skval.don' file
+        skval_lines = self.get_options(**kwargs)
+        if(skval_lines == False):
+            return self.__err_print__("could not collect 'skval' data from 'skval.don' file", **kwargs)
+
+        # Format skval lines into skval data
+        skval = self.parse_skval(skval_lines, **kwargs)
+        if(skval == False):
+            return self.__err_print__("failure to format 'skval' data", **kwargs)
+
+        # Get EoS from 'eos' folder
+        eoslist = self.collect_eos()
+        if(eoslist == False):
+            return self.__err_print__("could not collect EoS data from 'eos' folder", **kwargs)
+
+        # Put EoS and skval data in EoS loop
+        benvals = self.eos_loop(eoslist, skval, reset, **kwargs)
+        return benvals
+

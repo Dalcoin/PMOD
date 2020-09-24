@@ -460,7 +460,10 @@ class cmdUtil(PathParse):
         else:
             return self.__err_print__("should be either a string or an array of strings", varID='files_to_read', **kwargs)
 
-        filepathway = self.joinNode(self.varPath, directory)
+        if(directory not in self.varPath_Folders):
+            return self.__err_print__("not a folder in the current directory", varID=directory, **kwargs)
+
+        filepathway = self.joinNode(self.varPath, directory, **kwargs)
         if(filepathway == False):
             return False
 
@@ -470,16 +473,19 @@ class cmdUtil(PathParse):
         for file in files_to_read:
             entrypathway = self.joinNode(filepathway, file, **kwargs)
             if(entrypathway == False):
-                continue
-            lines = iop.flat_file_read(entrypathway)
-            if(lines == False):
                 failure_to_read.append(file)
                 continue
             if(clean):
-                filetext_dict[file] = [line.rstrip() for line in lines]
+                lines = iop.flat_file_grab(entrypathway, scrub=True)
+            else:
+                lines = iop.flat_file_grab(entrypathway)
+            if(lines == False):
+                failure_to_read.append(file)
+                continue
             else:
                 filetext_dict[file] = lines
-        if(len(failure_to_move) > 0):
-            self.__err_print__(["Below is a list of files which encoutered an error during the read operation:"]+failure_to_read, **kwargs)
+        if(len(failure_to_read) > 0):
+            msg = "Below is a list of files which encoutered an error during the read operation:"
+            self.__err_print__([msg]+failure_to_read, **kwargs)
         return filetext_dict
 

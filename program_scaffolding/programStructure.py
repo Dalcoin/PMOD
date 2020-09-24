@@ -642,7 +642,63 @@ class progStruct(cmdUtil):
             return self.__err_print__("pathway was not properly initialized", varID=self.LOGFILE, **kwargs)
 
         lines = iop.flat_file_grab(self.LOGPATH, scrub=True, **kwargs)
-        return lines 
+        return lines
+
+
+    #---------------------------#----------------#--------------------------#
+    # Executing Programs in BIN #                # Executing Program in BIN #
+    #---------------------------#----------------#--------------------------#
+
+    def run_commands(self, commands, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("run_commands", **kwargs)
+
+        failed_commands = []
+        not_commands = []
+        success = True
+
+        if(isinstance(commands, (tuple, list))):
+            for command in commands:
+                if(isinstance(command, str)):
+                    try:
+                        subprocess.call("./"+command, shell=True)
+                    except:
+                        failed_commands.append(command)
+                else:
+                    not_commands.append(str(command))
+        elif(isinstance(commands, str)):
+            try:
+                subprocess.call("./"+command, shell=True)
+            except:
+                failed_commands.append(command)
+        else:
+            not_commands.append(str(command))
+
+        if(len(failed_commands)>0):
+            self.__err_print__(["The following commands failed to execute:"]+failed_commands, **kwargs)
+            success = False
+
+        if(len(not_commands)>0):
+            self.__err_print__(["The following commands are not valid, no execution attempted:"]+not_commands, **kwargs)
+            success = False
+
+        return success
+
+
+    def set_osdir(self, pathway=None, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("set_osdir", **kwargs)
+
+        if(isinstance(pathway, str)):
+            pass
+        else:
+            pathway = self.DIRPATH
+
+        try:
+            os.chdir(pathway)
+            return True
+        except:
+            return self.__err_print__(["failure to set os-dir:", str(pathway)], **kwargs)
 
     #------------------------#----------------#------------------------#
     # Program Loop Functions #                # Program Loop Functions #
