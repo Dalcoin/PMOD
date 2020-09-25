@@ -1,2 +1,2 @@
-import programCompile import progcomp
-import programStructure import progstruct
+import programCompile as progcomp
+import programStructure as progstruct

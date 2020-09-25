@@ -6,9 +6,9 @@ from scipy.interpolate import splint as __integ__
 
 from scipy.integrate import quad as __definteg__
 
-import pmod.tcheck as check
-from pmod.tcheck import imprimerTemplate
-import pmod.strlist as strl
+import tcheck as check
+from tcheck import imprimerTemplate
+import strlist as strl
 
 '''
 Functions useful for mathmatical operations and plotting, emphasis on parsing floating point variables

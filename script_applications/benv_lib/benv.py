@@ -4,22 +4,22 @@ import subprocess
 import re
 import time
 
-from pmod.programStructure import progStruc
+from progLib.programStructure import progStruct
 
-import pmod.ioparse as iop
-import pmod.strlist as strl
-import pmod.mathops as mops
+from progLib.pmod import ioparse as iop
+from progLib.pmod import strlist as strl
+from progLib.pmod import mathops as mops
 
 
-class benv(progStruc):
+class benv(progStruct):
 
     def __init__(self,
-                 eos_fold_name='eos'
+                 eos_fold_name='eos',
                  par_file_name='par.don',
                  val_file_name='nucleus.don',
                  vrb_file_name='opt_par.etr',
                  skn_file_name='skin.srt',
-                 xeb_bin_name='xeb_server'
+                 xeb_bin_name='xeb_server',
                  aux_bin_name='aux',
                  osFormat='linux',
                  newPath=None,
@@ -170,17 +170,17 @@ class benv(progStruc):
         if(self.VALFILE in self.BIN_DICT):
             self.VALPATH = self.BIN_DICT[self.VALFILE]
         else:
-            success = self.__err_print__("not found in '"+self.BINFOLD"'", varID=self.VALFILE, **kwargs)
+            success = self.__err_print__("not found in '"+self.BINFOLD+"'", varID=self.VALFILE, **kwargs)
 
         if(self.AUXFILE in self.BIN_DICT):
             self.AUXPATH = self.BIN_DICT[self.AUXFILE]
         else:
-            success = self.__err_print__("not found in '"+self.BINFOLD"'", varID=self.AUXFILE, **kwargs)
+            success = self.__err_print__("not found in '"+self.BINFOLD+"'", varID=self.AUXFILE, **kwargs)
 
         if(self.XEBFILE in self.BIN_DICT):
             self.XEBPATH = self.BIN_DICT[self.XEBFILE]
         else:
-            success = self.__err_print__("not found in '"+self.BINFOLD"'", varID=self.XEBFILE, **kwargs)
+            success = self.__err_print__("not found in '"+self.BINFOLD+"'", varID=self.XEBFILE, **kwargs)
 
         return success
 
@@ -245,7 +245,7 @@ class benv(progStruc):
 
             if(self.SKVAL_HEADER.findall(line) != []):
                 resh = self.SKVAL_HEADER.findall(line)[0].lower()
-                if(resh == 'loop' or resh == 'special')
+                if(resh == 'loop' or resh == 'special'):
                     hed_bool = True
                 elif(resh == 'nuclei'):
                     nuc_bool = True
@@ -482,7 +482,7 @@ class benv(progStruc):
             11 2    0     19 19 1   1    0    220 0.16 65
         '''
 
-        if(self.__not_str_print__(parline, varID='parline', **kwargs):
+        if(self.__not_str_print__(parline, varID='parline', **kwargs)):
             return False
 
         pl = strl.str_to_list(parline, filtre=True, **kwargs)
@@ -518,7 +518,7 @@ class benv(progStruc):
         if(self.__not_num_print__(val, varID='val', style='int', **kwargs)):
             return False
 
-        if(isinstance(pos, (str, int)):
+        if(isinstance(pos, (str, int))):
             try:
                 pos = int(pos)
             except:
@@ -554,9 +554,9 @@ class benv(progStruc):
                       to each string.
         '''
 
-        if(__not_str_print__(divs, varID='divs', **kwargs):
+        if(__not_str_print__(divs, varID='divs', **kwargs)):
             try:
-                if(isinstance(divs, (list, tuple)):
+                if(isinstance(divs, (list, tuple))):
                     if(len(divs) == 3):
                         divs = strl.array_to_str(divs, **kwargs)
                     else:
@@ -568,9 +568,9 @@ class benv(progStruc):
             except:
                 return self.__err_print__("should be a string of three integers", varID='divs', **kwargs)
 
-        if(__not_str_print__(lims, varID='lims', **kwargs):
+        if(__not_str_print__(lims, varID='lims', **kwargs)):
             try:
-                if(isinstance(lims, (list, tuple)):
+                if(isinstance(lims, (list, tuple))):
                     if(len(lims) == 2):
                         lims = strl.array_to_str(lims, **kwargs)
                     else:
@@ -602,10 +602,10 @@ class benv(progStruc):
         208 82
         '''
 
-        if(self.__not_strarr_print__(valline, varID='valline', **kwargs):
+        if(self.__not_strarr_print__(valline, varID='valline', **kwargs)):
             return False
         if(len(valline) != 3):
-            return self.__err_print__("length should contain be 3 strings. Length : "+str(len(valline), varID='valline', **kwargs)
+            return self.__err_print__("length should contain be 3 strings. Length : "+str(len(valline)), varID='valline', **kwargs)
         divs, lims, anz = valline
 
         vallist = []
@@ -691,136 +691,63 @@ class benv(progStruc):
     # Output Data Formatter #
     #########################
 
-    def format_benv_data(self, data, style = None, coerce_to_style = False):
+    def format_benv_data(self, data, eospars=False, eosgrup=False, style=None, coerce_to_style=False, **kwargs):
 
-        def __parval_to_string__(parval_obj, coerce_to_style):
+        par_Strings = []
+        val_Strings = []
 
-            try:
-                optpars, skinvals = parval_obj
-            except:
-                print(self.s4+"[format_benv_data] [__parval_to_string__] Error: could not coerce 'parval_obj' into two objects")
-                return False
+        val_Strings.append("NR      PR      NS    CHR      BE      SEC   A   Z\n")
+        val_Strings.append("\n")
 
-            if(optpars != False):
-                pars_List = strl.str_to_list(optpars)
-            else:
-                pars_List = ["Error: No density functional parameters found, check convergence"]
-
-            if(skinvals != False):
-                vals_List = strl.str_to_list(skinvals)                         
-            else:
-                vals_List = ["Error: No found 'BENV' values found..."]       
-
-            if(coerce_to_style):
-                pass             # Place string style formatting function here
-            else:
-                par_String = strl.array_to_str(pars_List,spc='  ')
-                val_String = strl.array_to_str(vals_List,spc='  ')
-
-            return (par_String, val_String)
-
-
-        if(isinstance(style,str)):
-            style = style.lower()
-        else:
-            if(style == None):
-                pass
-            else:
-                print(self.s4+"[format_benv_data] Error: input 'style' must be a string\n")
-                return False
-
-        if(style == 'os' or style == 'one-shot' or style == 'single' or style == None):
-            parval_data = __parval_to_string__(data)
-            if(parval_data == False):
-                print(self.s4+"[format_benv_data] Error: 'data' could not be coerced into 'parval_data'\n")
-                return False
-            par_string, val_string = parval_data
-            output = ([par_string+'\n'], [val_string+'\n'])
-
-        elif(style == 'skval' or style == 'double' or style == 'skval-loop'):
-
-            par_Strings = []
-            val_Strings = []
-
-            for i,entry in enumerate(data):  
-                value, nucleus = entry
-                             
-                nucleus_String = strl.array_to_str(nucleus ,spc = '  ')+'\n'
-                parval_data = __parval_to_string__(value)
-                if(parval_data == False):
-                    print(self.s4+"[format_benv_data] Error: 'value' could not be coerced into 'parval_data'")
-                    print(self.s4+"Failure occured for the "+str(strl.print_ordinal(i))+" value of the input data\n")
+        for cohort in data:
+            for i,group in enumerate(cohort):
+                try:
+                    entry, eosid = group
+                except:
+                    msg = ["Data format invalid : ", "Data : "+str(group), "Failure for the "+strl.print_ordinal(i+1)+" EoS input"]
+                    self.__err_print__(msg, varID=eosid, **kwargs)
                     continue
-                par_string, val_string = parval_data
-                par_Strings.append(par_String+nucleus_String)                            
-                val_Strings.append(val_String+nucleus_String)                  
+                if(entry == False):
+                    msg = ["EoS could not be evaluated, check EoS file", "Failure for the "+strl.print_ordinal(i+1)+" EoS input"]
+                    self.__err_print__(msg, varID=eosid, **kwargs)
+                    continue
 
-            output = (par_Strings, val_Strings)
+                par_Strings.append(str(eosid)+'\n')
+                val_Strings.append(str(eosid)+'\n')
 
-        elif(style == 'eos', style == 'triple', style == 'eos-loope'):
-
-            par_Strings = []
-            val_Strings = []
-
-            val_Strings.append("NR      PR      NS    CHR      BE      SEC   A   Z\n")
-            val_Strings.append("\n")
-
-            for cohort in data:
-
-                for i,group in enumerate(cohort):
-
-                    parval_data = group
-                    if(parval_data == False):
-                        print(self.s4+"[format_benv_data] Error: 'group' could not be coerced into 'entry' and 'eosid'")
-                        print(self.s4+"Failure occured for the "+str(strl.print_ordinal(i))+" value of the input data\n")
-                        continue
-
-                    entry, eosid = parval_data
-                    if(entry == False):
-                        print(self.s4+"[format_benv_data] Error: 'entry' could not be coerced into 'data' and 'nucleus'")
-                        print(self.s4+"Failure occured for the "+str(strl.print_ordinal(i))+" value of the input data\n")
-                        continue
-
-                    par_Strings.append(str(eosid)+'\n')
-                    val_Strings.append(str(eosid)+'\n')   
-
-
+                try:
                     par_String, val_String, nucleus = entry
-                    nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+'\n' for az in nucleus]
-    
-#                    value = (par_String, val_String)                                                               
-#                    par_String, val_String = __parval_to_string__(value)
-                    
-                    par_list = [par for par in map(lambda x,y: x+y, par_String,nucleus)]
-                    val_list = [val for val in map(lambda x,y: x+y, val_String,nucleus)]
+                except:
+                    msg = ["EoS entry could not be evaluated...", "Failure for the "+strl.print_ordinal(i+1)+" EoS input"]
+                    self.__err_print__(msg, varID=eosid, **kwargs)
+                    continue
+                nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+'\n' for az in nucleus]
 
-                    for par in par_list:
-                        par_Strings.append(par)
-                    for val in val_list:
-                        val_Strings.append(val)
+                par_list = [par for par in map(lambda x,y: x+y, par_String,nucleus)]
+                val_list = [val for val in map(lambda x,y: x+y, val_String,nucleus)]
 
-                    par_Strings.append(" \n")
-                    val_Strings.append(" \n")
+                for par in par_list:
+                    par_Strings.append(par)
+                for val in val_list:
+                    val_Strings.append(val)
 
-            val_Strings.append("\n")
-            val_Strings.append("\n")
-            val_Strings.append("*Key\n")
-            val_Strings.append("\n")
-            val_Strings.append("NR  :  Neutron Radius\n")
-            val_Strings.append("PR  :  Proton  Radius\n")
-            val_Strings.append("NS  :  Neutron Skin\n")
-            val_Strings.append("CHR :  Charge  Radius\n")
-            val_Strings.append("BE  :  Binding Energy\n")
-            val_Strings.append("SEC :  Sym. Eng. Coef\n")
-            val_Strings.append("A   :  Mass    number\n")
-            val_Strings.append("Z   :  Atomic  number\n")
+                par_Strings.append(" \n")
+                val_Strings.append(" \n")
 
-            output = (par_Strings, val_Strings)
+        val_Strings.append("\n")
+        val_Strings.append("\n")
+        val_Strings.append("*Key\n")
+        val_Strings.append("\n")
+        val_Strings.append("NR  :  Neutron Radius\n")
+        val_Strings.append("PR  :  Proton  Radius\n")
+        val_Strings.append("NS  :  Neutron Skin\n")
+        val_Strings.append("CHR :  Charge  Radius\n")
+        val_Strings.append("BE  :  Binding Energy\n")
+        val_Strings.append("SEC :  Sym. Eng. Coef\n")
+        val_Strings.append("A   :  Mass    number\n")
+        val_Strings.append("Z   :  Atomic  number\n")
 
-        else:
-            print(self.s4+"[format_benv_data] Error: 'style' input variable not reconignized")
-            return False
-
+        output = (par_Strings, val_Strings)
         return output
 
     #######
@@ -1075,12 +1002,18 @@ class benv(progStruc):
 
     # Running and Looping functions
 
-    def single_run(self, parline=None, vallist=None, run_cmd='run.sh', clean_Run=True):
+    def single_run(self, parline=None, vallist=None, run_cmd='run.sh', clean_Run=True, **kwargs):
 
         if(isinstance(parline, str)):
-            self.write_parline(parline, **kwargs)
+            pass_parline = self.write_parline(parline, **kwargs)
+            if(pass_parline == False):
+                msg = ["failure to create and write parline", "parline : "+str(parline)]
+                return self.__err_print__(msg, **kwargs)
         if(isinstance(vallist, (tuple, list))):
-            self.write_vallist(vallist, **kwargs)
+            pass_vallist = self.write_vallist(vallist, **kwargs)
+            if(pass_vallist == False):
+                msg = ["failure to create and write vallist", "vallist : "+str(vallist)]
+                return self.__err_print__(msg, **kwargs)
 
         self.set_osdir(self.EOSPATH, **kwargs)
         self.run_commands(run_cmd, **kwargs)
@@ -1098,7 +1031,7 @@ class benv(progStruc):
         return (optpars, skinvals)
 
 
-    def skval_loop(self, skval, **kwargs):
+    def skval_loop(self, skval, mirrors=False, **kwargs):
         '''
         Notes:
 
@@ -1144,7 +1077,7 @@ class benv(progStruc):
                         new_vallist = self.create_vallist(ax, zx, **kwargs)
                         pass_vallist = self.write_vallist(new_vallist, **kwargs)
                         if(pass_vallist == False):
-                            msg = ["failure to create and write vallist", "vallist : "+str(new_vallist), ""]
+                            msg = ["failure to create and write vallist", "vallist : "+str(new_vallist)]
                             return self.__err_print__(msg, **kwargs)
 
                         results = self.single_run()
@@ -1152,6 +1085,21 @@ class benv(progStruc):
                             msg = ["failure to create complete run", "A,Z : "+str(ax)+","+str(zx)]
                             return self.__err_print__(msg, **kwargs)
                         output.append((results,(ax,zx)))
+
+                        if(mirrors and ax-zx!=zx):
+                            zx = ax-zx
+
+                            new_vallist = self.create_vallist(ax, zx, **kwargs)
+                            pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                            if(pass_vallist == False):
+                                msg = ["failure to create and write vallist", "vallist : "+str(new_vallist)]
+                                return self.__err_print__(msg, **kwargs)
+
+                            results = self.single_run()
+                            if(results == False):
+                                msg = ["failure to create complete run", "A,Z : "+str(ax)+","+str(zx)]
+                                return self.__err_print__(msg, **kwargs)
+                            output.append((results,(ax,zx)))
             return output
 
         if(loop_type == 'pair'):
@@ -1180,21 +1128,17 @@ class benv(progStruc):
                        parline=None,
                        initpar=False,
                        mirrors=False,
-                       eospars=False,
-                       eosgrup=False,
                        reset=True,
                        **kwargs):
         '''
-        !Function which runs the BENV program!
-
         reset : [bool] (True), resets data files to pre-run values
         '''
 
         benvals_group = []
 
         if(not isinstance(parline ,str)):
-            if(len(self.parline) > 0):
-                parline = self.parline[0]
+            if(isinstance(self.parline, str)):
+                parline = self.parline
             else:
                 self.__err_print__("could not be properly parsed", varID='parline', **kwargs)
 
@@ -1219,8 +1163,21 @@ class benv(progStruc):
                 self.__err_print__(msg, **kwargs)
                 continue
 
+            if(initpar):
+                new_vallist = self.create_vallist(self.initial_a, self.initial_z, **kwargs)
+                pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                initrun = self.single_run(self, parline=None, vallist=None, run_cmd='run.sh', clean_Run=True, **kwargs)
+                if(init_run == False):
+                    self.__err_print__("run failed", varID='initpar', **kwargs)
+                else:
+                    formated_initrun = self.parse_skval_benv_vals(initrun, (self.initial_a, self.initial_z))
+                    if(formated_initrun == False):
+                        self.__err_print__("failure to execute 'initpar'", **kwargs)
+                    else:
+                        benvals_group.append((formated_initrun, eosid))
+
             # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
-            benvals = self.skval_loop(skval, **kwargs)
+            benvals = self.skval_loop(skval, mirrors, **kwargs)
             if(benvals == False):
                 ith_entry = strl.print_ordinal(str(i+1), **kwargs)
                 msg = "The "+ith_entry+" failed the 'skval_loop' routine, cycling to the next eos..."
@@ -1244,6 +1201,9 @@ class benv(progStruc):
 
 
     def benv_run(self, reset=True, **kwargs):
+        '''
+        !Function which runs the BENV program!
+        '''
 
         # Get SKVAL from 'skval.don' file
         skval_lines = self.get_options(**kwargs)
@@ -1261,6 +1221,16 @@ class benv(progStruc):
             return self.__err_print__("could not collect EoS data from 'eos' folder", **kwargs)
 
         # Put EoS and skval data in EoS loop
-        benvals = self.eos_loop(eoslist, skval, reset, **kwargs)
-        return benvals
+        benval_data = self.eos_loop(eoslist, skval,
+                                    parline=self.initial_parline,
+                                    initpar=self.skval_dict['Initpar'],
+                                    mirrors=self.skval_dict['Mirrors'],
+                                    reset  =self.skval_dict['Resetit'],
+                                    **kwargs)
+
+        formatted_benval_data = self.format_benv_data(benval_data,
+                                                      self.skval_dict['EOSpars'],
+                                                      self.skval_dict['EOSgrup'],
+                                                      **kwargs)
+        return formatted_benval_data
 

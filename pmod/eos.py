@@ -1,11 +1,11 @@
 import itertools
 
-import pmod.ioparse as iop
-import pmod.strlist as strl
-import pmod.pinax as px
+import ioparse as iop
+import strlist as strl
+import pinax as px
 
-from pmod.tcheck import imprimerTemplate
-from pmod.mathops import spline
+from tcheck import imprimerTemplate
+from mathops import spline
 
 # conversion functions
 

@@ -65,7 +65,7 @@ File Structure :
                     |
                     |--- 'option.don'
                     |
-                    |--- 'pmod' -|---'...'
+                    |--- 'lib' -|---'...'
 
 '''
 
@@ -75,8 +75,8 @@ import subprocess
 import re
 import time
 
-import pmod.ioparse as iop 
-import pmod.strlist as strl
+from pmod import ioparse as iop 
+from pmod import strlist as strl
 from pmod.cmdutil import cmdUtil
 
 
@@ -88,7 +88,7 @@ class progStruct(cmdUtil):
                 bin_fold_name='bin',
                 dat_fold_name='dat',
                 opt_file_name='options.don',
-                log_file_name='logfile.don'
+                log_file_name='logfile.don',
                 initialize=True,
                 osFormat='linux',
                 newPath=None,
@@ -110,7 +110,7 @@ class progStruct(cmdUtil):
                                          space,
                                          endline,
                                          moduleNameOverride,
-                                         **kwargs):
+                                         **kwargs)
 
         kwargs = self.__update_funcNameHeader__("init", **kwargs)
 
@@ -780,7 +780,7 @@ class progStruct(cmdUtil):
             finally:
                 if(formatted_action == False or not isinstance(formatted_action, str)):
                     self.__err_print__("could not be parsed into a string", varID='action', **kwargs)
-                    continue
+            continue
 
             if(formatted_action == 'quit' or formatted_action == 'exit'):
                 print(" ")

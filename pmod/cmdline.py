@@ -89,9 +89,9 @@ import os
 import shutil
 import re
 
-from pmod.tcheck import imprimerTemplate
-import pmod.ioparse as iop
-import pmod.strlist as strl
+from tcheck import imprimerTemplate
+import ioparse as iop
+import strlist as strl
 
 class PathParse(imprimerTemplate):
 

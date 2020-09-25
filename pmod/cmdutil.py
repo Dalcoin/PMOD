@@ -2,8 +2,8 @@ import os
 import sys
 import subprocess
 
-import pmod.ioparse as iop
-from pmod.cmdline import PathParse
+import ioparse as iop
+from cmdline import PathParse
 
 
 # File Utility Functions
