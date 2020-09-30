@@ -314,7 +314,7 @@ class benv(progStruct):
 
         if(len(parlist) >= 4):
             self.initial_parline = strl.array_to_str(parlist[0], spc='  ', **kwargs)
-            self.initial_vallist = map(lambda lam: strl.array_to_str(lam, spc='  ', **kwargs), parlist[1:])
+            self.initial_vallist = map(lambda lam: str(strl.array_to_str(lam, spc='  ', **kwargs))+"\n", parlist[1:])
 
         # Parse the nuclist
         if(len(nuclist) > 0):
@@ -698,7 +698,7 @@ class benv(progStruct):
 
         '''
         kwargs = self.__update_funcNameHeader__("write_parline", **kwargs)
-        success = iop.flat_file_write(self.PARPATH, parline, **kwargs)
+        success = iop.flat_file_write(self.PARPATH, [parline], **kwargs)
         return success
 
 
@@ -738,12 +738,14 @@ class benv(progStruct):
         ingroup_vals = {}
 
         if(eosgrup):
-            val_Strings.append("    NR        PR        NS        CHR       BE        SEC     A   Z\n")
+            val_Strings.append("    NR        PR        NS        CHR       BE        SEC     A   Z    (EOS)\n")
         else:
-            val_Strings.append("    NR        PR        NS        CHR       BE        SEC     EOS\n")
+            val_Strings.append("    NR        PR        NS        CHR       BE        SEC     EOS    (A  Z)\n")
         val_Strings.append("\n")
 
-        for eos in benvdata:
+        eos_names = sorted(list(benvdata))
+
+        for eos in eos_names:
             if(eosgrup):
                 if(eospars):
                     par_Strings.append(str(eos)+'\n')
@@ -752,7 +754,8 @@ class benv(progStruct):
                     val_Strings.append(str(eos)+'\n')
 
             skval = benvdata[eos]
-            for az in skval:
+            az_names = sorted(list(skval))
+            for az in az_names:
                 pars, vals = skval[az]
                 if(eosgrup):
                     nucleus = "  "+strl.array_to_str(az ,spc = '  ')+'\n'
@@ -767,12 +770,12 @@ class benv(progStruct):
                             ingroup_pars[az] = []
                         if(ingroup_vals.get(az) == None):
                             ingroup_vals[az] = []
-                        ingroup_pars[az] = (pars+"  "+eos+"\n")
-                        ingroup_vals[az] = (vals+"  "+eos+"\n")
+                        ingroup_pars[az].append(pars+"  "+eos+"\n")
+                        ingroup_vals[az].append(vals+"  "+eos+"\n")
                     else:
                         if(ingroup_vals.get(az) == None):
                             ingroup_vals[az] = []
-                        ingroup_vals[az] = (vals+"  "+eos+"\n")
+                        ingroup_vals[az].append(vals+"  "+eos+"\n")
         if(eosgrup):
             if(eospars):
                 par_Strings.append("\n")
@@ -780,15 +783,17 @@ class benv(progStruct):
             else:
                 val_Strings.append("\n")
         else:
-            if(eospars):
-                for az in ingroup_vals:
-                    nucleus = "  "+strl.array_to_str(az ,spc = '  ')
-                    par_Strings += ingroup_pars[az]+nucleus+"\n"
-                    val_Strings += ingroup_vals[az]+nucleus+"\n"
-            else:
-                for az in ingroup_vals:
-                    nucleus = "  "+strl.array_to_str(az ,spc = '  ')
-                    val_Strings += ingroup_vals[az]+nucleus+"\n"
+            if(len(ingroup_vals)>0):
+                az_names = sorted(list(ingroup_vals))
+                if(eospars):
+                    for az in az_names:
+                        nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+"\n"]
+                        par_Strings += nucleus+ingroup_pars[az]
+                        val_Strings += nucleus+ingroup_vals[az]
+                else:
+                    for az in az_names:
+                        nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+"\n"]
+                        val_Strings += nucleus+ingroup_vals[az]
 
         val_Strings.append("\n")
         val_Strings.append("\n")
@@ -1083,17 +1088,6 @@ class benv(progStruct):
     # functions dealing with benv looping #------------------------------------------------------------|
     #######################################
 
-    def clean_up(self):
-        
-        self.exit_error_check()
-        print("")
-        print("No fatal Errors detected")
-        print("Run Number upon exit:  "+str(self.run_time))
-        print("Script run-time :  "+str(round(time.time()-self.time_Start,3))+" seconds")
-        print("   ")
-
-        return True
-
     # Running and Looping functions
 
     def single_run(self, parline=None, vallist=None, run_cmd='run.sh', clean_Run=True, **kwargs):
@@ -1263,6 +1257,14 @@ class benv(progStruct):
             # Set eos data (eos_instance) and 'par.don' line (parline)
             type, eos_instance, parline, eosid = formdat
 
+            # Pass the parline to the appropriate file
+            success = self.write_parline(parline, **kwargs)
+            if(success == False):
+                ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                msg = "The "+ith_entry+" EoS parline could not be passed to 'bin', cycling to the next eos..."
+                self.__err_print__(msg, **kwargs)
+                continue
+
             # Pass the eos data to the appropriate file
             success = self.write_eos(eos_instance, type, **kwargs)
             if(success == False):
@@ -1367,7 +1369,7 @@ class benv(progStruct):
             if(run_attempt == False):
                 print(self.space+"An error occured during 'benv' execution, see above for details\n")
             else:
-                print(self.space+"BENV loop completed..."
+                print(self.space+"BENV loop completed...\n")
             return True
 
         elif(input == 'menu'):
@@ -1375,13 +1377,3 @@ class benv(progStruct):
             return True
         else:
             return True
-
-
-
-
-
-
-
-
-
-
