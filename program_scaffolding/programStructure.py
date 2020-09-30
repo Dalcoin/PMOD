@@ -59,13 +59,15 @@ File Structure :
                     |
                     |--- 'dat' -|--- ''
                     |
+                    |--- 'lib' -|---'...'
+                    |
                     |--- 'compile_main.py'
                     |
                     |--- 'exe.py'
                     |
                     |--- 'option.don'
                     |
-                    |--- 'lib' -|---'...'
+                    |--- 'logfile.don'
 
 '''
 
@@ -169,7 +171,7 @@ class progStruct(cmdUtil):
         self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
 
         self.FILEPATH_ERROR_LIST = [self.OPTPATH_ERROR, self.LOGPATH_ERROR]
-        self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
+        self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_ERROR_LIST))
 
         # Set Pathways
         self.DIRPATH_SET = False
@@ -183,7 +185,7 @@ class progStruct(cmdUtil):
         self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
 
         self.FILEPATH_SET_LIST = [self.OPTPATH_SET, self.LOGPATH_SET]
-        self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
+        self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_SET_LIST))
 
         # Intial task errors
         self.INTERNAL_CML_ERROR = False
@@ -348,9 +350,9 @@ class progStruct(cmdUtil):
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
             self.FILEPATH_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_LIST))
             self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
+            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_ERROR_LIST))
             self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
+            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_SET_LIST))
 
         elif(dict_type == 'fold'):
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
@@ -359,8 +361,8 @@ class progStruct(cmdUtil):
 
         elif(dict_type == 'file'):
             self.FILEPATH_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_LIST))
-            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
-            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
+            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_ERROR_LIST))
+            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_SET_LIST))
 
         elif(dict_type == 'path'):
             self.FOLDPATH_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_LIST))
@@ -368,9 +370,9 @@ class progStruct(cmdUtil):
 
         elif(dict_type == 'error'):
             self.FOLDPATH_ERROR_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_ERROR_LIST))
+            self.FILEPATH_ERROR_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_ERROR_LIST))
             self.FOLDPATH_SET_DICT = dict(zip(self.FOLDNAME_LIST,self.FOLDPATH_ERROR_LIST))
-            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,FILEPATH_SET_LIST))
+            self.FILEPATH_SET_DICT = dict(zip(self.FILENAME_LIST,self.FILEPATH_SET_LIST))
 
         else:
             return self.__err_print__("type not recognizned : "+str(type(dict_type)), varID='dict_type', **kwargs)
@@ -425,7 +427,7 @@ class progStruct(cmdUtil):
         if(fold_name in self.FOLDNAME_LIST):
             self.FOLDPATH_DICT[fold_name] = self.joinNode(self.DIRPATH, fold_name)
             self.FOLDPATH_SET_DICT[fold_name] = True
-            self.PATH_ERROR_DICT[fold_name] = False
+            self.FOLDPATH_ERROR_DICT[fold_name] = False
             return True
         else:
             self.FOLDPATH_DICT[fold_name] = False
@@ -479,8 +481,8 @@ class progStruct(cmdUtil):
         if(self.BINPATH_ERROR or not self.BINPATH_SET):
             return self.__err_print__("pathway has not been set", varID=self.BINFOLD, **kwargs)
 
-        if(isinstance(bin_name,(array,tuple))):
-            if(__not_strarr_print__(bin_name, varID='bin_name', **kwargs)):
+        if(isinstance(bin_name,(list,tuple))):
+            if(self.__not_strarr_print__(bin_name, varID='bin_name', **kwargs)):
                 return False
         elif(isinstance(bin_name, str)):
             bin_name = [bin_name]
@@ -488,10 +490,10 @@ class progStruct(cmdUtil):
             return self.__err_print__("type not recognizned : "+str(type(bin_name)), varID='bin_name', **kwargs)
 
         not_in_bin = []
-        bincontent = self.contentPath(self.BINPATH)
+        bincontent = self.contentPath(self.BINPATH, **kwargs)
         for bin in bin_name:
             if(bin in bincontent):
-                self.BIN_DICT[bin] = self.joinNode(self.BINPATH,bin)
+                self.BIN_DICT[bin] = self.joinNode(self.BINPATH,bin,**kwargs)
             else:
                 not_in_bin.append(bin)
         if(len(not_in_bin) > 0):
@@ -542,60 +544,60 @@ class progStruct(cmdUtil):
         path6 = self.LOGPATH_SET
 
         if(err0):
-            print(self.space+"E0 Internal Command Line Test :          Failed")
+            print(self.space+"E0 Internal Command Line Test :      Failed")
         else:
             if(path0):
-                print(self.space+"E0 Internal Command Line Test :          Succeeded") 
+                print(self.space+"E0 Internal Command Line Test :      Succeeded") 
             else:
-                print(self.space+"E0 Internal Command Line Test :          ...command line not set")     
+                print(self.space+"E0 Internal Command Line Test :      ...command line not set")     
 
         if(err1):
-            print(self.space+"E1 Main Directory Path Test :            Failed")
+            print(self.space+"E1 Main Directory Path Test :        Failed")
         else:   
             if(path1):         
-                print(self.space+"E1 Main Directory Path Test :            Succeeded") 
+                print(self.space+"E1 Main Directory Path Test :        Succeeded") 
             else:
-                print(self.space+"E1 Main Directory Path Test :            ...path not found")
+                print(self.space+"E1 Main Directory Path Test :        ...path not found")
 
         if(err2):
-            print(self.space+"E2 Source Directory Path Test :                Failed")
+            print(self.space+"E2 Source Directory Path Test :      Failed")
         else:
             if(path2):
-                print(self.space+"E2 Source Directory Path Test :                Succeeded") 
+                print(self.space+"E2 Source Directory Path Test :      Succeeded") 
             else:
-                print(self.space+"E2 Source Directory Path Test :                ...path not found")
+                print(self.space+"E2 Source Directory Path Test :      ...path not found")
 
         if(err3):
-            print(self.space+"E3 Binary Directory Pathway Test :          Failed")
+            print(self.space+"E3 Binary Directory Pathway Test :   Failed")
         else:
             if(path3):
-                print(self.space+"E3 Binary Directory Pathway Test :          Succeeded")
+                print(self.space+"E3 Binary Directory Pathway Test :   Succeeded")
             else:
-                print(self.space+"E3 Binary Directory Pathway Test :          ...path not found")
+                print(self.space+"E3 Binary Directory Pathway Test :   ...path not found")
 
         if(err4):
-            print(self.space+"E4 Data Directory Path Test :          Failed")
+            print(self.space+"E4 Data Directory Path Test :        Failed")
         else:
             if(path4):
-                print(self.space+"E4 Data Directory Path Test :          Succeeded")
+                print(self.space+"E4 Data Directory Path Test :        Succeeded")
             else:
-                print(self.space+"E4 Data Directory Path Test :          ...path not found")
+                print(self.space+"E4 Data Directory Path Test :        ...path not found")
 
         if(err5):
-            print(self.space+"E5 Option File Path Test : Failed")
+            print(self.space+"E5 Option File Path Test :           Failed")
         else:
             if(path5):
-                print(self.space+"E5 Option File Path Test : Succeeded")
+                print(self.space+"E5 Option File Path Test :           Succeeded")
             else:
-                print(self.space+"E5 Option File Path Test : Skipped")
+                print(self.space+"E5 Option File Path Test :           Skipped")
 
         if(err6):
-            print(self.space+"E6 Option File Path Test : Failed")
+            print(self.space+"E6 Log File Path Test :              Failed")
         else:
             if(path6):
-                print(self.space+"E6 Option File Path Test : Succeeded")
+                print(self.space+"E6 Log File Path Test :              Succeeded")
             else:
-                print(self.space+"E6 Option File Path Test : Skipped")
+                print(self.space+"E6 Log File Path Test :              Skipped")
 
         print(" ")
         if(any((err0,err1,err2,err3,err4,err5,err6))):
@@ -668,11 +670,11 @@ class progStruct(cmdUtil):
                     not_commands.append(str(command))
         elif(isinstance(commands, str)):
             try:
-                subprocess.call("./"+command, shell=True)
+                subprocess.call("./"+commands, shell=True)
             except:
-                failed_commands.append(command)
+                failed_commands.append(commands)
         else:
-            not_commands.append(str(command))
+            not_commands.append(str(commands))
 
         if(len(failed_commands)>0):
             self.__err_print__(["The following commands failed to execute:"]+failed_commands, **kwargs)
@@ -711,7 +713,7 @@ class progStruct(cmdUtil):
         '''
 
         kwargs = self.__update_funcNameHeader__("set_option_menu", **kwargs)
-        if(isinstance(lines,(array,tuple))):
+        if(isinstance(lines,(list,tuple))):
             if(self.__not_strarr_print__(lines, varID='lines', **kwargs)):
                 return False
         elif(isinstance(lines,str)):
@@ -721,7 +723,12 @@ class progStruct(cmdUtil):
 
         self.option_menu_lines = ['    ']+[self.space+line for line in lines]
         if(titleBanner):
-            self.option_menu_lines = strl.print_border(str(self.DIRNAME), newln=False, cushion=1 ,**kwargs) + self.option_menu_lines
+            menu_title = strl.print_border(str(self.DIRNAME)+" menu", 
+                                           newln=False,
+                                           cushion=1,
+                                           indt=4,
+                                           **kwargs)
+            self.option_menu_lines = menu_title+self.option_menu_lines    
         return True
 
 
@@ -738,7 +745,7 @@ class progStruct(cmdUtil):
             except:
                 return self.__err_print__("failure to print menu lines", **kwargs)
         else:
-            return self.__err_print__("have not been set", varID='option_menu_lines' **kwargs)
+            return self.__err_print__("have not been set", varID='option_menu_lines', **kwargs)
 
 
     def program_loop(self, action_function, program_name='Main', **kwargs):
@@ -780,7 +787,6 @@ class progStruct(cmdUtil):
             finally:
                 if(formatted_action == False or not isinstance(formatted_action, str)):
                     self.__err_print__("could not be parsed into a string", varID='action', **kwargs)
-            continue
 
             if(formatted_action == 'quit' or formatted_action == 'exit'):
                 print(" ")

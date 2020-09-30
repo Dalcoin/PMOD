@@ -11,6 +11,8 @@ and moving those binaries to the binaries folder ('bin').
 
 A graphical example is shown below: this script is run within 'Main'
 
+The input binaries string names are 'aux' and 'xeb_server'
+
          |-- 'bin'----|---'run.sh'
 'Main' --|            |
          |-- 'src'-|  |---''  <----------<-------|
@@ -102,15 +104,22 @@ class progComp(cmu.cmdUtil):
 
         self.failError = False
 
+        self.DIR_NAME    = ""
+        self.SRC_NAME    = ""
+        self.BIN_NAME    = ""
+
         self.DIRPATH = ""
         self.SRCPATH = ""
         self.BINPATH = ""
 
         self.SRC_SCRIPT  = ""
         self.BIN_SCRIPT  = ""
-        self.DIR_NAME    = ""
-        self.SRC_NAME    = ""
-        self.BIN_NAME    = ""
+
+        self.SRC_SCRIPT_PATH  = ""
+        self.BIN_SCRIPT_PATH  = ""
+
+        self.SRC_CONTENT = []
+        self.BIN_CONTENT = []
 
         self.move_dict = {}
 
@@ -143,6 +152,36 @@ class progComp(cmu.cmdUtil):
             self.__err_print__("current directory name could not be resolved", **kwargs)
             self.failError = True
 
+        if(self.SRC_NAME not in self.varPath_Folders):
+            self.__err_print__("source folder not found in current directory", varID=self.SRC_NAME, **kwargs)
+            self.failError = True
+        else:
+            self.SRCPATH = self.joinNode(self.varPath, self.SRC_NAME, **kwargs)
+
+        if(self.BIN_NAME not in self.varPath_Folders):
+            self.__err_print__("binary folder not found in current directory", varID=self.BIN_NAME, **kwargs)
+            self.failError = True
+        else:
+            self.BINPATH = self.joinNode(self.varPath, self.BIN_NAME, **kwargs)
+
+        if(self.SRCPATH != ''):
+            self.SRC_CONTENT = self.contentPath(self.SRCPATH, objType='file', **kwargs)
+
+            if(self.SRC_SCRIPT not in self.SRC_CONTENT):
+                self.__err_print__("script file not found in '"+self.SRC_NAME+"' directory", varID=self.SRC_SCRIPT, **kwargs)
+                self.failError = True
+            else:
+                self.SRC_SCRIPT_PATH = self.joinNode(self.SRCPATH, self.SRC_SCRIPT, **kwargs)
+
+        if(self.BINPATH != ''):
+            self.BIN_CONTENT = self.contentPath(self.BINPATH, objType='file', **kwargs)
+
+            if(self.BIN_SCRIPT not in self.BIN_CONTENT):
+                self.__err_print__("script file not found in '"+self.BIN_NAME+"' directory", varID=self.BIN_SCRIPT, **kwargs)
+                self.failError = True
+            else:
+                self.BIN_SCRIPT_PATH = self.joinNode(self.BINPATH, self.SRC_SCRIPT, **kwargs)
+
 
     def compileFunc(self, safety_bool=True, **kwargs):
 
@@ -154,109 +193,36 @@ class progComp(cmu.cmdUtil):
         print(" ")
         print("The compiler is now starting...runtime messesges will be printed below:\n")
 
-        # Moving into the binary folder (bin)
-        success, value = self.cmd("cd "+self.BIN_NAME)
-        if(not success):
-            errmsg = ["the binary folder, could not be accessed",
-                      "binary folder name : '"+self.BIN_NAME+"'",
-                      "check to see in the binary folder is present under the current name"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
-
-        # Set binary directory (bin) pathway
-        success, value = self.cmd("pwd")
-        if(not success):
-            errmsg = ["the binary folder pathway, could not be accessed",
-                      "binary folder name : '"+self.BIN_NAME+"'",
-                      "check to see that the binary folder is present under the current name"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
-        else:
-            self.BINPATH = value
-
-        # Get list of content of Bin directory
-        success, value = self.cmd("ls")
-        if(not success):
-            errmsg = ["the binary folder content, could not be accessed",
-                      "binary folder name : '"+self.BIN_NAME+"'",
-                      "check to see that the binary folder is present under the current name"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
-        binarylist = value
-
         # Check for pre-existing binary files and remove any if the exist
         for entry in self.move_dict:
-            if(entry in binarylist):
+            if(entry in self.BIN_CONTENT):
                 errmsg = ["An already existing file is present in the binary folder",
                           "Attempting to overwrite this file : '"+entry+"'"]
                 self.__err_print__(errmsg, heading='Warning', parSpace=False, blankLine=False)
-                success, value = self.cmd("rm "+entry)
+                bin_node = self.joinNode(self.BINPATH, entry)
+                success = self.delFile(bin_node, **kwargs)
                 if(not success):
                     errmsg = ["failure to delete file","newly compiled binary '"+entry+"' may be placed in the '"+DIR_NAME+"' folder"]
                     self.__err_print__(errmsg, parSpace=False, blankLine=False)
-    
-        # Return to 'Main' directory
-        success, value = self.cmd("cd ..")
-        if(not success):
-            errmsg = ["the program folder, could not be reaccessed",
-                      "program folder name : '"+self.DIR_NAME+"'",
-                      "check to ensure all folders are properly named"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
 
         # Ensure that the compiling shell script has UNIX endline characters
         success = self.filesEndlineConvert(self.SRC_SCRIPT, foldName=self.SRC_NAME, **kwargs)
         if(success == False):
             self.__err_print__("not properly formatted: errors may result...", varID=self.SRC_SCRIPT, heading='Warning', parSpace=False) 
-    
-        # Moving into the source folder (src)
-        success, value = self.cmd("cd "+self.SRC_NAME)    
-        if(not success):
-            errmsg = ["the source folder, could not be accessed",
-                      "binary folder name : '"+self.SRC_NAME+"'",
-                      "check to see that the source folder is present under the current name"]
-            return self.__err_print__(errmsg, heading='ExitError')
 
-        # Get source folder (src) pathway
-        success, value = self.cmd("pwd")
-        if(not success):
-            errmsg = ["the source folder pathway, could not be accessed",
-                      "source folder name : '"+self.SRC_NAME+"'",
-                      "check to see that the source folder is present under the current name"]
-            return self.__err_print__(errmsg, heading='ExitError')
-        else:
-            self.SRCPATH = value
+        # Check for pre-existing binary files in the source folder (src) and remove any that are found
+        for entry in self.move_dict:
+            if(entry in self.SRC_CONTENT):
+                errmsg = ["An already existing file is present in the binary folder",
+                          "Attempting to delete this file : '"+entry+"'"]
+                self.__err_print__(errmsg, heading='Warning', parSpace=False, blankLine=False)
+                src_node = self.joinNode(self.SRCPATH, entry)
+                success = self.delFile(src_node, **kwargs)
+                if(not success):
+                    errmsg = ["Failure to delete existing file : '"+entry+"'",
+                              "Conflict may occur when attempting to recompile this binary file"]
+                    self.__err_print__(errmsg, heading='Warning', parSpace=False, blankLine=False)
 
-        # Get content of source folder (src)
-        success, value = self.cmd("ls")
-        if(not success):
-            errmsg = ["the source folder content, could not be accessed",
-                      "source folder name : '"+self.SRC_NAME+"'",
-                      "check to see that the source folder is present under the current name"]
-            return self.__err_print__(errmsg, heading='ExitError')
-
-        if(self.__not_strarr_print__(value, varID='value', **kwargs)):
-            errmsg = ["Source folder content could not be accessed",
-                      "Source folder : "+SRC_NAME,
-                      "Check to ensure that the source directory is properly formatted"]
-            return self.__err_print__(errmsg, heading='ExitError')
-        else:
-            if(len(value) > 0):
-                check_list = [entry.rstrip() for entry in value]
-
-                # Check for pre-existing binary files in the source folder (src) and remove any that are found
-                for entry in self.move_dict:
-                    if(entry in check_list):
-                        errmsg = ["An already existing file is present in the binary folder",
-                                  "Attempting to delete this file : '"+entry+"'"]
-                        self.__err_print__(errmsg, heading='Warning', parSpace=False, blankLine=False)
-                        success, value = self.cmd("rm "+entry)
-                        if(not success):
-                            errmsg = ["Failure to delete existing file : '"+entry+"'",
-                                      "Conflict may occur when attempting to recompile this binary file"]
-                            self.__err_print__(errmsg, heading='Warning', parSpace=False, blankLine=False)
-            else:
-                errmsg = ["the source folder is empty",
-                          "source folder name : '"+self.SRC_NAME+"'",
-                          "add the files to be compiled to the source folder and try again"]
-                return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
-    
         # Move system directory to source folder (src)
         try:
             os.chdir(self.SRCPATH)
@@ -284,69 +250,23 @@ class progComp(cmu.cmdUtil):
             return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
 
         # Get content of source folder (src) after running compiling script
-        success, value = self.cmd("ls")
-        if(not success):
-            errmsg = ["The source folder content could not be accessed after compiling shell script",
-                      "Shell script name : '"+self.SRC_SCRIPT+"'",
-                      "Source folder name : '"+self.SRC_NAME+"'"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
+        self.SRC_CONTENT = self.contentPath(self.SRCPATH, objType='file', **kwargs)
     
         # check contents of source folder (src) for binary(ies)
-
-        if(self.__not_strarr_print__(value, varID='value', **kwargs)):
-            errmsg = ["Source folder content could not be accessed after compiling shell script",
-                      "Shell script name : '"+self.SRC_SCRIPT+"'",
-                      "Source folder name : '"+self.SRC_NAME+"'",
-                      "Check to ensure that the source directory is properly formatted"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
-        else:
-            if(len(value) > 0):
-                for entry in self.move_dict:
-                    if(entry in value):
-                        self.__err_print__("binary file, has been found after compiling", varID=entry, heading="Success", parSpace=False)
-                        self.move_dict[entry] = True
-                    else:
-                        self.__err_print__("binary file, was not found upon compilation", varID=entry, heading="Failure", parSpace=False)
+        for entry in self.move_dict:
+            if(entry in self.SRC_CONTENT):
+                self.__err_print__("binary file, has been found after compiling", varID=entry, heading="Success", parSpace=False)
+                self.move_dict[entry] = True
+                newpath = self.joinNode(self.SRCPATH, entry)
+                if(isinstance(newpath, str)):
+                    self.moveObj(newpath, self.BINPATH, **kwargs)
             else:
-                errmsg = ["For some reason the source folder is now empty",
-                          "Source folder name : '"+self.SRC_NAME+"'",
-                          "Shell script name : '"+self.SRC_SCRIPT+"'",
-                          "Replace source code and shell script and try again"]
-                return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
-    
-        # Move binaries to the main directory
-        for entry in self.move_dict:
-            if(self.move_dict[entry]):
-                success, value = self.cmd("mv "+entry+" ..")
-                if(not success):
-                    self.__err_print__("was not successfully moved into the '"+self.DIR_NAME+"' directory", varID=entry, parSpace=False)
-                    self.move_dict[entry] = False
-
-        # Move pathway back to the main directory
-        success, value = self.cmd("cd ..")
-        if(not success):
-            return self.__err_print__("could not be reaccessed", varID=self.DIR_NAME, heading='ExitError')
-
-        # Move binaries into the binary directory
-        for entry in self.move_dict:
-            if(self.move_dict[entry]):
-                success, value = self.cmd("mv "+entry+" "+self.BIN_NAME)
-                if(not success):
-                    self.__err_print__("was not successfully moved into the '"+self.BIN_NAME+"' directory", varID=entry)
-                    self.move_dict[entry] = False
+                self.__err_print__("binary file, was not found upon compilation", varID=entry, heading="Failure", parSpace=False)
 
         # Ensure that the running shell script has UNIX endline characters
         success = self.filesEndlineConvert(self.BIN_SCRIPT, foldName=self.BIN_NAME, **kwargs)
         if(success == False):
             self.__err_print__("not properly formatted: errors may result...", varID=self.BIN_SCRIPT, heading='Warning',parSpace=False)
-
-        # Move pathway back into the binary directory
-        success, value = self.cmd("cd "+self.BIN_NAME)
-        if(not success):
-            errmsg = ["the program folder, could not be reaccessed",
-                      "program folder name : '"+self.DIR_NAME+"'",
-                      "check to ensure all folders are properly named"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
 
         # Move system directory to binary directory (bin)
         try:
@@ -365,19 +285,14 @@ class progComp(cmu.cmdUtil):
                       "Binary folder name : '"+self.BIN_NAME+"'"]
             return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
 
-        # Get content of binary folder (bin) after moving binaries
-        success, value = self.cmd("ls")
-        if(not success):
-            errmsg = ["The binary folder content could not be accessed after compiling shell script",
-                      "Shell script name : '"+self.BIN_SCRIPT+"'",
-                      "Binary folder name : '"+self.BIN_NAME+"'"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
+        # Get content of binary folder (bin) after running compiling script
+        self.BIN_CONTENT = self.contentPath(self.BINPATH, objType='file', **kwargs)
 
         # Move binaries into the binary directory
         bin_fail = False
         mb = 0
         for entry in self.move_dict:
-            if(entry in value):
+            if(entry in self.BIN_CONTENT):
                 self.__err_print__("The '"+entry+"' binary is accounted for in the binary folder", heading="Success", parSpace=False)
             elif(self.move_dict[entry] == False):
                 self.__err_print__("The '"+entry+"' binary was not moved into the binary folder", heading="Failure", parSpace=False)

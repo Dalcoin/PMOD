@@ -722,7 +722,7 @@ def str_filter_char(string, filtre, inverse=False, **pkwargs):
     return out_str
 
 
-def str_clean(string):
+def str_clean(string, **pkwargs):
     '''
     Description : Removes all spaces, endline characters and newline characters from string
     '''
@@ -732,7 +732,7 @@ def str_clean(string):
         return False
 
     array = str_to_list(string.rstrip(), filtre=True, **pkwargs)
-    if(__not_arr_print__(string, varID="array", **pkwargs)):
+    if(__not_arr_print__(array, varID="array", **pkwargs)):
         return False
 
     out_string = array_to_str(array, spc = '', **pkwargs)
@@ -824,7 +824,7 @@ def format_fancy(obj, header=None, newln=True, indt=4, err=True, list_return=Fal
         return False
 
 
-def print_border(string, style=('-','|'), newln=True, cushion=0, indt=0, comment=None, **pkwargs):
+def print_border(string, style=('-','|'), newln=True, cushion=0, indt=0, comment=None, autoprint=False, **pkwargs):
 
     pkwargs = __update_funcName__("print_border", **pkwargs)
     if(__not_str_print__(string, varID="string", **pkwargs)):
@@ -854,17 +854,22 @@ def print_border(string, style=('-','|'), newln=True, cushion=0, indt=0, comment
         mid = comment+mid
 
     stylized_list = []
-    print(tnb)
+    if(autoprint):
+        print(tnb)
     stylized_list.append(tnb+nl)
     for i in range(cushion):
-        print(blnk)
+        if(autoprint):
+            print(blnk)
         stylized_list.append(blnk+nl)
-    print(mid)
+    if(autoprint):
+        print(mid)
     stylized_list.append(mid+nl)
     for i in range(cushion):
-        print(blnk)
+        if(autoprint):
+            print(blnk)
         stylized_list.append(blnk+nl)
-    print(tnb)
+    if(autoprint):
+        print(tnb)
     stylized_list.append(tnb+nl)
 
     return stylized_list       

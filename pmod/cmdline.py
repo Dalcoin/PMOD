@@ -1502,6 +1502,50 @@ class PathParse(imprimerTemplate):
             return True
 
 
+    def delObj(self, delPath, **kwargs):
+        '''
+        Description : Attempts to delete the content at the location of the input pathway
+
+        Input:
+
+            delPath : A complete pathway string pointing to a file or folder
+
+        Output : [Bool], success
+        '''
+
+        kwargs = self.__update_funcNameHeader__("delObj", **kwargs)
+
+        if(isinstance(delPath, (list,tuple))):
+            delPath = self.convertPath(delPath, **kwargs)
+            if(delPath == False):
+                return self.__err_print__("could not be converted to a pathway string", varID= 'delPath', **kwargs)
+        elif(isinstance(delPath,str)):
+            pass
+        else:
+            return self.__err_print__("must be either a pathway formatted string or array", varID='delPath', **kwargs)
+
+        if(os.path.isfile(delPath)):
+            opt = 'file'
+        elif(os.path.isdir(delPath)):
+            opt = 'fold'
+        else:
+            errmsg = ["is not a file pathway", "Pathway: "+str(delPath)]
+            return self.__err_print__(errmsg, varID='delPath', **kwargs)
+
+        try:
+            if(opt == 'file'):
+                os.remove(delPath)
+            elif(opt == 'fold'):
+                shutil.rmtree(delPath)
+            else:
+                errmsg = ["Failure to delete object", "File pathway: "+str(delPath)]
+                return self.__err_print__(errmsg, **kwargs)
+        except:
+            errmsg = ["Failure to delete object", "File pathway: "+str(delPath)]
+            return self.__err_print__(errmsg, **kwargs)
+        return True
+
+
     #############################
     # find object(s) in pathway #
     #############################

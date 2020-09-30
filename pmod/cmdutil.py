@@ -223,13 +223,19 @@ class cmdUtil(PathParse):
 
         select_array = ['all']+self.dirNames+self.fileNames
 
-        if(self.__not_str_print__(select, varID='select', **kwargs)):
-            return False
-        else:
+        if(isinstance(select,str)):
             select = select.rstrip().lower()
             if(select not in select_array):
-                errmsg = ["should be in a valid object name:", "Files : "+str(self.fileNames), "Directory : "+str(self.dirNames), "Both : 'all'"]
+                errmsg = ["should be in a valid object name:",
+                          "Files : "+str(self.fileNames),
+                          "Directory : "+str(self.dirNames),
+                          "Both : 'all'"]
                 return self.__err_print__(errmsg, varID='select', **kwargs)
+            opt = 'str'
+        elif(self.strarrCheck(select, varName='select', failPrint=False, **kwargs)):
+            opt = 'arr'
+        else:
+            return self.__err_print__("should be either a string or an array of strings", varID='select', **kwargs)
 
         # dirs parsed as a array of string(s)
         if(self.strarrCheck(dirs, varName='dirs', failPrint=False, **kwargs)):
@@ -255,87 +261,106 @@ class cmdUtil(PathParse):
         fail_dirs = []
         for dir in dirs_to_empty:
             dirPath = self.joinNode(self.varPath, dir, **kwargs)
-            if(select == 'all'):
-                if(isinstance(style, str)):
-                    contents = self.contentPath(dirPath, **kwargs)
+            if(dirPath == False):
+                continue
+            if(opt == 'str'):
+                if(select == 'all'):
+                    if(isinstance(style, str)):
+                        contents = self.contentPath(dirPath, **kwargs)
+                        if(contents == False):
+                            fail_dirs.append(dir)
+                            continue
+                        for obj in contents:
+                            if(style in obj):
+                                pass
+                            else:
+                                continue
+                            objPath = self.joinNode(dirPath, obj, **kwargs)
+                            if(objPath == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                                continue
+                            if(os.path.isfile(objPath)):
+                                os.remove(objPath)
+                            elif(os.path.isdir(objPath)):
+                                shutil.rmtree(objPath)
+                            else:
+                                fail_dirs.append(dir+self.delim+obj)
+                    else:
+                        success = self.delDir(dirPath, **kwargs)
+                        if(success):
+                            success = self.makeDir(dirPath, **kwargs)
+                        if(not success):
+                            fail_dirs.append(dir)
+                elif(select in self.fileNames):
+                    contents = self.contentPath(dirPath, objType='file', **kwargs)
                     if(contents == False):
                         fail_dirs.append(dir)
                         continue
-                    for obj in contents:
-                        if(style in obj):
-                            pass
-                        else:
-                            continue
-                        objPath = self.joinNode(dirPath, obj, **kwargs)
-                        if(objPath == False):
-                            fail_dirs.append(dir+self.delim+obj)
-                            continue
-                        if(os.path.isfile(objPath)):
-                            os.remove(objPath)
-                        elif(os.path.isdir(objPath)):
-                            shutil.rmtree(objPath)
-                        else:
-                            fail_dirs.append(dir+self.delim+obj)
-                else:
-                    success = self.delDir(dirPath, **kwargs)
-                    if(success):
-                        success = self.makeDir(dirPath, **kwargs)
-                    if(not success):
+                    if(isinstance(style, str)):
+                        for obj in contents:
+                            if(style in obj):
+                                pass
+                            else:
+                                continue
+                            objPath = self.joinNode(dirPath, obj, **kwargs)
+                            if(objPath == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                                continue
+                            success = self.delFile(objPath, **kwargs)
+                            if(success == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                    else:
+                        for obj in contents:
+                            objPath = self.joinNode(dirPath, obj, **kwargs)
+                            if(objPath == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                                continue
+                            success = self.delFile(objPath, **kwargs)
+                            if(success == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                elif(select in self.dirNames):
+                    contents = self.contentPath(dirPath, objType='dir', **kwargs)
+                    if(contents == False):
                         fail_dirs.append(dir)
-            elif(select in self.fileNames):
-                contents = self.contentPath(dirPath, objType='file', **kwargs)
+                        continue
+                    if(isinstance(style, str)):
+                        for obj in contents:
+                            if(style in obj):
+                                pass
+                            else:
+                                continue
+                            objPath = self.joinNode(dirPath, obj, **kwargs)
+                            if(objPath == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                                continue
+                            success = self.delDir(objPath, **kwargs)
+                            if(success == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                    else:
+                        for obj in contents:
+                            objPath = self.joinNode(dirPath, obj, **kwargs)
+                            if(objPath == False):
+                                fail_dirs.append(dir+self.delim+obj)
+                                continue
+                            success = self.delDir(objPath, **kwargs)
+                            if(success == False):
+                                fail_dirs.append(dir+self.delim+obj)
+            elif(opt == 'arr'):
+                contents = self.contentPath(dirPath, **kwargs)
                 if(contents == False):
                     fail_dirs.append(dir)
                     continue
-                if(isinstance(style, str)):
-                    for obj in contents:
-                        if(style in obj):
-                            pass
-                        else:
-                            continue
+                for obj in select:
+                    if(obj in contents):
                         objPath = self.joinNode(dirPath, obj, **kwargs)
                         if(objPath == False):
                             fail_dirs.append(dir+self.delim+obj)
                             continue
-                        success = self.delFile(objPath, **kwargs)
+                        success = self.delObj(objPath, **kwargs)
                         if(success == False):
                             fail_dirs.append(dir+self.delim+obj)
-                else:
-                    for obj in contents:
-                        objPath = self.joinNode(dirPath, obj, **kwargs)
-                        if(objPath == False):
-                            fail_dirs.append(dir+self.delim+obj)
-                            continue
-                        success = self.delFile(objPath, **kwargs)
-                        if(success == False):
-                            fail_dirs.append(dir+self.delim+obj)
-            elif(select in self.dirNames):
-                contents = self.contentPath(dirPath, objType='dir', **kwargs)
-                if(contents == False):
-                    fail_dirs.append(dir)
-                    continue
-                if(isinstance(style, str)):
-                    for obj in contents:
-                        if(style in obj):
-                            pass
-                        else:
-                            continue
-                        objPath = self.joinNode(dirPath, obj, **kwargs)
-                        if(objPath == False):
-                            fail_dirs.append(dir+self.delim+obj)
-                            continue
-                        success = self.delDir(objPath, **kwargs)
-                        if(success == False):
-                            fail_dirs.append(dir+self.delim+obj)
-                else:
-                    for obj in contents:
-                        objPath = self.joinNode(dirPath, obj, **kwargs)
-                        if(objPath == False):
-                            fail_dirs.append(dir+self.delim+obj)
-                            continue
-                        success = self.delDir(objPath, **kwargs)
-                        if(success == False):
-                            fail_dirs.append(dir+self.delim+obj)
+                    else:
+                        fail_dirs.append(dir+self.delim+obj)
         if(len(fail_dirs) > 0):
             errmsg = ["The following objects could not be cleared:"]+fail_dirs
             self.__err_print__(errmsg, **kwargs)
