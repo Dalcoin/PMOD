@@ -138,7 +138,7 @@ def round_scientific(value, digits, pyver = '2.7', string=True, **pkwargs):
         except:
             return False
 
-    if(__not_num_print__(value, varID='digits', style='int', **pkwargs)):
+    if(__not_num_print__(digits, varID='digits', style='int', **pkwargs)):
         return False
     else:
         if(digits <= 0):

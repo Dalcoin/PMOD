@@ -213,7 +213,7 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
             if(isinstance(entry, str)):
                 outArray.append(entry)
             elif(check.isArray(entry)):
-                string = strl.array_to_str(entry, spc, endline, front_spacing=frontSpacing)
+                string = strl.array_to_str(entry, spc=spc, endline=endline, front_spacing=frontSpacing)
                 if(string == False or string == None):
                     __err_print__(strl.print_ordinal(i+1)+" entry, could not be converted to string", varID=mID, **pkwargs)
                     return False
@@ -225,7 +225,7 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
             if(__not_arr_print__(array, varID=mID+" "+strl.print_ordinal(i+1)+" entry", **pkwargs)):
                 return False
             else:
-                string = strl.array_to_str(entry, spc, endline, front_spacing=frontSpacing)
+                string = strl.array_to_str(entry, spc=spc, endline=endline, front_spacing=frontSpacing)
                 if(string == False or string == None):
                     __err_print__(strl.print_ordinal(i+1)+" entry, could not be converted to string", varID=mID, **pkwargs)
                     return False

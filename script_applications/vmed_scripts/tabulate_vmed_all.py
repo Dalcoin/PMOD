@@ -119,8 +119,8 @@ def tabulate_vmed_all(jv_list,
     return outlines
 
 # Add or modify selected 'jv' values 
-#jv_list = [('0','singlet'),('0','V++'),('1','singlet'),('1','triplet'),('1','V++')]
-jv_list = [('0','singlet')]
+jv_list = [('0','singlet'),('0','V++'),('1','singlet'),('1','triplet'),('1','V++')]
+#jv_list = [('0','singlet')]
 
 # Note you can also call : vf.partial_wave_dict 
 # This dictionary translates partial waves to their corrosponding 'jv' values: e.g. 

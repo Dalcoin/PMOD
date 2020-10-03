@@ -1,11 +1,11 @@
-import subprocess               
-import re                       
-                                
-import strlist as strl
-import ioparse as iop 
-import mathops as mops
-import pinax   as px  
-import cmdline as cml
+import subprocess
+import re
+
+import pmod.strlist as strl
+import pmod.ioparse as iop
+import pmod.mathops as mops
+import pmod.pinax   as px
+import pmod.cmdline as cml
 
 '''
     --------
@@ -339,46 +339,6 @@ def v_group():
     return numgroup, ngroup
 
 
-# Old version of v_group()
-#def v_group():
-#
-#    # Get contrib lines 
-#
-#    lines_list = get_contribs()
-#    if(lines_list == False):
-#        return False
-#    
-#    # Pair up V line with fun. line 
-#    main = strl.array_nth_index(lines_list, 2)
-#    comp = strl.array_nth_index(lines_list, 2, True)
-#    paired = map(lambda x,y: [x,y], main,comp)
-#        
-#    ### Group V contribs by number
-#    ngroup = []
-#    lngroup = []
-#    numgroup = []
-#    setn = -1
-#    for i in paired:
-#        get = i[0]
-#        vn = strl.str_to_list(get,filtre=True)[1]
-#        num = int(vn[1:])
-#        if(setn == num):
-#            lngroup.append(i)
-#        else:
-#            numgroup.append(num)
-#            ngroup.append(lngroup)
-#            lngroup = []
-#            lngroup.append(i)
-#            setn = num        
-#    ngroup.append(lngroup)
-#    ngroup = filter(None,ngroup)
-#    
-#    for i in range(len(ngroup)):
-#        ngroup[i] = strl.array_flatten(ngroup[i],safety=False)    
-#
-#    return numgroup, ngroup
-
-
 def gen_table_12_13(lines):
 
     list_12, list_13 = [], []
@@ -403,7 +363,7 @@ def gen_table_12_13(lines):
     if(val_table_12 == False or val_table_13 == False):
         print("[gen_fig_12_13] Error: an error occured while trying to transpose jsl tables")
         return False
-         
+
     for i in range(len(val_table_12)):
         val_table_12[i] = [float(j)*vmhc for j in val_table_12[i]]
     for i in range(len(val_table_13)):
@@ -441,7 +401,7 @@ def gen_table_12_13(lines):
 # heading function for vmed_format
 
 def head_construct(self, eflt, latex, nfile):
-    
+
     head_match = '\d\d*'
     head_compile = re.compile(head_match)
     eflt.sort(key = lambda y: int(head_compile.findall(y)[0]))
@@ -449,8 +409,8 @@ def head_construct(self, eflt, latex, nfile):
     sp_6 = '      '
     sp_5 = '     '
     sp_4 = '    '
-    
-    try: 
+
+    try:
         if(latex == 1):
             head = 'j & (x,y) & State & '
         else:
@@ -460,7 +420,7 @@ def head_construct(self, eflt, latex, nfile):
         for i in eflt:
             head_num = head_compile.findall(i)
 
-            if(latex == 1):  
+            if(latex == 1):
                 if(count<nfile-1):
                     head = head+'Eq.'+str(head_num[0])+' & '
                 else:
