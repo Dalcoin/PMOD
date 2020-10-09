@@ -87,8 +87,10 @@ class benv(progStruct):
         self.SKNPATH = ''
 
         # DAT Files
-        self.OUTPARS = 'parameters.don'
-        self.OUTVALS = 'characteristics.don'
+        self.OUTPARS = 'par_results.don'
+        self.OUTVALS = 'skval_results.don'
+        self.OUTSINGLEPARS = 'os_par_results.don'
+        self.OUTSINGLEVALS = 'os_skval_results.don'
 
         ###############
         # REGEX codes #
@@ -148,6 +150,10 @@ class benv(progStruct):
                            'EOSpars':False,
                            'EOSgrup':False,
                            'Resetit':False}
+
+        self.SKVAL_SET = False
+
+        self.skval = ()
 
         self.BENV_SET_BINARIES = self.init_binary([self.PARFILE, self.VALFILE, self.AUXNAME, self.XEBNAME])
         self.BENV_SET_PATHWAYS = self.benv_structure(**kwargs)
@@ -210,8 +216,8 @@ class benv(progStruct):
 
         reg_dict = {'INCloop':self.INCLOOP,
                     'AZpairs':self.AZPAIRS,
-                    'Initpar':self.MIRRORS,
-                    'Mirrors':self.INITPAR,
+                    'Initpar':self.INITPAR,
+                    'Mirrors':self.MIRRORS,
                     'EOSpars':self.EOSPARS,
                     'EOSgrup':self.EOSGRUP,
                     'Resetit':self.RESETIT}
@@ -316,6 +322,13 @@ class benv(progStruct):
             self.initial_parline = strl.array_to_str(parlist[0], spc='  ', **kwargs)
             self.initial_vallist = map(lambda lam: str(strl.array_to_str(lam, spc='  ', **kwargs))+"\n", parlist[1:])
 
+            try:
+                self.initial_a = int(float(parlist[3][0]))
+                self.initial_z = int(float(parlist[3][1]))
+            except:
+                self.__err_print__("failure to parse initial A and Z values, 'Initpar' option defaulted to False", **kwargs)
+                self.skval_dict['Initpar'] = False
+
         # Parse the nuclist
         if(len(nuclist) > 0):
             if(pairs):
@@ -353,7 +366,7 @@ class benv(progStruct):
 
     def create_parline(self, eos, n, n0, n1,
                          density = 2,
-                         microscopic = True,
+                         mic = True,
                          e0_rho0 = True,
                          phenom_esym = False,
                          k0 = 220,
@@ -411,18 +424,18 @@ class benv(progStruct):
             else:
                 pos_2 = 2
         elif(isinstance(density,int)):
-            if(eos == 2):
-                pos_2 = eos
-            elif(eos == 3):
-                pos_2 = eos
-            elif(eos == 4):
-                pos_2 = eos
+            if(density == 2):
+                pos_2 = density
+            elif(density == 3):
+                pos_2 = density
+            elif(density == 4):
+                pos_2 = density
             else:
                 pos_2 = 2
         else:
             pos_2 = 2
 
-        if(microscopic):
+        if(mic):
             pos_6 = 1
         else:
             pos_6 = 0
@@ -727,7 +740,18 @@ class benv(progStruct):
     # Output Data  #
     ################
 
-    def format_benv_data(self, benvdata, eospars=True, eosgrup=True, **kwargs):
+    def format_benv_data(self, benvdata,
+                               eospars=True,
+                               eosgrup=True,
+                               add_newline=True,
+                               add_descript=True,
+                               add_key=True,
+                               **kwargs):
+
+        if(add_newline):
+            nl = '\n'
+        else:
+            nl = ''
 
         kwargs = self.__update_funcNameHeader__("format_benv_data", **kwargs)
 
@@ -737,28 +761,29 @@ class benv(progStruct):
         ingroup_pars = {}
         ingroup_vals = {}
 
-        if(eosgrup):
-            val_Strings.append("    NR        PR        NS        CHR       BE        SEC     A   Z    (EOS)\n")
-        else:
-            val_Strings.append("    NR        PR        NS        CHR       BE        SEC     EOS    (A  Z)\n")
-        val_Strings.append("\n")
+        if(add_descript):
+            if(eosgrup):
+                val_Strings.append("    NR        PR        NS        CHR       BE        SEC     A   Z    (EOS)"+nl)
+            else:
+                val_Strings.append("    NR        PR        NS        CHR       BE        SEC     EOS    (A  Z)"+nl)
+            val_Strings.append(nl)
 
         eos_names = sorted(list(benvdata))
 
         for eos in eos_names:
             if(eosgrup):
                 if(eospars):
-                    par_Strings.append(str(eos)+'\n')
-                    val_Strings.append(str(eos)+'\n')
+                    par_Strings.append(str(eos)+nl)
+                    val_Strings.append(str(eos)+nl)
                 else:
-                    val_Strings.append(str(eos)+'\n')
+                    val_Strings.append(str(eos)+nl)
 
             skval = benvdata[eos]
             az_names = sorted(list(skval))
             for az in az_names:
                 pars, vals = skval[az]
                 if(eosgrup):
-                    nucleus = "  "+strl.array_to_str(az ,spc = '  ')+'\n'
+                    nucleus = "  "+strl.array_to_str(az ,spc = '  ')+nl
                     if(eospars):
                         par_Strings.append(pars+nucleus)
                         val_Strings.append(vals+nucleus)
@@ -770,43 +795,44 @@ class benv(progStruct):
                             ingroup_pars[az] = []
                         if(ingroup_vals.get(az) == None):
                             ingroup_vals[az] = []
-                        ingroup_pars[az].append(pars+"  "+eos+"\n")
-                        ingroup_vals[az].append(vals+"  "+eos+"\n")
+                        ingroup_pars[az].append(pars+"  "+eos+nl)
+                        ingroup_vals[az].append(vals+"  "+eos+nl)
                     else:
                         if(ingroup_vals.get(az) == None):
                             ingroup_vals[az] = []
-                        ingroup_vals[az].append(vals+"  "+eos+"\n")
+                        ingroup_vals[az].append(vals+"  "+eos+nl)
         if(eosgrup):
             if(eospars):
-                par_Strings.append("\n")
-                val_Strings.append("\n")
+                par_Strings.append(nl)
+                val_Strings.append(nl)
             else:
-                val_Strings.append("\n")
+                val_Strings.append(nl)
         else:
             if(len(ingroup_vals)>0):
                 az_names = sorted(list(ingroup_vals))
                 if(eospars):
                     for az in az_names:
-                        nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+"\n"]
+                        nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+nl]
                         par_Strings += nucleus+ingroup_pars[az]
                         val_Strings += nucleus+ingroup_vals[az]
                 else:
                     for az in az_names:
-                        nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+"\n"]
+                        nucleus = ["  "+strl.array_to_str(az ,spc = '  ')+nl]
                         val_Strings += nucleus+ingroup_vals[az]
 
-        val_Strings.append("\n")
-        val_Strings.append("\n")
-        val_Strings.append("*Key\n")
-        val_Strings.append("\n")
-        val_Strings.append("NR  :  Neutron Radius\n")
-        val_Strings.append("PR  :  Proton  Radius\n")
-        val_Strings.append("NS  :  Neutron Skin\n")
-        val_Strings.append("CHR :  Charge  Radius\n")
-        val_Strings.append("BE  :  Binding Energy\n")
-        val_Strings.append("SEC :  Sym. Eng. Coef\n")
-        val_Strings.append("A   :  Mass    number\n")
-        val_Strings.append("Z   :  Atomic  number\n")
+        if(add_key):
+            val_Strings.append(nl)
+            val_Strings.append(nl)
+            val_Strings.append("*Key"+nl)
+            val_Strings.append(nl)
+            val_Strings.append("NR  :  Neutron Radius"+nl)
+            val_Strings.append("PR  :  Proton  Radius"+nl)
+            val_Strings.append("NS  :  Neutron Skin"+nl)
+            val_Strings.append("CHR :  Charge  Radius"+nl)
+            val_Strings.append("BE  :  Binding Energy"+nl)
+            val_Strings.append("SEC :  Sym. Eng. Coef"+nl)
+            val_Strings.append("A   :  Mass    number"+nl)
+            val_Strings.append("Z   :  Atomic  number"+nl)
 
         if(eospars):
             output = (par_Strings, val_Strings)
@@ -1090,6 +1116,83 @@ class benv(progStruct):
 
     # Running and Looping functions
 
+    def parline_generator(self, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("parline_generator", **kwargs)
+
+        density = self.num_from_console("Input the density option [2, 3, 4]: ",
+                                        value_type='int',
+                                        free_and_accepted_values=[2,3,4],
+                                        **kwargs)
+        if(density not in [2, 3, 4]):
+            return True
+
+        micro = self.bool_from_console("Should the EoS be pure microscopic? [True, False]: ", **kwargs)
+        if(micro not in [True, False]):
+            return True
+
+        if(micro):
+            isym = False
+            isyme = False
+            k0 = 220
+            rho0 = 0.16
+        else:
+            isym = self.num_from_console("Input the symmetric EoS choice option [0, 1]: ",
+                                          value_type='int',
+                                          free_and_accepted_values=[0,1],
+                                          **kwargs)
+            if(isym not in [0,1]):
+                return True
+            else:
+                if(isym == 1): 
+                    isym = True
+                else:
+                    isym = False
+
+            isyme = self.bool_from_console("Should symmetry energy be purely emperical? [True, False]: ", **kwargs)
+            if(isyme not in [True, False]):
+                return True
+            else:
+                if(isyme == 1): 
+                    isyme = True
+                else:
+                    isyme = False
+
+            k0 = self.num_from_console("Input the curvature value (integer): ",
+                                       value_type='int',
+                                       **kwargs)
+
+            rho0 = self.num_from_console("Input the saturation density value (float): ",
+                                         value_type='float',
+                                         **kwargs)
+
+        fff = self.num_from_console("Input the density functional surface constant (integer): ",
+                                    value_type='int',
+                                    **kwargs)
+
+        new_parline = self.create_parline(0, 9, 9, 9,
+                                          density = density,
+                                          mic = micro,
+                                          e0_rho0 = isym,
+                                          phenom_esym = isyme,
+                                          k0 = k0,
+                                          rho0 = rho0,
+                                          fff = fff,
+                                          addn=False,
+                                          **kwargs)
+
+        print(" ")
+
+        if(not isinstance(new_parline, str)):
+            return False
+        else:
+            self.initial_parline = new_parline
+
+        print(self.space+"new parline = '"+new_parline+"' \n")
+
+        return new_parline
+
+
     def single_run(self, parline=None, vallist=None, run_cmd='run.sh', clean_Run=True, **kwargs):
 
         kwargs = self.__update_funcNameHeader__("single_run", **kwargs)
@@ -1220,15 +1323,32 @@ class benv(progStruct):
                     msg = ["failure to create complete run", "A,Z : "+str(ax)+","+str(zx)]
                     return self.__err_print__(msg, **kwargs)
                 output[(ax,zx)] = results
+
+                if(mirrors and ax-zx!=zx):
+                    zx = ax-zx
+
+                    new_vallist = self.create_vallist(ax, zx, **kwargs)
+                    pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                    if(pass_vallist == False):
+                        msg = ["failure to create and write vallist", "vallist : "+str(new_vallist)]
+                        return self.__err_print__(msg, **kwargs)
+
+                    results = self.single_run()
+                    if(results == False):
+                        msg = ["failure to create complete run", "A,Z : "+str(ax)+","+str(zx)]
+                        return self.__err_print__(msg, **kwargs)
+                    output[(ax,zx)] = results
             return output
 
 
     def eos_loop(self, eoslist,
                        skval,
+                       skval_run=True,
                        parline=None,
                        initpar=False,
                        mirrors=False,
                        reset=True,
+                       osaz = (),
                        **kwargs):
         '''
         reset : [bool] (True), resets data files to pre-run values
@@ -1236,13 +1356,21 @@ class benv(progStruct):
 
         kwargs = self.__update_funcNameHeader__("eos_loop", **kwargs)
 
+        benvals = {}
         benvals_group = {}
 
         if(not isinstance(parline ,str)):
             if(isinstance(self.initial_parline, str)):
                 parline = self.initial_parline
             else:
-                self.__err_print__("could not be properly parsed", varID='parline', **kwargs)
+                return self.__err_print__("could not be properly parsed", varID='parline', **kwargs)
+
+        if(not skval_run and not isinstance(osaz, (str,tuple))):
+            return self.__err_print__("should be a tuple when not using 'skval_run' option", varID='osaz', **kwargs)
+        else:
+            if(not skval_run and isinstance(osaz, (str,tuple))):
+                if(len(osaz) != 2):
+                    return self.__err_print__("should have a length of two : '"+str(len(osaz))+"'", varID='osaz', **kwargs)
 
         # cycle through each EoS
         for i,eos in enumerate(eoslist):
@@ -1273,13 +1401,34 @@ class benv(progStruct):
                 self.__err_print__(msg, **kwargs)
                 continue
 
-            # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
-            benvals = self.skval_loop(skval, mirrors, initpar, **kwargs)
-            if(benvals == False):
-                ith_entry = strl.print_ordinal(str(i+1), **kwargs)
-                msg = "The "+ith_entry+" failed the 'skval_loop' routine, cycling to the next eos..."
-                self.__err_print__(msg, **kwargs)
-                continue
+
+            if(skval_run):
+                # Initiate skval loop for given 'parline', 'data' and 'type' and 'parline'
+                benvals = self.skval_loop(skval, mirrors, initpar, **kwargs)
+                if(benvals == False):
+                    ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                    msg = "The "+ith_entry+" failed the 'skval_loop' routine, cycling to the next eos..."
+                    self.__err_print__(msg, **kwargs)
+                    continue
+            else:
+                ax = osaz[0]
+                zx = osaz[1]
+                newaz = (ax, zx)
+                new_vallist = self.create_vallist(ax, zx, **kwargs)
+                pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                benvals = {newaz : self.single_run(**kwargs)}
+                if(benvals[newaz] == False):
+                    ith_entry = strl.print_ordinal(str(i+1), **kwargs)
+                    msg = "The "+ith_entry+" failed the 'skval_loop' routine, cycling to the next eos..."
+                    self.__err_print__(msg, **kwargs)
+                    continue
+                if(mirrors):
+                    if(zx != ax-zx):
+                        zx = ax-zx
+                        newaz = (ax, zx)
+                        new_vallist = self.create_vallist(ax, zx, **kwargs)
+                        pass_vallist = self.write_vallist(new_vallist, **kwargs)
+                        benvals[newaz] = self.single_run(**kwargs)
 
             benvals_group[eosid] = benvals
 
@@ -1290,22 +1439,15 @@ class benv(progStruct):
         return benvals_group
 
 
-    def benv_run(self, reset=True, return_data=False, **kwargs):
+    def benv_run(self, skval, reset=True, return_data=False, **kwargs):
         '''
         !Function which runs the SKVAL loop over the EOS!
         '''
 
         kwargs = self.__update_funcNameHeader__("benv_run", **kwargs)
 
-        # Get SKVAL from 'skval.don' file
-        skval_lines = self.get_options(**kwargs)
-        if(skval_lines == False):
-            return self.__err_print__("could not collect 'skval' data from 'skval.don' file", **kwargs)
-
-        # Format skval lines into skval data
-        skval = self.parse_skval(skval_lines, **kwargs)
-        if(skval == False):
-            return self.__err_print__("failure to format 'skval' data", **kwargs)
+        if(skval == ()):
+            return self.__err_print__("needs to be set", varID='skval', **kwargs)
 
         # Get EoS from 'eos' folder
         eoslist = self.collect_eos()
@@ -1337,6 +1479,83 @@ class benv(progStruct):
             return True
 
 
+    def os_run(self, skval, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("os_run", **kwargs)
+
+        # Get EoS from 'eos' folder
+        eoslist = self.collect_eos()
+        if(eoslist == False):
+            return self.__err_print__("could not collect EoS data from 'eos' folder", **kwargs)
+
+        proceed = True
+
+        val_Strings = []
+        par_Strings = []
+
+        while(proceed):
+            aval = self.num_from_console("Input the Atomic Mass Number : ", 'int', **kwargs)
+            if(aval == ''):
+                break
+
+            zval = self.num_from_console("Input the Atomic Number : ", 'int', **kwargs)
+            if(zval == ''):
+                break
+
+            benval_data = self.eos_loop(eoslist, skval,
+                                        skval_run=False,
+                                        parline=None,
+                                        initpar=False,
+                                        mirrors=self.skval_dict['Mirrors'],
+                                        reset  =self.skval_dict['Resetit'],
+                                        osaz = (aval, zval),
+                                        **kwargs)
+
+            formatted_benval_data = self.format_benv_data(benval_data,
+                                                          self.skval_dict['EOSpars'],
+                                                          self.skval_dict['EOSgrup'],
+                                                          add_newline=False,
+                                                          add_descript=False,
+                                                          add_key=False,
+                                                          **kwargs)
+
+            if(self.skval_dict['EOSpars']):
+                par_vals, val_vals = formatted_benval_data
+                val_Strings += val_vals
+                par_Strings += par_vals
+            else:
+                val_Strings += formatted_benval_data
+
+            if(self.skval_dict['EOSpars']):
+                print(" ")
+                print(self.space+" Nucleus data Printed below :\n")
+                for entry in val_vals:
+                    print(self.doubleSpace+entry)
+                print(" ")
+                print(self.space+" Nucleus Parameters Printed below :\n")
+                for entry in par_vals:
+                    print(self.doubleSpace+entry)
+                print(" ")
+            else:
+                val_Strings = formatted_benval_data
+                print(" ")
+                print(self.space+" Nucleus data Printed below :\n")
+                for entry in val_Strings:
+                    print(self.doubleSpace+entry)
+                print(" ")
+
+            repreat = self.input_from_console("Input 'exit' to quit, input anything else to repeat : ", **kwargs)
+            if(repreat == 'quit' or repreat == 'exit'):
+                proceed = False
+
+        if(self.skval_dict['EOSpars']):
+            self.write_to_dat(self.OUTSINGLEPARS, [string+'\n' for string in par_Strings], **kwargs)
+            self.write_to_dat(self.OUTSINGLEVALS, [string+'\n' for string in val_Strings], **kwargs)
+        else:
+            self.write_to_dat(self.OUTSINGLEVALS, [string+'\n' for string in val_Strings], **kwargs)
+        return True
+
+
     def set_benv_menu(self, **kwargs):
 
         kwargs = self.__update_funcNameHeader__("set_benv_menu", **kwargs)
@@ -1350,11 +1569,30 @@ class benv(progStruct):
         return self.set_option_menu(menu_lines, **kwargs)
 
 
+    def get_skval(self, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("set_benv_menu", **kwargs)
+
+        # Get SKVAL from 'skval.don' file
+        skval_lines = self.get_options(**kwargs)
+        if(skval_lines == False):
+            return self.__err_print__("could not collect 'skval' data from 'skval.don' file", **kwargs)
+
+        # Format skval lines into skval data
+        skval = self.parse_skval(skval_lines, **kwargs)
+        if(skval == False):
+            return self.__err_print__("failure to format 'skval' data", **kwargs)
+
+        self.SKVAL_SET = True
+        self.skval = skval
+        return skval
+
+
     def benv_program_loop(self, input, **kwargs):
 
         kwargs = self.__update_funcNameHeader__("benv_program_loop", **kwargs)
 
-        action_list = ('benv', 'single', 'pars', 'menu', 'exit', 'quit')
+        action_list = ('benv', 'single', 'pars', 'menu', 'help', 'exit', 'quit')
 
         if(input not in action_list):
             print(self.space+"Input not recognized : '"+str(input))+"'"
@@ -1365,15 +1603,15 @@ class benv(progStruct):
                 return True
 
         if(input == 'benv'):
-            run_attempt = self.benv_run(**kwargs)
+            run_attempt = self.benv_run(self.skval, **kwargs)
             if(run_attempt == False):
                 print(self.space+"An error occured during 'benv' execution, see above for details\n")
             else:
                 print(self.space+"BENV loop completed...\n")
-            return True
-
-        elif(input == 'menu'):
-            self.print_option_menu(**kwargs)
-            return True
+        elif(input == 'single'):
+            self.os_run(self.skval, **kwargs)
+        elif(input == 'pars'):
+            self.parline_generator(**kwargs)
         else:
             return True
+        return True

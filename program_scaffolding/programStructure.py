@@ -748,6 +748,109 @@ class progStruct(cmdUtil):
             return self.__err_print__("have not been set", varID='option_menu_lines', **kwargs)
 
 
+    def input_from_console(self, input_msg, include_space=True, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("input_from_console", **kwargs)
+
+        if(self.__not_str_print__(input_msg, varID='input_msg', **kwargs)):
+            return False
+
+        if(include_space):
+            action = raw_input(self.space+input_msg)
+        else:
+            action = raw_input(input_msg)
+        print('    ')
+
+        try:
+            formatted_action = strl.str_clean(action.lower())
+        except:
+            formatted_action = False
+        finally:
+            if(formatted_action == False or not isinstance(formatted_action, str)):
+                self.__err_print__("could not be parsed into a string", varID='action', **kwargs)
+
+        return formatted_action
+
+
+    def values_from_console(self, input_msg, include_space=True, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("values_from_console", **kwargs)
+
+        run = True
+        value_list = []
+
+        while(run):
+            input_str = self.input_from_console(input_msg, include_space, **kwargs)
+            if(not isinstance(input_str, str)):
+                continue
+            value_list = strl.str_to_list(input_str, filtre=True, **kwargs)
+            if(not isinstance(input_str, list)):
+                continue
+            run = False
+
+        return value_list
+
+
+    def num_from_console(self, input_msg, value_type, free_and_accepted_values=None, include_space=True, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("num_from_console", **kwargs)
+
+        if(value_type not in ('int', 'float')):
+            return self.__err_print__("should be either 'int' or 'float' : '"+str(value_type)+"'", varID='value_type', **kwargs)
+
+        run = True
+        val = ''
+
+        if(isinstance(free_and_accepted_values, (float, int, long))):
+            free_and_accepted_values = [free_and_accepted_values]
+
+        while(run):
+            line = self.input_from_console(input_msg, include_space, **kwargs)
+            clean_line = strl.str_clean(line, **kwargs)
+            if(clean_line == 'exit' or clean_line == 'quit'):
+                break
+            try:
+                if(value_type == 'int'):
+                    val = int(float(clean_line))
+                else:
+                    val = float(clean_line)
+                run = False
+            except:
+                val = ''
+                self.__err_print__("Input could not be parsed into an '"+value_type+"': '"+str(line)+"'")
+            if(isinstance(free_and_accepted_values, (list, tuple))):
+                if(val not in free_and_accepted_values):
+                    self.__err_print__("Input should be one of the following values: "+str(free_and_accepted_values))
+                    run = True
+                    continue
+        return val
+
+
+    def bool_from_console(self, input_msg, include_space=True, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("num_from_console", **kwargs)
+
+        run = True
+        val = ''
+
+        while(run):
+            line = self.input_from_console(input_msg, include_space, **kwargs)
+            clean_line = strl.str_clean(line, **kwargs)
+            if(clean_line == 'exit' or clean_line == 'quit'):
+                break
+            if(clean_line.lower() == 'true'):
+                val = True
+                run = False
+            elif(clean_line.lower() == 'false'):
+                val = False
+                run = False
+            else:
+                self.__err_print__("Input could not be parsed into a boolean, try again")
+
+        return val
+
+
+
     def program_loop(self, action_function, program_name='Main', **kwargs):
         '''
         Description:
@@ -777,20 +880,14 @@ class progStruct(cmdUtil):
 
         while(run):
 
-            action = raw_input(self.space+"Input a choice from the option menu: ")
-            print(' ')
-
-            try:
-                formatted_action = strl.str_clean(action.lower())
-            except:
-                formatted_action = False
-            finally:
-                if(formatted_action == False or not isinstance(formatted_action, str)):
-                    self.__err_print__("could not be parsed into a string", varID='action', **kwargs)
+            formatted_action = self.input_from_console("Input a menu option ('menu' to show the menu): ", **kwargs)
 
             if(formatted_action == 'quit' or formatted_action == 'exit'):
                 print(" ")
                 run = False
+
+            if(formatted_action == 'menu' or formatted_action == 'help'):
+                self.print_option_menu(**kwargs)
 
             success = action_function(formatted_action)
             if(not success):
