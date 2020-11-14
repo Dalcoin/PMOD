@@ -2,6 +2,7 @@ import re
 
 import strlist as strl
 import tcheck as check
+import mathops as mops
 
 global printer
 global re_space
@@ -117,7 +118,18 @@ def line_nan_check(array, nan=True, inf=True, null=True, **pkwargs):
 # table_trans  ([[1,2,3],[4,5,6]])  =>  [[1,4],[2,5],[3,6]]
 
 
-def ismatrix(n, numeric=False, string=False, matrixName=None, **pkwargs):
+def ismatrix(n, typeRestriction=None, matrixName=None, **pkwargs):
+    '''
+    Description:
+
+    Inputs:
+
+        typeRestriction:
+            if 'str' : each element is checked as a string, False is returned if any element is a non-string
+            if 'num' : each element is checked as a numeric, False is returned if any element is a non-numeric
+
+        matrixName : If a string, then error messages use this string as the name of the input matrix
+    '''
 
     pkwargs = printer.update_funcName("ismatrix", **pkwargs)
 
@@ -130,10 +142,21 @@ def ismatrix(n, numeric=False, string=False, matrixName=None, **pkwargs):
     if(__not_arr_print__(n, varID=mID, **pkwargs)):
         return False
 
+    string=False
+    numeric=False
+
+    if(isinstance(typeRestriction, str)):
+        if(typeRestriction.lower() == 'str'):
+            string=True
+        elif(typeRestriction.lower() == 'num'):
+            numeric=True
+        else:
+            pass
+
     lang = 0
+    err = False
     for i,entry in enumerate(n):
-        if(__not_arr_print__(entry, varID=mID+" entry with index "+str(i), **pkwargs)):
-            err = True
+        if(__not_arr_print__(entry, varID="The "+strl.print_ordinal(i+1)+" entry of '"+mID+"'", **pkwargs)):
             return False
         else:
             if(i == 0):
@@ -147,16 +170,27 @@ def ismatrix(n, numeric=False, string=False, matrixName=None, **pkwargs):
                 err_arr = [str(j) for j in entry if not check.isNumeric(j) and not isinstance(j, str)]
 
             if(len(err_arr)>0):
-                __err_print__(["Below is the invalid content in the "+strl.print_ordinal(i+1)+" entry of "+mID+":"]+err_arr, **pkwargs)
-                return False
+                err_msg = ["Below is the invalid content in the "+strl.print_ordinal(i+1)+" entry of "+mID+":"]+err_arr
+                __err_print__(err_msg, **pkwargs)
+                err=True
             if(len(entry) != lang):
                 errString_p1 = "length of the "+strl.print_ordinal(i+1)+" entry of '"+mID
                 __err_print__(errString_p1+"' doesn't match the length of the first entry", **pkwargs)
-                return False
-    return True
+                err=True
+                continue
+    if(err):
+        return False
+    else:
+        return True
 
 
 def coerce_to_matrix(n, fill="NULL", matrixName=None, **pkwargs):
+    '''
+    Description : Attempts to convert an array of arrays into a rectangular array of arrays
+                  Filling is added to the ending of each array
+    '''
+
+    pkwargs = printer.update_funcName("coerce_to_matrix", **pkwargs)
 
     mID=''
     if(isinstance(matrixName, str)):
@@ -164,19 +198,21 @@ def coerce_to_matrix(n, fill="NULL", matrixName=None, **pkwargs):
     else:
         mID = "n"
 
-    pkwargs = printer.update_funcName("coerce_to_matrix", **pkwargs)
-
     if(__not_arr_print__(n, varID=mID, **pkwargs)):
         return False
 
     newn = list(n)
     maxl = 0
 
+    err = False
     for i,entry in enumerate(newn):
-        if(__not_arr_print__(entry, varID=strl.print_ordinal(i+1)+" entry of matrix "+mID, **pkwargs)):
-            return False
+        if(__not_arr_print__(entry, varID="The "+strl.print_ordinal(i+1)+" entry of '"+mID+"'", **pkwargs)):
+            err = True
+            continue
         if(len(entry) > maxl):
             maxl = len(entry)
+    if(err):
+        return False
 
     for i,entry in enumerate(newn):
         if(len(entry) < maxl):
@@ -185,7 +221,15 @@ def coerce_to_matrix(n, fill="NULL", matrixName=None, **pkwargs):
     return newn
 
 #**********************
-def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSpacing='', strOpt=True, **pkwargs):
+def matrix_to_str_array(array,
+                        spc='  ',
+                        matrixName=None,
+                        endline=False,
+                        frontSpacing='',
+                        roundUniform=False,
+                        strOpt=True,
+                        pyver='2.7',
+                        **pkwargs):
     '''
     Description: Takes a matrix (2-D array of arrays) and returns a 1-D array; 'outArray'
                  Each entry in 'outArray' is a string corrosponding to the original entry
@@ -194,10 +238,18 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
     Input:
         array   : A 2-D Python array (list or tuple) object
         spc [*] : A string object, usually spacing
+        matrixName [*] : A string object, used for the name of the variable when printing error messages
+        endline [*] : If True then the endline character '\n' is added to the end of each string
+        frontSpacing [*] : A string object to be added to the beginning of each string
+        strOpt [*] : 
+        roundUniform [*] : Round each numeric value in the matrix to a uniform length of 8 characters
 
     Return:
         out_array : A list of strs if success, False if failure
     '''
+
+    pkwargs = printer.update_funcName("matrix_to_str_array", **pkwargs)
+
     mID=''
     if(isinstance(matrixName, str)):
         mID = matrixName
@@ -206,10 +258,19 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
 
     if(__not_arr_print__(array, varID=mID, **pkwargs)):
         return False
+
     outArray = []
 
     for i,entry in enumerate(array):
-        if(strOpt):
+        if(roundUniform):
+            line = strl.array_to_str(mops.round_uniform_array(entry, pyver, failPrint=False, **pkwargs),
+                                     spc=spc, endline=endline, front_spacing=frontSpacing, **pkwargs)
+            if(isinstance(line,str)):
+                outArray.append(line)
+            else:
+                msg = "failure to create a string of rounded numerics from the "+strl.print_ordinal(i)+" entry of 'array'"
+                __err_print__(msg, **pkwargs)
+        elif(strOpt):
             if(isinstance(entry, str)):
                 outArray.append(entry)
             elif(check.isArray(entry)):
@@ -222,7 +283,7 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
                 __err_print__(strl.print_ordinal(i+1)+" entry, is not an array", varID=mID, **pkwargs)
                 return False
         else:
-            if(__not_arr_print__(array, varID=mID+" "+strl.print_ordinal(i+1)+" entry", **pkwargs)):
+            if(__not_arr_print__(array, varID="The "+strl.print_ordinal(i+1)+" entry of '"+mID+"'", **pkwargs)):
                 return False
             else:
                 string = strl.array_to_str(entry, spc=spc, endline=endline, front_spacing=frontSpacing)
@@ -233,7 +294,7 @@ def matrix_to_str_array(array, spc='  ', matrixName=None, endline=False, frontSp
     return outArray
 
 
-def table_trans(n, test_matrix=True, coerce=False, numeric=False, string=False, fill='NULL', matrixName=None, **pkwargs):
+def table_trans(n, test_matrix=True, coerce=False, fill='NULL', typeRestriction=None, matrixName=None, **pkwargs):
 
     pkwargs = printer.update_funcName("table_trans", **pkwargs)
 
@@ -246,7 +307,7 @@ def table_trans(n, test_matrix=True, coerce=False, numeric=False, string=False, 
             else:
                 pkwargs["failPrint"] = False
                 oldval=pkwargs["failPrint"]
-        if(not ismatrix(n, numeric=numeric, string=string, matrixName=matrixName, **pkwargs)):
+        if(not ismatrix(n, typeRestriction=typeRestriction, matrixName=matrixName, **pkwargs)):
             matrix_assert = False
         if(coerce):
             pkwargs["failPrint"] = oldval
@@ -272,7 +333,7 @@ def table_trans(n, test_matrix=True, coerce=False, numeric=False, string=False, 
     return new_matrix
 
 
-def table_from_str_array(table_list, test_matrix=True, spc=' ', transpose=True, matrixName=None, **pkwargs):
+def table_from_str_array(table_list, test_matrix=True, spc=' ', transpose=True, matrixName=None, string=False, **pkwargs):
 
     mID=''
     if(isinstance(matrixName, str)):

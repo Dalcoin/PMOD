@@ -21,6 +21,7 @@ class benv(progStruct):
                  skn_file_name='skin.srt',
                  xeb_bin_name='xeb_server',
                  aux_bin_name='aux',
+                 zed_bin_name='zed',
                  osFormat='linux',
                  newPath=None,
                  rename=True,
@@ -66,6 +67,9 @@ class benv(progStruct):
 
         self.XEBNAME = xeb_bin_name
         self.XEBPATH = ''
+
+        self.ZEDNAME = zed_bin_name
+        self.ZEDPATH = ''
 
         # Input Files
         self.PARFILE = par_file_name
@@ -117,6 +121,7 @@ class benv(progStruct):
         self.EOSPARS = re.compile(r"\s*EOSpars\s*:\s*(TRUE|True|true|FALSE|False|false)")
         self.EOSGRUP = re.compile(r"\s*EOSgrup\s*:\s*(TRUE|True|true|FALSE|False|false)")
         self.RESETIT = re.compile(r"\s*Resetit\s*:\s*(TRUE|True|true|FALSE|False|false)")
+        self.DENSITY = re.compiel(r"\s*Density\s*:\s*(TRUE|True|true|FALSE|False|false)")
 
         self.SKVAL_HEADER = re.compile(r"#\-+([^\-]+)\-+#")
         self.SKVAL_NUCLEI = re.compile(r"\s*(\d+)\s*,\s*(\d+)")
@@ -149,13 +154,14 @@ class benv(progStruct):
                            'Mirrors':False,
                            'EOSpars':False,
                            'EOSgrup':False,
-                           'Resetit':False}
+                           'Resetit':False,
+                           'Density':False}
 
         self.SKVAL_SET = False
 
         self.skval = ()
 
-        self.BENV_SET_BINARIES = self.init_binary([self.PARFILE, self.VALFILE, self.AUXNAME, self.XEBNAME])
+        self.BENV_SET_BINARIES = self.init_binary([self.PARFILE, self.VALFILE, self.AUXNAME, self.XEBNAME, self.ZEDNAME])
         self.BENV_SET_PATHWAYS = self.benv_structure(**kwargs)
 
 
@@ -194,6 +200,11 @@ class benv(progStruct):
         else:
             success = self.__err_print__("not found in '"+self.BINFOLD+"'", varID=self.XEBNAME, **kwargs)
 
+        if(self.ZEDNAME in self.BIN_DICT):
+            self.ZEDPATH = self.BIN_DICT[self.ZEDNAME]
+        else:
+            success = self.__err_print__("not found in '"+self.BINFOLD+"'", varID=self.ZEDNAME, **kwargs)
+
         return success
 
 
@@ -220,7 +231,8 @@ class benv(progStruct):
                     'Mirrors':self.MIRRORS,
                     'EOSpars':self.EOSPARS,
                     'EOSgrup':self.EOSGRUP,
-                    'Resetit':self.RESETIT}
+                    'Resetit':self.RESETIT,
+                    'Density':self.DENSITY}
 
         reg_list = []
 
@@ -230,7 +242,8 @@ class benv(progStruct):
                      'Mirrors',
                      'EOSpars',
                      'EOSgrup',
-                     'Resetit']
+                     'Resetit',
+                     'Density']
 
         line_ids = ['pars', 'loop', 'special', 'nuclei']
 
@@ -1615,3 +1628,38 @@ class benv(progStruct):
         else:
             return True
         return True
+
+
+    ###############################################
+    # functions dealing with density calculations #------------------------------------------------------------|
+    ###############################################
+
+    def density_run(self, optline=None, den_parline=None, run_cmd='run.sh', clean_Run=True, **kwargs):
+
+        kwargs = self.__update_funcNameHeader__("density_run", **kwargs)
+
+        if(isinstance(parline, str)):
+            pass_parline = self.write_parline(parline, **kwargs)
+            if(pass_parline == False):
+                msg = ["failure to create and write parline", "parline : "+str(parline)]
+                return self.__err_print__(msg, **kwargs)
+        if(isinstance(vallist, (tuple, list))):
+            pass_vallist = self.write_vallist(vallist, **kwargs)
+            if(pass_vallist == False):
+                msg = ["failure to create and write vallist", "vallist : "+str(vallist)]
+                return self.__err_print__(msg, **kwargs)
+
+        self.set_osdir(self.BINPATH, **kwargs)
+        self.run_commands(run_cmd, **kwargs)
+        self.set_osdir(**kwargs)
+
+        values_dict = self.read_files_from_folder('bin', [self.VRBFILE, self.SKNFILE], clean=True, **kwargs)
+
+        optpars = values_dict.get(self.VRBFILE)
+        sknvals = values_dict.get(self.SKNFILE)
+
+        if(clean_Run):
+            self.clearDir(['bin'], select=[self.VRBFILE, self.SKNFILE], **kwargs)
+
+        self.cycle+=1
+        return (optpars[0], sknvals[0])

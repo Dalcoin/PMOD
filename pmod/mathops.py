@@ -160,7 +160,7 @@ def round_scientific(value, digits, pyver = '2.7', string=True, **pkwargs):
         return float(rnum)
 
 
-def round_uniform(value, pyver = '2.7', **pkwargs):
+def round_uniform(value, pyver = '2.7', failReturn=True, **pkwargs):
 
     pkwargs = __update_funcName__("round_uniform", **pkwargs)
 
@@ -168,10 +168,15 @@ def round_uniform(value, pyver = '2.7', **pkwargs):
         try:
             value = float(value)
         except:
-            __err_print__("could not be coerced to a string", varID="value", **pkwargs)
+            if(failReturn):
+                return __err_print__("could not be coerced to a number", varID="value", **pkwargs)
+            else:
+                return value
+    elif(__not_num_print__(value, varID=str(value), heading="error", **pkwargs)):
+        if(failReturn):
             return False
-    elif(__not_num_print__(value, varID='number', heading="error", **pkwargs)):
-        return False
+        else:
+            return value
     else:
         pass
 
@@ -206,6 +211,10 @@ def round_uniform(value, pyver = '2.7', **pkwargs):
     else:
         output = '0.000000'
     return output
+
+
+def round_uniform_array(arr, pyver='2.7', failReturn=False, **pkwargs):
+    return [round_uniform(entry, pyver, failReturn, **pkwargs) for entry in arr]
 
 
 def round_format(num, dec, **pkwargs):     

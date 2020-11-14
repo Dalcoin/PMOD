@@ -168,21 +168,21 @@ def file2Convert(fileName, style, header = False, newFile = None):
     else:
         return outLines
     return True  
-    
- 
+
+
 # Constants
      
-pi = 3.141592653589793 # pi - 16 digits 
-hc = 197.327           # hc - Standard Nuclear Conversion Constant
+pi = 3.141592653589793 # pi - 16 digits
+hc = 197.327           # hc - Standard Nuclear Conversion Constant (MeV fm)
 pi2 = pi*pi            # pi squared
                        
-mnuc = 938.918         # Nucleon Mass-Energy 
-mneu = 939.5656328     # Neutron Mass-Energy   
-mprt = 938.2720881629  # Proton Mass-Energy  
-melc = 0.51099895      # Electron Mass-Energy 
-mmun = 105.658375523   # Muon Mass-Energy    
+mnuc = 938.918         # Nucleon Mass-Energy (MeV)
+mneu = 939.5656328     # Neutron Mass-Energy (MeV)
+mprt = 938.2720881629  # Proton Mass-Energy (MeV)
+melc = 0.51099895      # Electron Mass-Energy (MeV)
+mmun = 105.658375523   # Muon Mass-Energy (MeV)
                        
-vmhc = pi*hc*mnuc/2.0  # (pi/2) hc [MeV^-2] -> fm Conversion Constant      
+vmhc = pi*hc*mnuc/2.0  # (pi/2) hc [MeV^-2] -> fm Potential Conversion Constant
 
 kf_vals_20 = [i*0.1 for i in xrange(1,21)]  
 qf_vals_20 = [hc*float(i) for i in kf_vals_20]
