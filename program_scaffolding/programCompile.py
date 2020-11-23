@@ -15,7 +15,7 @@ The input binaries string names are 'aux' and 'xeb_server'
 
          |-- 'bin'----|---'run.sh'
 'Main' --|            |
-         |-- 'src'-|  |---''  <----------<-------|
+         |-- 'src'-|  |---'...'  <-------<-------|
                    |                             |
                    |--'aux'     <--------|-->|   |
                    |                     |   |-->|  The script moves the binaries 'aux' and 'xeb_server'
@@ -229,8 +229,8 @@ class progComp(cmu.cmdUtil):
         except:
             errmsg = ["Failure to set the shell pathway to the source folder",
                       "Source folder name : '"+self.SRC_NAME+"'"]
-            return self.__err_print__(errmsg, heading='ExitError', blankLine=False) 
-    
+            return self.__err_print__(errmsg, heading='ExitError', blankLine=False)
+
         # Change the mode on the shell script to an exceutable
         try:
             subprocess.call("chmod +x "+self.SRC_SCRIPT, shell=True)
@@ -251,8 +251,8 @@ class progComp(cmu.cmdUtil):
 
         # Get content of source folder (src) after running compiling script
         self.SRC_CONTENT = self.contentPath(self.SRCPATH, objType='file', **kwargs)
-    
-        # check contents of source folder (src) for binary(ies)
+
+        # Check contents of source folder (src) for binary(ies)
         for entry in self.move_dict:
             if(entry in self.SRC_CONTENT):
                 self.__err_print__("binary file, has been found after compiling", varID=entry, heading="Success", parSpace=False)

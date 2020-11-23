@@ -1305,7 +1305,7 @@ class PathParse(imprimerTemplate):
             renameOption = self.rename
 
         if(renameOption):
-            destPath = self.renamePath(filePath, destPath, objName=dirName, **kwargs)
+            destPath = self.renamePath(dirPath, dirName, objName=dirName, **kwargs)
             if(destPath == False):
                 return self.__err_print__("failure to generate renamed object at destination pathway", **kwargs)
         else:

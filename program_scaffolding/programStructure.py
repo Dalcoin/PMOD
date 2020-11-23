@@ -518,9 +518,19 @@ class progStruct(cmdUtil):
         else:
             return str(round(run_time,3))+" s"
 
-    def exit_function(self, action_msg, failure=True):
+    def exit_function(self, action_msg, failure=False, binlogfiles=None, delete_logfiles=True, signiture=True):
+        if(isinstance(binlogfiles, str)):
+            self.update_logfile_from_bin(binlogfiles, delete_logfiles, signiture)
+        elif(isinstance(binlogfiles, (tuple, list))):
+            if(all([isinstance(entry, str) for entry in binlogfiles])):
+                self.update_logfile_from_bin(binlogfiles, delete_logfiles, signiture)
+        else:
+            pass
+
         if(failure):
             print("ExitError: '"+self.DIRNAME+"' failed "+action_msg)
+        else:
+            print(action_msg)
         print("Number of runs upon exit :  "+str(self.cycle))
         print("Script run-time :  "+self.get_run_time()+"\n")
         sys.exit()
@@ -646,6 +656,30 @@ class progStruct(cmdUtil):
         lines = iop.flat_file_grab(self.LOGPATH, scrub=True, **kwargs)
         return lines
 
+    def update_logfile_from_bin(self, binlogfile, delete_logfiles=True, signiture=False, **kwargs):
+        if(isinstance(binlogfile, (list,tuple))):
+            if(not self.__not_strarr_print__(binlogfile, varID='binlogfile', firstError=True, **kwargs)):
+                return False
+        elif(isinstance(binlogfile, str)):
+            binlogfile = [binlogfile]
+        else:
+            return self.__err_print__("should be either a string or array of strings", varID='binlogfile', **kwargs)
+
+        loglines = []
+        logdict = self.read_files_from_folder(self.BINFOLD, binlogfile, clean=False, failPrint=False, **kwargs)
+        if(logdict == False):
+            return logdict
+        lognames = sorted(list(logdict))
+
+        for logfile in lognames:
+            if(signiture):
+                loglines+=["'"+logfile+"' content:\n","\n"]
+            loglines+=["\n"]
+            loglines+=logdict[logfile]
+            if(delete_logfiles):
+                logfilepath = self.joinNode(self.BINPATH, logfile, **kwargs)
+                self.delFile(logfilepath, **kwargs)
+        return iop.flat_file_append(self.LOGPATH, loglines, type_test=False, **kwargs)
 
     #---------------------------#----------------#--------------------------#
     # Executing Programs in BIN #                # Executing Program in BIN #
@@ -851,7 +885,7 @@ class progStruct(cmdUtil):
 
 
 
-    def program_loop(self, action_function, program_name='Main', **kwargs):
+    def program_loop(self, action_function, program_name='Main', binlogfiles=None, **kwargs):
         '''
         Description:
 
@@ -893,6 +927,4 @@ class progStruct(cmdUtil):
             if(not success):
                 self.__err_print__("is not a valid command", varID=str(formatted_action), **kwargs)
             continue
-
-        self.exit_function("exiting program", failure=False)
         return True

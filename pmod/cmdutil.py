@@ -280,9 +280,15 @@ class cmdUtil(PathParse):
                                 fail_dirs.append(dir+self.delim+obj)
                                 continue
                             if(os.path.isfile(objPath)):
-                                os.remove(objPath)
+                                try:
+                                    os.remove(objPath)
+                                except:
+                                    continue
                             elif(os.path.isdir(objPath)):
-                                shutil.rmtree(objPath)
+                                try:
+                                    shutil.rmtree(objPath)
+                                except:
+                                    continue
                             else:
                                 fail_dirs.append(dir+self.delim+obj)
                     else:
@@ -501,9 +507,9 @@ class cmdUtil(PathParse):
                 failure_to_read.append(file)
                 continue
             if(clean):
-                lines = iop.flat_file_grab(entrypathway, scrub=True)
+                lines = iop.flat_file_grab(entrypathway, scrub=True, **kwargs)
             else:
-                lines = iop.flat_file_grab(entrypathway)
+                lines = iop.flat_file_grab(entrypathway, **kwargs)
             if(lines == False):
                 failure_to_read.append(file)
                 continue
