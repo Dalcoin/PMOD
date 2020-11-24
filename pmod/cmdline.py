@@ -929,7 +929,7 @@ class PathParse(imprimerTemplate):
 
     def renamePath(self, originPath, destPath, objName=None, climbPath_Opt=True, **kwargs):
         '''
-        Description : Takes an input pathway and an destination pathway along 
+        Description : Takes an input pathway and an destination pathway, with 
                       options for the object's name and climbing pathway if
                       destination path terminates with a non-folder object.
 
@@ -963,11 +963,12 @@ class PathParse(imprimerTemplate):
         kwargs = self.__update_funcNameHeader__("renamePath", **kwargs)
 
         destNode = self.getNode(originPath, **kwargs)
-        originPath = self.convertPath(originPath, **kwargs)
-        destPath = self.convertPath(destPath, **kwargs)
-
         if(destNode == False):
-            return self.__err_print__("failed to yield terminating node", varID='originPath', **kwargs)
+            return False
+
+        destPath = self.convertPath(destPath, **kwargs)
+        if(destPath == False):
+            return False
 
         # If the objName variable is changed to a string
         if(isinstance(objName,str)):
@@ -1305,7 +1306,7 @@ class PathParse(imprimerTemplate):
             renameOption = self.rename
 
         if(renameOption):
-            destPath = self.renamePath(dirPath, dirName, objName=dirName, **kwargs)
+            destPath = self.renamePath(dirPath, dirPath, objName=dirName, **kwargs)
             if(destPath == False):
                 return self.__err_print__("failure to generate renamed object at destination pathway", **kwargs)
         else:
