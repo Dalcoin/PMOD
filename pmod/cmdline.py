@@ -123,22 +123,7 @@ class PathParse(imprimerTemplate):
               indicated by the addition of and underscore and a descriptive word
               starting with a capital letter (e.g. files in the current (path)
               directory are stored as a list of strings with the variable: varPath_Files)
-    '''
 
-    def __init__(self,
-                 osFormat,
-                 newPath=None,
-                 rename=False,
-                 debug=True,
-                 shellPrint=False,
-                 colourPrint=True,
-                 space='    ',
-                 endline='\n',
-                 moduleNameOverride=None,
-                 **kwargs
-                ):
-
-        '''
         --------
         | init |
         --------
@@ -164,7 +149,43 @@ class PathParse(imprimerTemplate):
 
             .varOS      :  A string to specify the operating system, this determines the path file format
             .varCol     :  True for color Escape code when printing, False by default
-        '''
+
+        -----------
+        | Methods |
+        -----------
+
+        STD-Function-Names:
+
+            joinNode    : Joins string to a pathway formattted string
+            delNode     : Deletes node by position from (right) index
+            getNode     : Retrieves node by position from (right) index
+            renamePath  : Renames pathway if name conflict in pathway directory
+            contentPath : Retrieves contents of pathway directory
+            moveObj     : Moves object found at pathway to new pathway
+            delFile     : Delete file found at pathway
+            copyFile    : Copies file found at pathway to new pathway
+            makeDir     : Creates directory at pathway
+            delDir      : Deletes directory at pathway
+            copyDir     : Copies directory at pathway to new pathway
+            delObj      : Deletes directory at pathway
+            find        : Searches directory at pathway for exact match
+            match       : Searches directory at pathway for matching strings
+
+
+    '''
+
+    def __init__(self,
+                 osFormat,
+                 newPath=None,
+                 rename=False,
+                 debug=True,
+                 shellPrint=False,
+                 colourPrint=True,
+                 space='    ',
+                 endline='\n',
+                 moduleNameOverride=None,
+                 **kwargs
+                ):
 
         # initilize imprimerTemplate class
         super(PathParse, self).__init__(space, endline, debug, **kwargs)
