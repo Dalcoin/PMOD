@@ -230,4 +230,4 @@ qf_vals_20 = [hc*float(i) for i in kf_vals_20]
 pf_vals_20 = [int(i) for i in qf_vals_20]
 
 sm_vals_20 = [2.0*i*i*i/(3.0*pi2) for i in kf_vals_20]    
-nm_vals_20 = [i*i*i/(3.0*pi2) for i in kf_vals_20]   
+nm_vals_20 = [i*i*i/(3.0*pi2) for i in kf_vals_20]

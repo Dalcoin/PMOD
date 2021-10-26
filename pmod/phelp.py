@@ -1,10 +1,21 @@
 from matplotlib import pyplot as __plt__
+import numpy as np
 
 import tcheck as __check__
 import mathops as __mops__
 
 # Graphing functions
 
+'''
+
+List of functions:
+
+    new_plot
+    new_smooth_plot
+    new_four_plot
+    new_func_plot
+
+'''
 
 def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, save_name = 'plot.jpg'):
     '''
@@ -15,10 +26,10 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
     # ECC
 
     # Dummy Check for 'x' and 'y'
-    if(not __check__.array_test(x)):
+    if(not __check__.isArray(x)):
         print("[__ecc_plot__] Error: 'x' must be an array")  
         return False    
-    if(not __check__.array_test(y)):
+    if(not __check__.isArray(y)):
         print("[__ecc_plot__] Error: 'y' must be an array") 
         return False      
             
@@ -26,12 +37,12 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
     xnumeric = True 
     xarray = True
     for i in x:
-        if(__check__.numeric_test(i)):
+        if(__check__.isNumeric(i)):
             xarray = False 
-        elif(__check__.array_test(i)):
+        elif(__check__.isArray(i)):
             xnumeric = False 
             for j in i:
-                if(not __check__.numeric_test(j)):
+                if(not __check__.isNumeric(j)):
                     xarray = False
         else:
             xnumeric, xarray = False, False 
@@ -43,12 +54,12 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
     ynumeric = True 
     yarray = True
     for i in y:
-        if(__check__.numeric_test(i)):
+        if(__check__.isNumeric(i)):
             yarray = False 
-        elif(__check__.array_test(i)):
+        elif(__check__.isArray(i)):
             ynumeric = False 
             for j in i:
-                if(not __check__.numeric_test(j)):
+                if(not __check__.isNumeric(j)):
                     yarray = False
         else:
             ynumeric, yarray = False, False 
@@ -82,7 +93,7 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
      
     # Label checks            
     labre = False
-    if(not __check__.array_test(label)):
+    if(not __check__.isArray(label)):
         if(label != None):
             print("[__ecc_plot__] Warning: input 'label' is not an array and has been deprecated") 
         labre = True  
@@ -102,7 +113,7 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
     # Limit checks
              
     limre = False
-    if(not __check__.array_test(lims)):
+    if(not __check__.isArray(lims)):
         if(lims != None):
             print("[__ecc_plot__] Warning: input 'lims' is not an array and has been deprecated") 
         limre = True  
@@ -112,21 +123,21 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
             limre = True
         else:
             xlims, ylims = lims[0], lims[1]
-            if(__check__.array_test(xlims)):
-                if(not __check__.numeric_test(xlims[0]) or not __check__.numeric_test(xlims[1])):
+            if(__check__.isArray(xlims)):
+                if(not __check__.isNumeric(xlims[0]) or not __check__.isNumeric(xlims[1])):
                     print("[__ecc_plot__] Warning: input 'xlims' is not string so 'lims and has been deprecated")    
                     limre = True 
             else:
                 limre = True 
-            if(__check__.array_test(ylims)):
-                if(not __check__.numeric_test(ylims[0]) or not __check__.numeric_test(ylims[1])):
+            if(__check__.isArray(ylims)):
+                if(not __check__.isNumeric(ylims[0]) or not __check__.isNumeric(ylims[1])):
                     print("[__ecc_plot__] Warning: input 'ylims' is not string so 'lims and has been deprecated")  
                     limre = True      
             else:
                 limre = True          
                                    
     # Checking the rest of the input variables
-    if(__check__.numeric_test(fontsize)):
+    if(__check__.isNumeric(fontsize)):
         fontsize = int(fontsize)
     else:
         fontsize = 30 
@@ -141,7 +152,7 @@ def __ecc_plot__(x, y, label = None, lims = None, fontsize = 20, save = False, s
     return output
               
 
-def new_plot(x, y, label = None, lims = None, fontsize = 30, save = False, save_name = 'plot.jpg'):
+def new_plot(x, y, label=None, lims=None, fontsize = 30, save=False, save_name='plot.jpg'):
 
     test = __ecc_plot__(x, y, label, lims, fontsize, save, save_name)
     if(test == False):
@@ -195,8 +206,8 @@ def new_plot(x, y, label = None, lims = None, fontsize = 30, save = False, save_
     return True  
 
 
-def new_smooth_plot(x, y, label = None, lims = None, smoothness = 300,
-                    fontsize = 30, save = False, save_name = 'plot.jpg'):    
+def new_smooth_plot(x, y, label=None, lims=None, smoothness=300,
+                    fontsize=30, save=False, save_name='plot.jpg', **pkwargs):    
 
     test = __ecc_plot__(x, y, label, lims, fontsize, save, save_name)
     if(test == False):
@@ -224,18 +235,14 @@ def new_smooth_plot(x, y, label = None, lims = None, smoothness = 300,
     xlim, ylim = lims[0], lims[1]
 
     spln_inst = __mops__.spline()
-                   
+
     __plt__.figure()
     __plt__.rc('xtick',labelsize=16)
     __plt__.rc('ytick',labelsize=16)
 
     if(sep):
-        xsmooth = __mops__.span_vec(x, smoothness)  
-        spln_inst.pass_vecs(x, y, xsmooth)
-              
-        spln_inst.pass_spline()
-        ysmooth = spln_inst.get_spline()   
-
+        xsmooth = __mops__.span_vec(x, smoothness) 
+        ysmooth = spln_inst.scos_interpolate(xsmooth, x, y, der=0, sort='cubic', **pkwargs)
         __plt__.plot(xsmooth, ysmooth, linewidth = 2.5)
 
     elif(ysep):
@@ -276,10 +283,10 @@ def new_smooth_plot(x, y, label = None, lims = None, smoothness = 300,
 
 
 def new_four_plot(tl_data, tr_data, bl_data, br_data, 
-                  fontsize = 20, lwd = 2.5, 
-                  label = None, lims = None, namelab = None, 
-                  smooth = False, smoothness = 300, 
-                  save = False, save_name=None):
+                  fontsize=20, lwd=2.5, 
+                  label=None, lims=None, namelab=None, 
+                  smooth=False, smoothness=300, 
+                  save=False, save_name=None):
 
     fig, axs = __plt__.subplots(2, 2, sharex=False, sharey=False)
 
@@ -291,7 +298,7 @@ def new_four_plot(tl_data, tr_data, bl_data, br_data,
     if(smooth):
         spln_inst = __mops__.spline()
     
-    if(not __check__.array_test(label)):
+    if(not __check__.isArray(label)):
         tl_label, tr_label, bl_label, br_label = [[' ',' '],[' ',' '],[' ',' '],[' ',' ']]        
     else:
         if(len(label) != 4): 
@@ -650,4 +657,76 @@ def new_four_plot(tl_data, tr_data, bl_data, br_data,
         except:
             print("Error: attempted and failed to print graph as "+str(save_name))
        
+    return True
+
+
+def new_func_plot(x, func, label=None, lims=None, fontsize=30, save=False, save_name='plot.jpg', **pars):
+    '''
+    Plots a function y = func(i, **pars).
+
+    Note, x must be a list of floats, func input of one float, i, and return a single float, y.
+    Any additional variables **pars, must not have the following variable names:
+
+        label
+        lims
+        fontsize
+        save
+        save_name
+        pars
+
+    '''
+
+    if(len(pars) == 0):
+        y = [func(i) for i in x]
+    else:
+        y = [func(i, **pars) for i in x]
+
+    test = __ecc_plot__(x, y, label, lims, fontsize, save, save_name)
+    if(test == False):
+        print("[new_plot] Error: input test failed, see preceding error msg for details")
+        return False  
+    else:
+        xarray, yarray ,labre, limre, fontsize, save, save_name = test
+
+    xysep, ysep, sep = False, False, False
+    if(xarray and yarray): 
+        xysep = True 
+    elif(yarray):
+        ysep = True 
+    else:
+        sep = True 
+
+    if(labre):
+        label = (None, None)
+    if(limre):
+        lims = (None, None)
+
+    xlab, ylab = label[0], label[1]
+    xlim, ylim = lims[0], lims[1]
+
+    __plt__.figure()
+    __plt__.rc('xtick',labelsize=16)
+    __plt__.rc('ytick',labelsize=16)
+
+    if(sep):
+        __plt__.plot(x, y, linewidth = 2.5)
+    elif(ysep):
+        for i in y:
+            __plt__.plot(x, i, linewidth = 2.5)
+    elif(xysep):
+        for i in xrange(len(x)):
+            __plt__.plot(x[i], y[i], linewidth = 2.5)
+
+    if(xlab != None):
+        __plt__.ylabel(ylab, fontsize = fontsize, labelpad = 20)
+    if(ylab != None):
+        __plt__.xlabel(xlab, fontsize = fontsize, labelpad = 20)
+    if(xlim != None):
+        __plt__.xlim(xlim[0],xlim[1])
+    if(ylim != None):
+        __plt__.ylim(ylim[0],ylim[1])
+
+    __plt__.show()
+    if(save):
+        __plt__.savefig(save_name)  
     return True
